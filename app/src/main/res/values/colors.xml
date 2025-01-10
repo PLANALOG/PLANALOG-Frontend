@@ -2,4 +2,12 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="transparent">#00FF0000</color>
+    <color name="main_1">#2C3E50</color>
+    <color name="main_2">#ECF0F1</color>
+    <color name="btm_nav_unselected">#802C3E50</color>
+    <color name="state_1">#BDC3C7</color>
+    <color name="state_2">#C84141</color>
+    <color name="state_3">#FFFFFF</color>
+    <color name="delete_page">#801E1E1E</color>
 </resources>
