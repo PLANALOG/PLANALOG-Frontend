@@ -12,11 +12,8 @@
 - ![Material Design](https://img.shields.io/badge/Material%20Design-757575?logo=material-design&logoColor=white) 안드로이드 UI 디자인
 - ![View Binding](https://img.shields.io/badge/View%20Binding-8BC34A?logo=android&logoColor=white) 레이아웃 연결  
 - ![Data Binding](https://img.shields.io/badge/Data%20Binding-673AB7?logo=android&logoColor=white) 데이터 연결  
-- ![Coroutines](https://img.shields.io/badge/Coroutines-FF6F00?logo=kotlin&logoColor=white) 비동기 작업 처리  
-- ![Kakao Login](https://img.shields.io/badge/Kakao%20Login-FEE500?logo=kakao&logoColor=black) 소셜 로그인 
-- ![Firebase Cloud Messaging](https://img.shields.io/badge/FCM-FFCA28?logo=firebase&logoColor=white) 알림 기능 구현  
-- ![CalendarView](https://img.shields.io/badge/CalendarView-009688?logo=android&logoColor=white) 캘린더 UI 및 데이터 연동  
-- ![SearchView](https://img.shields.io/badge/SearchView-03A9F4?logo=android&logoColor=white) 검색 기능  
+- ![Coroutines](https://img.shields.io/badge/Coroutines-FF6F00?logo=kotlin&logoColor=white) 비동기 작업 처리
+- ![Firebase Cloud Messaging](https://img.shields.io/badge/FCM-FFCA28?logo=firebase&logoColor=white) 알림 기능 구현
 ### Tools
 - ![Android Studio](https://img.shields.io/badge/Android%20Studio-3DDC84?logo=android-studio&logoColor=white) 통합 개발 환경(IDE)  
 - ![Gradle](https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white) 빌드 관리 도구  
@@ -35,7 +32,14 @@
 - ![ConstraintLayout](https://img.shields.io/badge/ConstraintLayout-3DDC84?logo=android&logoColor=white) UI 배치  
 - ![LiveData](https://img.shields.io/badge/LiveData-43A047?logo=android&logoColor=white) 데이터 업데이트 반영  
 - ![Room](https://img.shields.io/badge/Room-FF6F00?logo=android&logoColor=white) 데이터 저장  
-  <br/><br/>
+- ![Naver SDK](https://img.shields.io/badge/Naver%20SDK-00C73C.svg?&logo=naver&logoColor=white) 네이버 로그인 및 API 연동
+- ![Kakao SDK](https://img.shields.io/badge/Kakao%20SDK-FFCD00.svg?&logo=kakao&logoColor=black) 카카오 로그인 및 API 연동
+- ![Google Sign-In API](https://img.shields.io/badge/Google%20Sign--In%20API-4285F4.svg?&logo=google&logoColor=white) 구글 계정 인증 및 로그인 API
+- ![SharedPreferences](https://img.shields.io/badge/SharedPreferences-%23FF5722.svg?&logo=android&logoColor=white) 간단한 데이터 저장 및 관리
+- ![RecyclerView](https://img.shields.io/badge/RecyclerView-%233DDC84.svg?&logo=android&logoColor=white) 리스트 및 데이터 표시 UI 컴포넌트
+- ![CalendarView](https://img.shields.io/badge/CalendarView-009688?logo=android&logoColor=white) 캘린더 UI 및 데이터 연동  
+- ![SearchView](https://img.shields.io/badge/SearchView-03A9F4?logo=android&logoColor=white) 검색 기능  
+<br/>
 
 ## Convention
 
@@ -75,7 +79,7 @@
 > Issue Convention
 - 양식 | [커밋 유형(전부 대문자)] 이슈 내용
 - 예시 | [FEAT] 추억 등록하기 UI 구현
-  <br/><br/>
+<br/><br/>
 
 > PR Convention
 - 양식
@@ -90,7 +94,7 @@
        [변경 내용 작성]
     4. 테스트 결과
        [구현 화면 첨부]
-       <br/><br/>
+<br/><br/>
   
 > Commit Convention
 1. 커밋 유형 : 첫 글자만 영어 대문자로 작성
@@ -113,7 +117,7 @@
     - 제목은 영문 기준 50자 이내로 할 것
     - 자신의 코드가 직관적으로 바로 파악할 수 있다고 생각하지 말자
     - 여러가지 항목이 있다면 글머리 기호를 통해 가독성 높이기
-      <br/><br/>
+<br/><br/>
    
 ## 폴더 구조
 📁 ProjectRoot/<br/>
