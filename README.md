@@ -1,5 +1,5 @@
 <p align='center'>
-    <img src="https://capsule-render.vercel.app/api?type=waving&color=2C3E50&height=300&section=header&text=PLANALOG&fontSize=70&animation=fadeIn&fontColor=ECF0F1&fontAlignY=38&desc=Frontend%20Repository&descAlignY=51&descAlign=62"/>
+    <img src="https://capsule-render.vercel.app/api?type=waving&color=2C3E50&height=300&section=header&text=PLANALOG&fontSize=70&animation=fadeIn&fontColor=ECF0F1&fontAlignY=38&desc=일상%20관리와%20공유를%20동시에&descAlignY=51&descAlign=62"/>
 </p>
 
 ## 🔨Tech Stack
@@ -20,7 +20,7 @@
 ### Version Control
 - ![Git](https://img.shields.io/badge/Git-F05032?logo=git&logoColor=white) 코드 버전 관리  
 - ![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white) 리포지토리 호스팅 및 협업  
-### 주요 사용 기능
+### Others
 - ![FAB](https://img.shields.io/badge/FAB-6200EA?logo=material-design&logoColor=white) 게시글 작성 버튼  
 - ![EditText](https://img.shields.io/badge/EditText-FF9800?logo=android&logoColor=white) 사용자 입력 처리
 - ![TextInputEditText](https://img.shields.io/badge/TextInputEditText-FF9800?logo=android&logoColor=white) 텍스트 입력  
