@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 선택 X -->
+    <item android:state_checked="false">
+        <shape>
+            <solid android:color="#D9D9D9"/>
+            <corners android:radius="3dp"/>
+        </shape>
+    </item>
+    <!-- 선택 O -->
+    <item android:state_checked="true">
+        <layer-list>
+            <!--배경-->
+            <item>
+                <shape>
+                    <corners android:radius="3dp"/>
+                    <solid android:color="#5C94B6"/>
+                </shape>
+            </item>
+            <!--이미지-->
+            <item android:drawable="@drawable/ic_check"/>
+        </layer-list>
+    </item>
+</selector>
