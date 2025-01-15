@@ -3,14 +3,14 @@
 
 
     <!-- post -->
-    <string name="post_type">Post Type</string>
+    <string name="post_type">Moment</string>
     <string name="user_name">이름</string>
     <string name="user_message">님의 소중한 순간을 남겨보세요.</string>
     <string name="post_title">제목</string>
     <string name="post_content">내용을 입력하세요 (500자 이내)</string>
     <string name="post_content_count">/500</string>
 
-    <!--home-->
+    <!-- home -->
     <string name="home">home</string>
     <string name="search">search</string>
     <string name="post">post</string>
@@ -25,7 +25,7 @@
     <string name="planner_memo_ex_1">오늘 할 일을 입력해주세요.</string>
     <string name="planner_memo_ex_2">의미론 보강 온라인</string>
 
-    <!--플래너 더보기 팝업-->
+    <!-- 플래너 더보기 팝업 -->
     <string name="save">저장</string>
     <string name="delete">삭제</string>
 
