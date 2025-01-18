@@ -1,6 +1,31 @@
 <resources>
     <string name="app_name">PLANALOG</string>
 
+    <!-- splash -->
+    <string name="splash_tagline">일정 관리와 일상 공유를 동시에</string>
+
+    <!-- login start -->
+    <string name="login_ok">로그인 되었습니다!</string>
+
+
+    <!-- login start set -->
+    <string name="login">소셜 로그인</string>
+    <string name="hello1">안녕하세요!</string>
+    <string name="hello2"> 입니다.</string>
+    <string name="hello3">에서 사용할</string>
+
+
+    <string name="nickname_ex">ex) 플라나</string>
+    <string name="nickname_ok">확인</string>
+
+    <string name="pick_nickname">이름 (닉네임)을 정해주세요</string>
+    <string name="blocknickname">이미 존재하는 닉네임입니다.</string>
+
+
+
+
+
+
 
     <!-- post -->
     <string name="post_type">Moment</string>
