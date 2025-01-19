@@ -12,4 +12,17 @@
         <item name="android:statusBarColor">@color/main_2</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
+
+
+
+
+    <style name="Theme.PLANALOG.RemoveSplash" parent="Base.Theme.PLANALOG">
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
+
+    <style name="SplashStatusTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:statusBarColor">@color/main_2</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>

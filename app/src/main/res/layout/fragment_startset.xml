@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/main_1">
+
+    <!-- 로고 이미지 -->
+    <ImageView
+        android:id="@+id/ivLogo"
+        android:layout_width="112dp"
+        android:layout_height="112dp"
+        android:src="@drawable/ic_logo"
+        android:adjustViewBounds="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="34dp"
+        android:layout_marginTop="54dp"/>
+
+
+    <!-- '소셜 로그인' 텍스트 -->
+    <TextView
+        android:id="@+id/hello_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/hello1"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        android:fontFamily="@font/pretendard_medium"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivLogo" />
+
+    <TextView
+        android:id="@+id/hello_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/hello_1" />
+
+    <TextView
+        android:id="@+id/hello_3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="78dp"
+        android:text="New Text"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        app:layout_constraintTop_toBottomOf="@id/hello_2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/hello_4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/pick_nickname"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:fontFamily="@font/pretendard_medium"
+        app:layout_constraintTop_toBottomOf="@id/hello_3"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <FrameLayout
+        android:id="@+id/write_nickname_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="34dp"
+        android:layout_marginTop="21dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/hello_4">
+
+        <EditText
+            android:id="@+id/write_nickname"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:ems="10"
+            android:textSize="17sp"
+            android:text="@string/nickname_ex"
+            android:gravity="center"
+            android:fontFamily="@font/pretendard_medium"
+            android:background="@drawable/btn_round"
+            android:padding="12dp" />
+
+        <ImageView
+            android:id="@+id/logincheck"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_logincheck"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="12dp"
+            android:visibility="invisible"
+            />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/blocknickname"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:fontFamily="@font/pretendard_medium"
+        android:textSize="12sp"
+        android:layout_marginTop="5dp"
+        android:text="@string/blocknickname"
+        android:textColor="@color/white"
+        app:layout_constraintStart_toStartOf="@id/write_nickname_frame"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/write_nickname_frame"
+        android:visibility="invisible"
+        />
+
+    <TextView
+        android:id="@+id/ok"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/btn_round"
+        android:paddingStart="27dp"
+        android:paddingEnd="27dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:text="@string/nickname_ok"
+        android:fontFamily="@font/pretendard_medium"
+        android:textSize="20sp"
+        app:layout_constraintTop_toBottomOf="@id/blocknickname"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
