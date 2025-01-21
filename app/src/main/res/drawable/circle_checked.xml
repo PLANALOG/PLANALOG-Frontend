@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--배경-->
+    <item>
+        <shape>
+            <corners android:radius="1000dp"/>
+            <solid android:color="@color/main_1"/>
+        </shape>
+    </item>
+    <!--이미지-->
+    <item android:drawable="@drawable/ic_check"/>
+</layer-list>

@@ -56,6 +56,9 @@
     <string name="planner_memo_ex_1">오늘 할 일을 입력해주세요.</string>
     <string name="planner_memo_ex_2">의미론 보강 온라인</string>
 
+    <!--  캘린더  -->
+    <string name="calendar">calendar</string>
+
     <!-- 팝업 -->
     <string name="save">저장</string>
     <string name="delete">삭제</string>

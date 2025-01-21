@@ -32,17 +32,17 @@
         <activity
             android:name=".ui.start.QnaActivity"
             android:exported="true"
-            android:theme="@style/FullStatusTheme"/>
+            android:theme="@style/SplashStatusTheme"/>
 
         <activity
             android:name=".ui.start.LoginActivity"
             android:exported="true"
-            android:theme="@style/FullStatusTheme"/>
+            android:theme="@style/SplashStatusTheme"/>
 
         <activity
             android:name=".ui.start.StartsetActivity"
             android:exported="true"
-            android:theme="@style/FullStatusTheme"/>
+            android:theme="@style/SplashStatusTheme"/>
 
         <activity
             android:name=".ui.start.ResultActivity"

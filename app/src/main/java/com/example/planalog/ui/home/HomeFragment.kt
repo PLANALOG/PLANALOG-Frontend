@@ -7,8 +7,10 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.R
+import com.example.planalog.databinding.FragmentCalendarBinding
 import com.example.planalog.databinding.FragmentHomeBinding
 import com.example.planalog.ui.comment.CommentFragment
+import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarFragment
 import com.example.planalog.ui.home.ctgy.Category
 import com.example.planalog.ui.home.ctgy.CategoryAdapter
 import com.example.planalog.ui.home.ctgy.MemoAdapter
@@ -16,8 +18,8 @@ import com.example.planalog.ui.home.memo.ChecklistItem
 import com.example.planalog.utils.generateRandomColor
 
 class HomeFragment : Fragment() {
-
-    private lateinit var binding : FragmentHomeBinding
+    private var _binding: FragmentHomeBinding? = null
+    private val binding get() = _binding!!
 
     private val checklist = mutableListOf<ChecklistItem>()
     private val categories = mutableListOf<Category>()
@@ -29,7 +31,7 @@ class HomeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = FragmentHomeBinding.inflate(inflater, container, false)
+        _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
         return binding.root
     }
@@ -69,6 +71,19 @@ class HomeFragment : Fragment() {
             transaction.replace(R.id.main_frm, fragment)
             transaction.commit()
         }
+
+//        //캘린더로 이동
+//        binding.mainCalendarIc.setOnClickListener {
+//            parentFragmentManager.beginTransaction()
+//                .replace(R.id.fragment_calendar, CalendarFragment())
+//                .addToBackStack(null)
+//                .commit()
+//        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     private fun addCheckListItem(task: String) {
