@@ -83,7 +83,7 @@
             android:inputType="textPersonName"
             android:ems="14"
             android:textSize="17sp"
-            android:text="@string/nickname_ex"
+            android:hint="@string/nickname_ex"
             android:gravity="center"
             android:fontFamily="@font/pretendard_medium"
             android:background="@drawable/btn_round"

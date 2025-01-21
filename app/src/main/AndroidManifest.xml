@@ -28,6 +28,29 @@
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/FullStatusTheme"/>
+
+        <activity
+            android:name=".ui.start.QnaActivity"
+            android:exported="true"
+            android:theme="@style/FullStatusTheme"/>
+
+        <activity
+            android:name=".ui.start.LoginActivity"
+            android:exported="true"
+            android:theme="@style/FullStatusTheme"/>
+
+        <activity
+            android:name=".ui.start.StartsetActivity"
+            android:exported="true"
+            android:theme="@style/FullStatusTheme"/>
+
+        <activity
+            android:name=".ui.start.ResultActivity"
+            android:exported="true"
+            android:theme="@style/FullStatusTheme"/>
+
+
+
     </application>
 
 </manifest>
