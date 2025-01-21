@@ -21,6 +21,12 @@
     <string name="pick_nickname">이름 (닉네임)을 정해주세요</string>
     <string name="blocknickname">이미 존재하는 닉네임입니다.</string>
 
+    <!-- onboard qna -->
+    <string name="ready"> 준비중...</string>
+    <string name="on_ready"> 준비 완료!</string>
+    <string name="Start"> Start</string>
+
+
 
 
 

@@ -6,7 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
 import com.example.planalog.databinding.ActivitySplashBinding
-import com.example.planalog.ui.home.HomeFragment
+import com.example.planalog.ui.start.LoginActivity
 
 class SplashActivity : AppCompatActivity() {
 
@@ -19,7 +19,7 @@ class SplashActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         Handler(Looper.getMainLooper()).postDelayed({
-            val intent = Intent(this, MainActivity::class.java)
+            val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
             finish()
         }, 500)
