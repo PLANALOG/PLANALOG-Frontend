@@ -22,7 +22,7 @@
 
     <style name="SplashStatusTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowTranslucentStatus">false</item>
-        <item name="android:statusBarColor">@color/main_2</item>
+        <item name="android:statusBarColor">@color/main_1</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

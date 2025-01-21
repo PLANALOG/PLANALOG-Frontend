@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/drawable/shadow_border.xml -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/main_2"/> <!-- 배경 색상 -->
+    <corners android:radius="5dp"/> <!-- 모서리 둥글기 -->
+    <stroke android:color="@color/main_1" android:width="1dp"/> <!-- 테두리 색상 및 두께 -->
+    <padding android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp"/> <!-- 내부 여백 -->
+    <elevation android:value="4dp"/> <!-- 그림자 높이 -->
+</shape>
