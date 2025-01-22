@@ -2,14 +2,11 @@ package com.example.planalog
 
 import android.os.Bundle
 import android.view.View
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentTransaction
 import com.example.planalog.databinding.ActivityMainBinding
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarFragment
+import com.example.planalog.ui.comment.com.example.planalog.ui.home.notify.NotifyFragment
 import com.example.planalog.ui.home.HomeFragment
 import com.example.planalog.ui.post.PostFragment
 import com.example.planalog.ui.profile.ProfileFragment
@@ -35,14 +32,17 @@ class MainActivity : AppCompatActivity() {
                 R.id.search_fragment -> {
                     replaceFragment(SearchFragment())
                     hideCalendarFragment()  // 캘린더 숨기기
+                    hideNotificationFragment()
                 }
                 R.id.post_fragment -> {
                     replaceFragment(PostFragment())
                     hideCalendarFragment()  // 캘린더 숨기기
+                    hideNotificationFragment()
                 }
                 R.id.profile_fragment -> {
                     replaceFragment(ProfileFragment())
                     hideCalendarFragment()  // 캘린더 숨기기
+                    hideNotificationFragment()
                 }
             }
             true
@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity() {
 
         // 캘린더 이동 (홈 화면에서 캘린더 아이콘 클릭 시)
         showCalendarFragment()
+        showrNotifyFragment()
     }
 
     private fun showCalendarFragment() {
@@ -79,5 +80,30 @@ class MainActivity : AppCompatActivity() {
     private fun hideCalendarFragment() {
         // 캘린더 프래그먼트를 숨긴다.
         binding.fragmentCalendar.visibility = View.GONE
+    }
+
+    private fun showrNotifyFragment() {
+        binding.mainBellIc.setOnClickListener {
+            // 캘린더 프래그먼트를 홈 화면에서만 표시
+            val notifyFragment =
+                supportFragmentManager.findFragmentByTag(NotifyFragment::class.java.simpleName)
+            if (notifyFragment == null) {
+                val transaction = supportFragmentManager.beginTransaction()
+                val newNotifyFragment = NotifyFragment()
+                transaction.replace(
+                    R.id.fragment_notify,
+                    newNotifyFragment,
+                    CalendarFragment::class.java.simpleName
+                )
+                transaction.addToBackStack(null)  // 뒤로 가기 스택에 추가
+                transaction.commit()
+            }
+            binding.fragmentNotify.visibility = View.VISIBLE
+        }
+    }
+
+    private fun hideNotificationFragment() {
+        // 알림 프래그먼트가 있는 경우 숨기기
+        binding.fragmentNotify.visibility = View.GONE
     }
 }
