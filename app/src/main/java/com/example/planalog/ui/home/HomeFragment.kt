@@ -72,13 +72,10 @@ class HomeFragment : Fragment() {
             transaction.commit()
         }
 
-//        //캘린더로 이동
-//        binding.mainCalendarIc.setOnClickListener {
-//            parentFragmentManager.beginTransaction()
-//                .replace(R.id.fragment_calendar, CalendarFragment())
-//                .addToBackStack(null)
-//                .commit()
-//        }
+        // 전달된 result 값 처리
+        val result = arguments?.getString("result") ?: ""
+        updateLayoutBasedOnResult(result)
+
     }
 
     override fun onDestroyView() {
@@ -95,5 +92,18 @@ class HomeFragment : Fragment() {
         val color = generateRandomColor()
         categories.add(Category(title, mutableListOf(), color))
         ctgyAdapter.notifyItemInserted(categories.size - 1)
+    }
+
+    private fun updateLayoutBasedOnResult(result: String) {
+        when (result) {
+            "a" -> {
+                binding.homePlannerMemoV.visibility = View.VISIBLE
+                binding.homePlannerCtgyV.visibility = View.GONE
+            }
+            else -> {
+                binding.homePlannerMemoV.visibility = View.GONE
+                binding.homePlannerCtgyV.visibility = View.VISIBLE
+            }
+        }
     }
 }
