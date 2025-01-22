@@ -67,6 +67,9 @@
     <string name="msg_3">Oro 님이 \u003c시험공부\u003e에 공감합니다.</string>
     <string name="msg_4">Oro 님이 나를 응원하고 싶어합니다.</string>
 
+    <!--  검색  -->
+    <string name="hint">닉네임 또는 키워드 검색</string>
+
     <!-- 팝업 -->
     <string name="save">저장</string>
     <string name="delete">삭제</string>
