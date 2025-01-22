@@ -35,6 +35,7 @@ class ResultActivity : AppCompatActivity() {
         // Button click event
         binding.startButton.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
+            intent.putExtra("result", result) // 결과 값을 전달
             startActivity(intent)
             finish()
         }
