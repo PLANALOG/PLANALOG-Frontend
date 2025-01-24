@@ -39,14 +39,20 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // RecyclerView 설정
-        ctgyAdapter = CategoryAdapter(categories)
-        binding.homePlannerCtgyRv.layoutManager = LinearLayoutManager(context)
+        // 카테고리형 RecyclerView 설정
+        ctgyAdapter = CategoryAdapter(categories) {
+            binding.homePlannerCtgySaveBtn.isEnabled = true // 변경사항 발생 시 SAVE 버튼 활성화
+        }
         binding.homePlannerCtgyRv.adapter = ctgyAdapter
+        binding.homePlannerCtgyRv.layoutManager = LinearLayoutManager(context)
 
-        memoAdapter = MemoAdapter(checklist)
-        binding.homePlannerMemoRv.layoutManager = LinearLayoutManager(context)
+        // 메모형 RecyclerView 설정
+        memoAdapter = MemoAdapter(checklist) {
+            val hasEditableMemos = checklist.any { it.isEditable }
+            binding.homePlannerMemoSaveBtn.isEnabled = hasEditableMemos
+        }
         binding.homePlannerMemoRv.adapter = memoAdapter
+        binding.homePlannerMemoRv.layoutManager = LinearLayoutManager(context)
 
         // 초기 카테고리 추가
         if (categories.isEmpty()) {
@@ -61,6 +67,34 @@ class HomeFragment : Fragment() {
         // 메모형 체크리스트 추가 버튼 클릭 리스너
         binding.homePlannerMemoPlusIc.setOnClickListener {
             addCheckListItem("")
+        }
+
+        // 카테고리형 플래너 저장 버튼 클릭 리스너
+        binding.homePlannerCtgySaveBtn.setOnClickListener {
+            // 모든 카테고리 제목 및 체크리스트 수정 상태 고정
+            categories.forEach { category ->
+                category.isEditable = false // 제목 수정 불가능
+                category.checklists.forEach { checklist ->
+                    checklist.isEditable = false // 체크리스트 수정 불가능
+                }
+            }
+
+            // 어댑터에 변경 사항 반영
+            ctgyAdapter.notifyDataSetChanged()
+
+            // SAVE 버튼 비활성화 및 스타일 업데이트
+            binding.homePlannerCtgySaveBtn.isEnabled = false
+            binding.homePlannerCtgySaveBtn.alpha = 0.5f // 버튼의 투명도를 낮춰 비활성화 상태를 시각적으로 표현
+        }
+
+        // 메모형 플래너 저장 버튼 클릭 리스너
+        binding.homePlannerMemoSaveBtn.setOnClickListener {
+            // 모든 항목 수정 불가능으로 변경
+            checklist.forEach { it.isEditable = false }
+            memoAdapter.notifyDataSetChanged()
+
+            // 저장 버튼 비활성화
+            binding.homePlannerMemoSaveBtn.isEnabled = false
         }
 
         // home_reply_iv 클릭 리스너 추가

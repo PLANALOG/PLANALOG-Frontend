@@ -6,4 +6,5 @@ data class Category(
     var title: String,
     val checklists: MutableList<ChecklistItem>,
     val color: Int,
+    var isEditable: Boolean = true,
 )

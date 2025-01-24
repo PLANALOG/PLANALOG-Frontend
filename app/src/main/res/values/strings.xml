@@ -55,6 +55,7 @@
     <string name="home_blog_detail_ex">TOEIC 52일차!\n단어 더 외우고 문법 공부하기..</string>
     <string name="planner_memo_ex_1">오늘 할 일을 입력해주세요.</string>
     <string name="planner_memo_ex_2">의미론 보강 온라인</string>
+    <string name="save_btn">SAVE</string>
 
     <!--  캘린더  -->
     <string name="calendar">calendar</string>
