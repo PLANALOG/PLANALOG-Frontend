@@ -69,7 +69,7 @@ class HomeFragment : Fragment() {
             addCheckListItem("")
         }
 
-        // 저장 버튼 클릭 리스너
+        // 카테고리형 플래너 저장 버튼 클릭 리스너
         binding.homePlannerCtgySaveBtn.setOnClickListener {
             // 모든 카테고리 제목 및 체크리스트 수정 상태 고정
             categories.forEach { category ->
@@ -87,6 +87,7 @@ class HomeFragment : Fragment() {
             binding.homePlannerCtgySaveBtn.alpha = 0.5f // 버튼의 투명도를 낮춰 비활성화 상태를 시각적으로 표현
         }
 
+        // 메모형 플래너 저장 버튼 클릭 리스너
         binding.homePlannerMemoSaveBtn.setOnClickListener {
             // 모든 항목 수정 불가능으로 변경
             checklist.forEach { it.isEditable = false }
