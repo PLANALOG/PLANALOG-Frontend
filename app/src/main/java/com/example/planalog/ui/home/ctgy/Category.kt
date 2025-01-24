@@ -5,6 +5,7 @@ import com.example.planalog.ui.home.memo.ChecklistItem
 data class Category(
     var title: String,
     val checklists: MutableList<ChecklistItem>,
-    val color: Int,
+    var color: Int,
     var isEditable: Boolean = true,
+    var isSelected: Boolean = false,
 )
