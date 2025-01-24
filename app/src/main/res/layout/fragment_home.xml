@@ -22,7 +22,7 @@
             android:background="@drawable/edge"
             android:padding="20dp"
             android:layout_marginTop="20dp"
-            android:visibility="gone"
+            android:visibility="visible"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -53,9 +53,23 @@
                     android:layout_width="20dp"
                     android:layout_height="wrap_content"
                     android:src="@drawable/ic_tools"
+                    android:layout_marginEnd="10dp"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"/>
+                    app:layout_constraintEnd_toStartOf="@id/home_planner_ctgy_save_btn"/>
+
+                <TextView
+                    android:id="@+id/home_planner_ctgy_save_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/save_btn"
+                    android:textSize="15sp"
+                    android:textColor="@color/save_btn_color"
+                    android:fontFamily="@font/pretendard_medium"
+                    android:enabled="false"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -90,86 +104,99 @@
                     tools:listitem="@layout/home_planner_ctgy_item"/>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
-
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/home_planner_memo_v"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/edge"
-        android:padding="20dp"
-        android:layout_marginBottom="20dp"
-        android:visibility="visible"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/home_blog_wrapper">
-
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/home_planner_memo_topbar"
+            android:id="@+id/home_planner_memo_v"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/edge"
+            android:padding="20dp"
+            android:layout_marginBottom="20dp"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
-
-            <TextView
-                android:id="@+id/home_planner_date_tv"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                android:text="@string/date_ex"
-                android:textSize="15sp"
-                android:textColor="@color/main_1"
-                android:fontFamily="@font/pretendard_medium"/>
-
-            <ImageView
-                android:id="@+id/home_planner_memo_plus_ic"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@drawable/ic_plus"
-                android:scaleType="fitCenter"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"/>
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <View
-            android:id="@+id/home_planner_memo_hr_v"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="15dp"
-            android:background="@color/black"
-            app:layout_constraintBottom_toTopOf="@id/home_planner_memo_content"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/home_planner_memo_topbar" />
+            app:layout_constraintBottom_toTopOf="@id/home_blog_wrapper">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/home_planner_memo_content"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/home_planner_memo_hr_v">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/home_planner_memo_rv"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/home_planner_memo_topbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <TextView
+                    android:id="@+id/home_planner_date_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:text="@string/date_ex"
+                    android:textSize="15sp"
+                    android:textColor="@color/main_1"
+                    android:fontFamily="@font/pretendard_medium"/>
+
+                <ImageView
+                    android:id="@+id/home_planner_memo_plus_ic"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_plus"
+                    android:scaleType="fitCenter"
+                    android:layout_marginEnd="10dp"
+                    app:layout_constraintEnd_toStartOf="@id/home_planner_memo_save_btn"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
+                <TextView
+                    android:id="@+id/home_planner_memo_save_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/save_btn"
+                    android:textSize="15sp"
+                    android:textColor="@color/save_btn_color"
+                    android:fontFamily="@font/pretendard_medium"
+                    android:enabled="false"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <View
+                android:id="@+id/home_planner_memo_hr_v"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="15dp"
+                android:background="@color/black"
+                app:layout_constraintBottom_toTopOf="@id/home_planner_memo_content"
                 app:layout_constraintEnd_toEndOf="parent"
-                tools:listitem="@layout/home_planner_memo_item"/>
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/home_planner_memo_topbar" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/home_planner_memo_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/home_planner_memo_hr_v">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/home_planner_memo_rv"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    tools:listitem="@layout/home_planner_memo_item"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/home_blog_wrapper"
