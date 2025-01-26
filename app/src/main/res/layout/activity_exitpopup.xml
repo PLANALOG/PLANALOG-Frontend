@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/btn_roundgray">
+
+    <!-- 사용자 이미지 -->
+    <ImageView
+        android:id="@+id/user_image"
+        android:layout_width="wrap_content"
+        android:layout_height="64dp"
+        android:layout_marginTop="16dp"
+        android:src="@drawable/ic_myprofile"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 사용자 이름 -->
+    <TextView
+        android:id="@+id/user_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="11dp"
+        android:text="@string/quit_name"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/pretendard_bold"
+        app:layout_constraintTop_toBottomOf="@id/user_image"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 메시지 텍스트 -->
+    <TextView
+        android:id="@+id/message_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="9dp"
+        android:text="@string/check_quit"
+        android:fontFamily="@font/pretendard_medium"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/user_name"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 경고 설명 텍스트 -->
+    <TextView
+        android:id="@+id/warning_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="9dp"
+        android:text="@string/warning"
+        android:fontFamily="@font/pretendard_light"
+        android:textSize="14sp"
+        android:textColor="@color/black"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/message_text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 취소 버튼 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/button_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="11dp"
+        app:layout_constraintTop_toBottomOf="@id/warning_text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- 취소 버튼 -->
+        <TextView
+            android:id="@+id/cancel_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="65dp"
+            android:layout_marginBottom="16dp"
+            android:text="@string/cancel"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:fontFamily="@font/pretendard_medium"
+            android:background="@drawable/btn_rounddark"
+            android:textColor="@color/white"
+            android:paddingVertical="7dp"
+            android:paddingHorizontal="40dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/leave_button"
+            app:layout_constraintBottom_toBottomOf="parent"
+            />
+
+        <!-- 탈퇴 버튼 -->
+        <TextView
+            android:id="@+id/leave_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="65dp"
+            android:layout_marginBottom="16dp"
+            android:text="@string/quit"
+            android:textSize="14sp"
+            android:background="@drawable/btn_round"
+            android:fontFamily="@font/pretendard_medium"
+            android:textColor="@color/state_2"
+            android:gravity="center"
+            android:paddingVertical="7dp"
+            android:paddingHorizontal="40dp"
+            app:layout_constraintStart_toEndOf="@id/cancel_button"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
