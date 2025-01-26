@@ -53,6 +53,20 @@
             android:exported="true"
             android:theme="@style/FullStatusTheme" />
 
+        <activity
+            android:name=".ui.profile.EditprofileActivity"
+            android:exported="true"
+            android:theme="@style/FullStatusTheme"/>
+
+        <activity
+            android:name=".ui.profile.ExitpopupActivity"
+            android:theme="@style/Theme.AppCompat.Dialog"/>
+
+        <activity
+            android:name=".ui.profile.EditcharacterActivity"
+            android:exported="true"
+            android:theme="@style/FullStatusTheme"/>
+
     </application>
 
 </manifest>
