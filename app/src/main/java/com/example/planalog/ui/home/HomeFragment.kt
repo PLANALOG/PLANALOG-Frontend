@@ -81,7 +81,7 @@ class HomeFragment : Fragment() {
         // 메모 추가 버튼 클릭 리스너
         binding.homePlannerMemoPlusIc.setOnClickListener {
             addCheckListItem("")
-            //binding.homePlannerMemoSaveBtn.isEnabled = true
+            binding.homePlannerMemoSaveBtn.isEnabled = true
         }
 
 
