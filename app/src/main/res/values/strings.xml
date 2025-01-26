@@ -74,6 +74,10 @@
 
     <!--  검색  -->
     <string name="hint">닉네임 또는 키워드 검색</string>
+    <string name="name_1">고기좋아</string>
+    <string name="name_2">소피</string>
+    <string name="recent_word">최근 검색어</string>
+    <string name="name_3">정희이야기</string>
 
     <!-- 팝업 -->
     <string name="save">저장</string>

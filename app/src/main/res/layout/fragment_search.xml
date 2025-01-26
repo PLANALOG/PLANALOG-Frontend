@@ -79,7 +79,7 @@
                 app:layout_constraintStart_toEndOf="@id/search_pf_1_cv"
                 app:layout_constraintTop_toTopOf="@id/search_pf_1_cv"
                 app:layout_constraintBottom_toBottomOf="@id/search_pf_1_cv"
-                android:text="고기좋아"
+                android:text="@string/name_1"
                 android:textColor="@color/main_1"
                 android:textSize="18sp"
                 android:fontFamily="@font/pretendard_medium"/>
@@ -111,7 +111,7 @@
                 app:layout_constraintStart_toEndOf="@id/search_pf_2_cv"
                 app:layout_constraintTop_toTopOf="@id/search_pf_2_cv"
                 app:layout_constraintBottom_toBottomOf="@id/search_pf_2_cv"
-                android:text="소피"
+                android:text="@string/name_2"
                 android:textColor="@color/main_1"
                 android:textSize="18sp"
                 android:fontFamily="@font/pretendard_medium"/>
@@ -128,7 +128,7 @@
                 android:id="@+id/search_recent_word"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="최근 검색어"
+                android:text="@string/recent_word"
                 android:textSize="18sp"
                 android:textColor="@color/main_1"
                 android:fontFamily="@font/pretendard_medium"
@@ -164,7 +164,7 @@
                 app:layout_constraintStart_toEndOf="@id/search_pf_3_cv"
                 app:layout_constraintTop_toTopOf="@id/search_pf_3_cv"
                 app:layout_constraintBottom_toBottomOf="@id/search_pf_3_cv"
-                android:text="정희이야기"
+                android:text="@string/name_3"
                 android:textColor="@color/main_1"
                 android:textSize="18sp"
                 android:fontFamily="@font/pretendard_medium"/>
