@@ -1,4 +1,4 @@
-package com.example.planalog.ui.comment
+package com.example.planalog.ui.comment.com.example.planalog.ui.comment
 
 import android.os.Bundle
 import android.view.LayoutInflater
