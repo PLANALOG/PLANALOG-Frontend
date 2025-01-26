@@ -7,10 +7,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.R
-import com.example.planalog.databinding.FragmentCalendarBinding
 import com.example.planalog.databinding.FragmentHomeBinding
-import com.example.planalog.ui.comment.CommentFragment
-import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarFragment
+import com.example.planalog.ui.comment.com.example.planalog.ui.comment.CommentFragment
 import com.example.planalog.ui.home.ctgy.Category
 import com.example.planalog.ui.home.ctgy.CategoryAdapter
 import com.example.planalog.ui.home.ctgy.MemoAdapter
@@ -89,7 +87,6 @@ class HomeFragment : Fragment() {
         // 전달된 result 값 처리
         val result = arguments?.getString("result") ?: ""
         updateLayoutBasedOnResult(result)
-
     }
 
     private fun deleteButtonClickListener() {

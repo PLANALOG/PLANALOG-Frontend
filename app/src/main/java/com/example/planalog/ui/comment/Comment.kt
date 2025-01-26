@@ -1,4 +1,4 @@
-package com.example.planalog.ui.comment
+package com.example.planalog.ui.comment.com.example.planalog.ui.comment
 
 import com.example.planalog.R
 

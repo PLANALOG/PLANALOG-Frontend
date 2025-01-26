@@ -4,7 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/main_2">
 
     <!-- 사용자 정보 및 메뉴 -->
     <LinearLayout
@@ -46,32 +47,36 @@
         <TextView
             android:id="@+id/commentContent"
             android:fontFamily="@font/pretendard_medium"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_width="344dp"
+            android:layout_height="28dp"
             android:layout_marginTop="8dp"
-            android:padding="8dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:text="댓글 내용"/>
+            android:text="댓글 내용"
+            android:gravity="center"
+            android:background="@drawable/edge_border"
+            android:backgroundTint="@color/main_2"
+        />
+
+
+
 
         <!-- 답글 버튼 -->
         <Button
             android:id="@+id/commentReplyButton"
-            android:fontFamily="@font/pretendard_medium"
-            android:layout_width="60dp"
-            android:layout_height="40dp"
+            android:fontFamily="@font/pretendard_light"
+            android:textSize="13sp"
+            android:layout_width="45dp"
+            android:layout_height="28dp"
             android:text="답글"
             android:textColor="@android:color/white"
-            android:backgroundTint="#2C3E50"
+            android:backgroundTint="@color/main_1"
             app:layout_constraintTop_toBottomOf="@id/commentContent"
             app:layout_constraintEnd_toEndOf="parent"
             app:cornerRadius="14dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
-            android:paddingRight="11dp"
-            android:paddingLeft="11dp"
-            />
+            android:padding="0dp"
+            android:gravity="center"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </LinearLayout>
