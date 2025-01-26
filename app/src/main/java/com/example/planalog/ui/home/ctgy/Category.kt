@@ -8,4 +8,6 @@ data class Category(
     var color: Int,
     var isEditable: Boolean = true,
     var isSelected: Boolean = false,
+    var isPartiallySelected: Boolean = false,
+    var isDeleteMode: Boolean = false,
 )
