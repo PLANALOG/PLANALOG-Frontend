@@ -18,6 +18,16 @@ class NotifyFragment : Fragment() {
     ): View? {
         _binding = FragmentNotifyBinding.inflate(inflater, container, false)
 
+        binding.agreeBtn.setOnClickListener {
+            //팝업창 호출
+            ConfirmDialogFragment().show(parentFragmentManager, "ConfirmDialog")
+        }
+
+        binding.agreeBtn2.setOnClickListener {
+            //팝업창 호출
+            ConfirmDialogFragment().show(parentFragmentManager, "ConfirmDialog")
+        }
+
         return binding.root
     }
 }
