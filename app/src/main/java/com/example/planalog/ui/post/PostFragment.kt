@@ -88,9 +88,6 @@ class PostFragment : Fragment() {
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                // 글자 수 업데이트
-                val currentLength = s?.length ?: 0
-                binding.postContentCount.text = "$currentLength/500"
             }
 
             override fun afterTextChanged(s: Editable?) {

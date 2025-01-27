@@ -15,6 +15,10 @@ class PostDetailFragment : Fragment() {
     private var _binding: FragmentPostDetailBinding? = null
     private val binding get() = _binding!!
 
+    // 좋아요 상태 및 개수 저장 변수
+    private var isLiked = false
+    private var likeCount = 0
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -38,6 +42,25 @@ class PostDetailFragment : Fragment() {
             binding.selectedImageView.visibility = View.GONE
         }
 
+        // 좋아요 개수가 0이면 숨김
+        updateLikeVisibility()
+
+        // 좋아요 버튼 클릭 시
+        binding.buttonHand.setOnClickListener {
+            if (isLiked) {
+                likeCount--
+                binding.buttonHand.setImageResource(R.drawable.ic_hand)  // 기본 아이콘
+            } else {
+                likeCount++
+                binding.buttonHand.setImageResource(R.drawable.ic_hand)  // 좋아요 활성화 아이콘
+            }
+            isLiked = !isLiked
+
+            // UI 업데이트
+            binding.likeCount.text = likeCount.toString()
+            updateLikeVisibility()
+        }
+
         // 댓글 버튼 클릭 시 CommentFragment로 이동
         binding.buttonReply.setOnClickListener {
             parentFragmentManager.commit {
@@ -47,6 +70,15 @@ class PostDetailFragment : Fragment() {
         }
 
         return binding.root
+    }
+
+    // 좋아요 개수 0일 때 숨기고, 1 이상일 때 보이게 설정하는 함수
+    private fun updateLikeVisibility() {
+        if (likeCount == 0) {
+            binding.likeCount.visibility = View.GONE
+        } else {
+            binding.likeCount.visibility = View.VISIBLE
+        }
     }
 
     override fun onDestroyView() {
