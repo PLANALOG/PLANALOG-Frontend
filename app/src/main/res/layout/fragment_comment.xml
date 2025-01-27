@@ -15,19 +15,33 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp">
+        android:padding="8dp"
+        android:elevation="4dp"
+        android:layout_margin="8dp">
 
         <EditText
             android:id="@+id/commentInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/pretendard_light"
             android:layout_weight="1"
-            android:hint="댓글 입력" />
+            android:hint="@string/enter"
+            android:textColorHint="@color/gray"
+            android:padding="12dp"
+            android:background="@android:color/transparent"
+            android:textSize="16sp" />
 
         <Button
             android:id="@+id/commentPostButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="등록" />
+            android:fontFamily="@font/pretendard_light"
+            android:textSize="13sp"
+            android:layout_width="45dp"
+            android:layout_height="28dp"
+            android:text="@string/put"
+            android:textColor="@color/main_1"
+            android:backgroundTint="@color/white"
+            android:padding="0dp"
+            android:gravity="center"/>
+
     </LinearLayout>
 </LinearLayout>
