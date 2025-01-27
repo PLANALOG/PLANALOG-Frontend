@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.planalog.databinding.ActivityLoginBinding
+import com.example.planalog.network.SocialLogin.KakaologinActivity
+import com.example.planalog.network.SocialLogin.NaverloginActivity
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
@@ -16,14 +18,14 @@ class LoginActivity : AppCompatActivity() {
         binding.btnNaverLogin.setOnClickListener {
             Toast.makeText(this, "Naver Login Clicked", Toast.LENGTH_SHORT).show()
             // Add your Naver login logic here
-            val intent = Intent(this, StartsetActivity::class.java)
+            val intent = Intent(this, NaverloginActivity::class.java)
             startActivity(intent)
         }
 
         binding.btnKakaoLogin.setOnClickListener {
             Toast.makeText(this, "Kakao Login Clicked", Toast.LENGTH_SHORT).show()
             // Add your Kakao login logic here
-            val intent = Intent(this, StartsetActivity::class.java)
+            val intent = Intent(this, KakaologinActivity::class.java)
             startActivity(intent)
         }
 
