@@ -98,15 +98,6 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     android:background="@color/transparent" />
 
-                <TextView
-                    android:id="@+id/postContentCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/post_content_count"
-                    android:layout_marginEnd="16dp"
-                    android:layout_marginBottom="16dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <!-- 구분선 -->
