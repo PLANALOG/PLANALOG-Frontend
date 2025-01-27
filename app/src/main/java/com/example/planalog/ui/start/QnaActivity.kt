@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.SpannableStringBuilder
 import android.text.style.TypefaceSpan
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
@@ -16,11 +17,14 @@ class QnaActivity : AppCompatActivity() {
     private var option1Count = 0
     private var option2Count = 0
     private var currentQuestion = 1
+    private var nickname: String? = null  // null 허용 타입으로 변경
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityQnaBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        Log.d("QnaActivity", "받은 닉네임: $nickname")
 
         setupCombinedTextView()
         // 초기 질문 설정
@@ -87,10 +91,14 @@ class QnaActivity : AppCompatActivity() {
     }
 
     private fun navigateToResult() {
+        val nickname = intent.getStringExtra("nickname") ?: "사용자"
         val result = if (option1Count >= 2) "a" else "b"
         val intent = Intent(this, ResultActivity::class.java).apply {
             putExtra("result", result)
+            putExtra("nickname", nickname ?: "사용자")  // null 체크
         }
+
+        Log.d("QnaActivity", "ResultActivity로 전달할 닉네임: $nickname")
         startActivity(intent)
         finish()
     }
