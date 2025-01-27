@@ -1,9 +1,10 @@
-package com.example.planalog.ui.comment.com.example.planalog.ui.comment
+package com.example.planalog.ui.comment
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.planalog.databinding.ItemCommentBinding
+import com.example.planalog.ui.comment.com.example.planalog.ui.comment.Comment
 
 class CommentAdapter(private val comments: MutableList<Comment>) :
     RecyclerView.Adapter<CommentAdapter.CommentViewHolder>() {
@@ -18,7 +19,7 @@ class CommentAdapter(private val comments: MutableList<Comment>) :
     override fun onBindViewHolder(holder: CommentViewHolder, position: Int) {
         val comment = comments[position]
 
-        // 사용자 정보 설정
+        // 데이터 바인딩
         holder.binding.commentUserName.text = comment.userName
         holder.binding.commentContent.text = comment.content
         holder.binding.commentProfileImage.setImageResource(comment.profileImage)
@@ -29,6 +30,6 @@ class CommentAdapter(private val comments: MutableList<Comment>) :
     // 댓글 추가 메서드
     fun addComment(comment: Comment) {
         comments.add(comment)
-        notifyItemInserted(comments.size - 1)
+        notifyItemInserted(comments.size - 1) // 새 댓글이 추가된 위치만 갱신
     }
 }
