@@ -4,21 +4,19 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import com.example.planalog.R
 import com.example.planalog.databinding.FragmentPostBinding
 
 class PostFragment : Fragment() {
     private lateinit var binding: FragmentPostBinding
     private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
-    private var selectedImageUri: Uri? = null
+    private lateinit var slidePagerAdapter: SlidePagerAdapter
+    private val slideList = mutableListOf<Slide>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -27,50 +25,48 @@ class PostFragment : Fragment() {
     ): View {
         binding = FragmentPostBinding.inflate(inflater, container, false)
 
+        setupViewPager()
         setupImagePicker()
-        setupPostContentListener()
 
-        // 사진 선택 버튼 클릭 시
-        binding.photoButton.setOnClickListener {
-            openImagePicker()
-        }
-
-        // 글 작성 후 완료 버튼 클릭 시
-        binding.uploadButton.setOnClickListener {
-            // 입력된 제목과 내용을 가져옴
-            val title = binding.postTitle.text.toString()
-            val content = binding.postContent.text.toString()
-
-            // PostDetailFragment로 데이터 전달
-            val bundle = Bundle().apply {
-                putString("title", title)
-                putString("content", content)
-                putParcelable("imageUri", selectedImageUri)
-            }
-
-            // PostDetailFragment 생성 및 인자 전달
-            val postDetailFragment = PostDetailFragment().apply {
-                arguments = bundle
-            }
-
-            // 프래그먼트 전환
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.main_frm, postDetailFragment)
-                .addToBackStack(null)  // 뒤로가기 기능
-                .commit()
-        }
+        binding.photoButton.setOnClickListener { openImagePicker() }
+        binding.uploadButton.setOnClickListener { uploadPost() }
 
         return binding.root
+    }
+
+    private fun setupViewPager() {
+        slidePagerAdapter = SlidePagerAdapter(slideList) { position ->
+            // 이미지 클릭 처리 (선택사항)
+        }
+        binding.viewPager.adapter = slidePagerAdapter
     }
 
     private fun setupImagePicker() {
         imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                result.data?.data?.let { uri ->
-                    selectedImageUri = uri
-                    binding.selectedImageView.setImageURI(uri)
-                    binding.selectedImageView.visibility = View.VISIBLE
+                val clipData = result.data?.clipData
+                val uriList = mutableListOf<Uri>()
+
+                if (clipData != null) {
+                    // 다중 선택 처리
+                    for (i in 0 until clipData.itemCount) {
+                        val uri = clipData.getItemAt(i).uri
+                        uriList.add(uri)
+                    }
+                } else {
+                    // 단일 선택 처리
+                    result.data?.data?.let { uri ->
+                        uriList.add(uri)
+                    }
                 }
+
+                // 선택된 URI를 슬라이드로 추가
+                uriList.forEach { uri ->
+                    val newSlide = Slide(imageResId = uri, postContent = "")
+                    slideList.add(newSlide)
+                }
+                slidePagerAdapter.notifyDataSetChanged()
+                binding.viewPager.setCurrentItem(slideList.size - 1, true) // 마지막 슬라이드로 이동
             }
         }
     }
@@ -78,20 +74,15 @@ class PostFragment : Fragment() {
     private fun openImagePicker() {
         val intent = Intent(Intent.ACTION_PICK).apply {
             type = "image/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true) // 다중 선택 허용
         }
         imagePickerLauncher.launch(intent)
     }
 
-    private fun setupPostContentListener() {
-        binding.postContent.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-            }
-        })
+    private fun uploadPost() {
+        // 업로드 로직 추가
+        val title = binding.postTitle.text.toString()
+        val contentSlides = slideList.map { it.postContent }.joinToString("\n")
+        // title, contentSlides, 그리고 이미지 데이터 처리
     }
 }
