@@ -1,0 +1,31 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center">
+
+    <!-- 이미지 영역 -->
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:scaleType="centerCrop"
+        android:background="@color/transparent"
+        android:layout_gravity="center" />
+
+    <!-- 게시물 내용 -->
+    <EditText
+        android:id="@+id/postContent"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:hint="@string/post_content"
+        android:textSize="16sp"
+        android:fontFamily="@font/pretendard_medium"
+        android:padding="8dp"
+        android:inputType="textMultiLine"
+        android:maxLines="10"
+        android:gravity="top"
+        android:background="@color/transparent"
+        android:layout_marginTop="16dp" />
+</LinearLayout>
