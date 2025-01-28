@@ -1,19 +1,28 @@
 package com.example.planalog.ui.home
 
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentHomeBinding
+//import com.example.planalog.repository.TaskRepository
 import com.example.planalog.ui.comment.CommentFragment
+import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarAdapter
+import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarDay
+import com.example.planalog.ui.home.calender.SharedViewModel
 import com.example.planalog.ui.home.ctgy.Category
 import com.example.planalog.ui.home.ctgy.CategoryAdapter
 import com.example.planalog.ui.home.ctgy.MemoAdapter
 import com.example.planalog.ui.home.memo.ChecklistItem
 import com.example.planalog.utils.generateRandomColor
+import com.example.planalog.utils.getCurrentDate
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -23,6 +32,11 @@ class HomeFragment : Fragment() {
     private val categories = mutableListOf<Category>()
     private lateinit var ctgyAdapter : CategoryAdapter
     private lateinit var memoAdapter: MemoAdapter
+    private lateinit var calendarAdapter: CalendarAdapter
+
+    //private lateinit var taskRepository: TaskRepository
+    //private val sharedViewModel: SharedViewModel by activityViewModels()
+    private val calendarDays = mutableListOf<CalendarDay>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -40,6 +54,20 @@ class HomeFragment : Fragment() {
         // 초기 상태 버튼 설정
         setInitialBtnState()
 
+        // ViewModel의 calendarDays를 사용
+//        sharedViewModel.calendarDays.observe(viewLifecycleOwner) { calendarDays ->
+//            calendarAdapter = CalendarAdapter(calendarDays)
+//            binding.calendarRecyclerView.adapter = calendarAdapter
+//        }
+        val days = mutableListOf<CalendarDay>()
+        val onDayClicked: (CalendarDay) -> Unit = { day ->
+            if (!day.isEmpty) {
+                Toast.makeText(context, "Clicked: ${day.date}", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        calendarAdapter = CalendarAdapter(days, onDayClicked)
+
         // 카테고리형 RecyclerView 설정
         ctgyAdapter = CategoryAdapter(categories, {
             updateSaveButtonState() // SAVE 버튼 활성화 로직
@@ -52,14 +80,27 @@ class HomeFragment : Fragment() {
 
 
         // 메모형 RecyclerView 설정
-        memoAdapter = MemoAdapter(checklist, {
-            // 체크리스트 변경 상태 확인
-            updateDeleteButtonState()
-            updateSaveButtonState()
-        }, { hasSelected ->
-            // 삭제 버튼 상태 업데이트
-            binding.homePlannerMemoDeleteBtn.isEnabled = hasSelected
-        })
+        memoAdapter = MemoAdapter(
+            requireContext(),
+            checklist,
+            onMemoChanged = {
+                // Checklist 변경 상태 확인
+                updateDeleteButtonState()
+                updateSaveButtonState()
+                checkAllItemsChecked()  // Ensure all items checked
+            },
+            onDeleteStateChanged = { hasSelected ->
+                // 삭제 모드 상태 업데이트
+                binding.homePlannerMemoDeleteBtn.isEnabled = hasSelected
+            },
+            onAllChecked = { allChecked ->
+                if (allChecked) {
+                    markCurrentDateCompleted(true)
+                } else {
+                    markCurrentDateCompleted(false)
+                }
+            }
+        )
         binding.homePlannerMemoRv.adapter = memoAdapter
         binding.homePlannerMemoRv.layoutManager = LinearLayoutManager(context)
 
@@ -79,9 +120,11 @@ class HomeFragment : Fragment() {
         }
 
         // 메모 추가 버튼 클릭 리스너
+        // 메모 추가 버튼 클릭 리스너
         binding.homePlannerMemoPlusIc.setOnClickListener {
             addCheckListItem("")
             binding.homePlannerMemoSaveBtn.isEnabled = true
+            //taskRepository = TaskRepository(requireContext())
         }
 
 
@@ -193,6 +236,7 @@ class HomeFragment : Fragment() {
 
             // 삭제 모드 비활성화
             memoAdapter.toggleDeleteMode(false) // 삭제 모드 비활성화
+            sendTaskToApi()
         }
 
         // 메모형 삭제 버튼 클릭 리스너
@@ -263,6 +307,52 @@ class HomeFragment : Fragment() {
         }
     }
 
+
+    // 텍스트 전송 함수
+    private fun sendTaskToApi() {
+        val taskTitle = checklist.joinToString(", ") { it.task }  // 체크리스트 항목들을 하나의 텍스트로 결합
+        val currentDate = getCurrentDate()  // 현재 날짜 가져오기
+
+        // 모든 체크리스트 항목이 체크되었는지 확인
+        val allChecked = checklist.all { it.isChecked }
+
+        // 로그로 출력해서 API에 전달되는 데이터 확인
+        Log.d("API SendTask", "Task Title: $taskTitle")
+        Log.d("API SendTask", "Current Date: $currentDate")
+//        taskRepository.createTask(taskTitle, currentDate)  // TaskRepository에 task 전달
+
+        // 저장된 날짜와 함께 데이터를 전달하기 위해 SharedPreferences 사용 (간단한 저장 방식)
+        val sharedPreferences = requireContext().getSharedPreferences("task_prefs", Context.MODE_PRIVATE)
+        val savedDates = sharedPreferences.getStringSet("saved_dates", mutableSetOf()) ?: mutableSetOf()
+
+        // 모든 체크리스트 항목이 체크되었는지 확인
+        savedDates.add(currentDate)  // 날짜 추가 (항목이 체크되었는지 여부와 무관하게 저장)
+
+        sharedPreferences.edit().putStringSet("saved_dates", savedDates).apply()
+
+        Log.d("API SendTask", "Task Title: $taskTitle, Date: $currentDate")
+    }
+
+    private fun checkAllItemsChecked() {
+        val allChecked = checklist.all { it.isChecked }
+
+        if (allChecked) {
+            markCurrentDateCompleted(true)
+        } else {
+            markCurrentDateCompleted(false)
+        }
+    }
+
+    private fun markCurrentDateCompleted(isCompleted: Boolean) {
+        val currentDate = getCurrentDate()
+
+        calendarDays.forEach { day ->
+            if (day.date == currentDate) {
+                day.isTaskCompleted = isCompleted
+            }
+        }
+        calendarAdapter.notifyDataSetChanged()
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()

@@ -65,6 +65,7 @@ class ResultActivity : AppCompatActivity() {
             })
             val intent = Intent(this, MainActivity::class.java)
             intent.putExtra("nickname", nickname)
+            intent.putExtra("result", result)
             startActivity(intent)
             finish()
         }
