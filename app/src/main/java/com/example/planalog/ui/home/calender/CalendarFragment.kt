@@ -1,14 +1,20 @@
 package com.example.planalog.ui.comment.com.example.planalog.ui.home.calender
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.text.util.LocalePreferences.getFirstDayOfWeek
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.planalog.databinding.FragmentCalendarBinding
 import com.example.planalog.ui.comment.com.example.planalog.utils.generateCalendarDays
 import com.example.planalog.ui.comment.com.example.planalog.utils.showDropdownMenu
+import com.example.planalog.ui.home.calender.SharedViewModel
+import com.example.planalog.utils.getCurrentDate
+import java.util.Calendar
 
 class CalendarFragment : Fragment() {
     private var _binding: FragmentCalendarBinding? = null
@@ -20,6 +26,8 @@ class CalendarFragment : Fragment() {
     private var currentMonth = 1 // 초기 월
     private val minYear = 2024 // 최소 연도
     private val maxYear = 2025 // 최대 연도
+
+    private val sharedViewModel: SharedViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -33,6 +41,8 @@ class CalendarFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        sharedViewModel.calendarDays.value = generateCalendarDays(currentYear, currentMonth)
 
         setupRecyclerView() // RecyclerView 설정
 
@@ -102,9 +112,30 @@ class CalendarFragment : Fragment() {
         // 두 자릿수로 월을 포맷팅
         val formattedMonth = String.format("%02d", month)
 
+        // SharedPreferences에서 저장된 날짜 불러오기
+        val savedDates = requireContext()
+            .getSharedPreferences("task_prefs", Context.MODE_PRIVATE)
+            .getStringSet("saved_dates", emptySet()) ?: emptySet()
+
         // 캘린더 날짜 생성
         calendarDays.clear()
-        calendarDays.addAll(generateCalendarDays(year, formattedMonth.toInt())) // 새로운 날짜 리스트로 갱신
+
+        val daysInMonth = generateCalendarDays(year, formattedMonth.toInt())
+
+        // 달의 시작 요일 확인 (1일의 요일 가져오기)
+        val firstDayOfWeek = getFirstDayOfWeek(year, formattedMonth.toInt())
+
+        // 빈 날짜 추가 (달의 시작 위치 조정)
+        for (i in 0 until firstDayOfWeek) {
+            calendarDays.add(CalendarDay("", isEmpty = true))
+        }
+
+        // 저장된 날짜 확인 후 해당 날짜에 표시 추가
+        for (day in daysInMonth) {
+            val fullDate = "$year-$formattedMonth-${day.date}"
+            day.isTaskCompleted = savedDates.contains(fullDate)
+            calendarDays.add(day)
+        }
 
         // RecyclerView에 데이터 변경 알림
         calendarAdapter.notifyDataSetChanged()
@@ -115,6 +146,13 @@ class CalendarFragment : Fragment() {
         // 버튼 활성화/비활성화 처리
         handleButtonState()
     }
+
+    private fun getFirstDayOfWeek(year: Int, month: Int): Int {
+        val calendar = Calendar.getInstance()
+        calendar.set(year, month - 1, 1) // 월은 0부터 시작 (1월은 0)
+        return calendar.get(Calendar.DAY_OF_WEEK) - 1 // 일요일=1 -> 0으로 변환
+    }
+
 
     private fun handleButtonState() {
         // 이전 버튼 비활성화 처리
