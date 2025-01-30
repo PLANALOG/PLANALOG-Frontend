@@ -1,5 +1,6 @@
 package com.example.planalog.ui.start
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -10,20 +11,22 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.res.ResourcesCompat
+import com.example.planalog.MainActivity
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityStartsetBinding
-import com.example.planalog.network.ApiService
 import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.startset.Idcheck
+import com.example.planalog.network.startset.IdcheckService
 import com.example.planalog.network.startset.NicknameCheckResponse
-import com.google.gson.JsonObject
+import com.example.planalog.network.user.UserResponse
+import com.example.planalog.network.user.UserService
+import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class StartsetActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityStartsetBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,7 +67,6 @@ class StartsetActivity : AppCompatActivity() {
 
 
         binding.ok.setOnClickListener {
-            binding.ok.setOnClickListener {
                 val nickname = binding.writeNickname.text.toString().trim()
 
                 if (nickname.isNotEmpty() && nickname.length <= 15) {
@@ -78,26 +80,43 @@ class StartsetActivity : AppCompatActivity() {
                     Toast.makeText(this, "유효한 닉네임을 입력해 주세요.", Toast.LENGTH_SHORT).show()
                 }
             }
-        }
+
+        getUserInfo()
     }
 
+    // 닉네임 확인 api 호출 함수
     private fun checkNicknameAvailability(nickname: String) {
-        val service = ApiService.idcheckService
+        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val receivedAccessToken = sharedPreferences.getString("received_access_token", null)
+        val idCheckService = RetrofitClient.create(IdcheckService::class.java, this)
 
-        service.idcheck(nickname).enqueue(object : Callback<NicknameCheckResponse> {
+        idCheckService.idcheck(nickname).enqueue(object : Callback<NicknameCheckResponse> {
             override fun onResponse(
                 call: Call<NicknameCheckResponse>,
                 response: Response<NicknameCheckResponse>
             ) {
                 if (response.isSuccessful) {
                     response.body()?.let { body ->
+                        Log.d(
+                            "StartsetActivity",
+                            "서버 응답 성공. 닉네임: $nickname, 응답: ${body.resultType}"
+                        )
+
                         when (body.resultType) {
-                            "SUCCESS" -> handleSuccessResponse(body.success?.isDuplicated ?: true)
-                            else -> showErrorMessage(body.error ?: "알 수 없는 오류가 발생했습니다.")
+                            "SUCCESS" -> {
+                                Log.d(
+                                    "StartsetActivity",
+                                    "닉네임 중복 여부: ${body.success?.isDuplicated}"
+                                )
+                                handleSuccessResponse(body.success?.isDuplicated ?: true)
+                            }
+
+                            else -> {
+                                Log.e("StartsetActivity", "오류 발생: ${body.error ?: "알 수 없는 오류"}")
+                                showErrorMessage(body.error ?: "알 수 없는 오류가 발생했습니다.")
+                            }
                         }
                     }
-                } else {
-                    showErrorMessage("서버 응답 실패: ${response.code()}")
                 }
             }
 
@@ -127,14 +146,49 @@ class StartsetActivity : AppCompatActivity() {
     }
 
 
+    // 본인 회원 정보 api 호출 함수
+    private fun getUserInfo() {
 
+//        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+//        val receivedAccessToken = sharedPreferences.getString("received_access_token", null)
+//        val authorizationHeader = "Bearer $receivedAccessToken"
+        val userService = RetrofitClient.create(UserService::class.java, this)
 
+//        if (receivedAccessToken.isNullOrEmpty()) {
+//            Toast.makeText(this, "저장된 액세스 토큰이 없습니다.", Toast.LENGTH_SHORT).show()
+//            return
+//        }
 
+        userService.getUserInfo().enqueue(object : Callback<UserResponse> {
+            override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
+                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+                    val userInfo = response.body()?.success
+                    if (userInfo != null) {
+                        // JSON 형식으로 UserInfo 로그 출력
+                        val userInfoJson = Gson().toJson(userInfo)
+                        Toast.makeText(this@StartsetActivity, "사용자 정보 확인", Toast.LENGTH_SHORT).show()
+                        Log.d("User Info", "UserInfo JSON: $userInfoJson")
+                    }
 
+                    // 사용자 정보 확인 후 MainActivity로 이동
+                    val intent = Intent(this@StartsetActivity, MainActivity::class.java)
+                    intent.putExtra("nickname", userInfo?.nickname)
+                    startActivity(intent)
+                    finish()
+                } else {
+                    Toast.makeText(this@StartsetActivity, "사용자 정보 가져오기 실패", Toast.LENGTH_SHORT).show()
+                    Log.e("User Info", "실패 코드: ${response.code()}")
+                }
+            }
 
+            override fun onFailure(call: Call<UserResponse>, t: Throwable) {
+                Toast.makeText(this@StartsetActivity, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
+                Log.e("User Info", "네트워크 오류", t)
+            }
+        })
+    }
 
-
-
+    // 화면 텍스트 변경 함수
     private fun setupCombinedTextView() {
         val spannable1 = SpannableStringBuilder()
         val spannable2 = SpannableStringBuilder()

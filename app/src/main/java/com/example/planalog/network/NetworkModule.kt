@@ -1,50 +1,42 @@
 package com.example.planalog.network
 
-import java.net.CookieManager
-import okhttp3.JavaNetCookieJar
+import android.content.Context
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
+import okhttp3.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import com.example.planalog.network.startset.Idcheck
-import com.example.planalog.network.user.UserService
-import java.net.CookiePolicy
 
 object RetrofitClient {
 
     private const val BASE_URL = "http://15.164.83.14:3000"
 
-    // 로깅 인터셉터 추가 (네트워크 요청/응답 로그 확인용)
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY  // 요청 및 응답 본문 로깅
-    }
+        // Authorization 헤더를 자동으로 추가하는 Interceptor
+        private class AuthInterceptor(private val context: Context) : Interceptor {
+            override fun intercept(chain: Interceptor.Chain): okhttp3.Response {
+                val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                val token = sharedPreferences.getString("received_access_token", null)
 
-    // 쿠키 관리 설정 추가
-    private val cookieManager = CookieManager().apply {
-        setCookiePolicy(CookiePolicy.ACCEPT_ALL)  // 모든 쿠키 허용
-    }
+                val requestBuilder = chain.request().newBuilder()
+                token?.let {
+                    requestBuilder.addHeader("Authorization", "Bearer $it")
+                }
+                return chain.proceed(requestBuilder.build())
+            }
+        }
 
-    // OkHttp 클라이언트 생성 (쿠키 관리 추가)
-    private val httpClient = OkHttpClient.Builder()
-        .cookieJar(JavaNetCookieJar(cookieManager))  // 자동 쿠키 관리 추가
-        .addInterceptor(loggingInterceptor)
-        .build()
-
-    fun getRetrofit(): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
-            .client(httpClient)  // OkHttp 클라이언트 적용
+    // Retrofit 인스턴스를 생성할 때 Authorization 토큰을 포함하도록 설정
+    fun <T> create(service: Class<T>, context: Context): T {
+        val client = OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(context))
             .build()
-    }
-}
 
-object ApiService {
-    val idcheckService: Idcheck by lazy {
-        RetrofitClient.getRetrofit().create(Idcheck::class.java)
-    }
+        val retrofit = Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
 
-    val userService: UserService by lazy {
-        RetrofitClient.getRetrofit().create(UserService::class.java)
+        return retrofit.create(service)
     }
 }

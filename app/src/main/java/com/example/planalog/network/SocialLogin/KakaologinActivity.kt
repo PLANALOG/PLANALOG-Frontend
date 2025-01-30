@@ -1,6 +1,5 @@
 package com.example.planalog.network.SocialLogin
 
-import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -9,10 +8,8 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat.startActivity
 import com.example.planalog.MainActivity
 import com.example.planalog.databinding.ActivityWebViewBinding
-import org.json.JSONObject
 
 class KakaologinActivity : AppCompatActivity() {
 

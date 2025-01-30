@@ -12,11 +12,14 @@ import androidx.core.content.res.ResourcesCompat
 import com.example.planalog.MainActivity
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityResultBinding
-import com.example.planalog.network.ApiService
+import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.user.UserResponse
+import com.example.planalog.network.user.UserService
 import com.example.planalog.network.user.UserUpdateRequest
 import com.example.planalog.network.user.UserUpdateResponse
+import com.google.gson.Gson
 import retrofit2.Call
+import retrofit2.Callback
 import retrofit2.Response
 
 class ResultActivity : AppCompatActivity() {
@@ -28,9 +31,6 @@ class ResultActivity : AppCompatActivity() {
         binding = ActivityResultBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setupCombinedTextView()
-
-        // 세션 쿠키 로드
-        loadSessionCookies("http://15.164.83.14:3000")
 
         val nickname = intent.getStringExtra("nickname") ?: "사용자"
         Log.d("ResultActivity", "받은 닉네임: $nickname")
@@ -49,53 +49,79 @@ class ResultActivity : AppCompatActivity() {
         binding.startButton.setOnClickListener {
             val type = if (result == "a") "memo" else "category"
 
-            ApiService.userService.getUserInfo().enqueue(object : retrofit2.Callback<UserResponse> {
-                override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
-                    Log.d("ResultActivity", "서버 응답: ${response.body()}")
-                    if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                        updateUserInfo(nickname, type)
-                    } else {
-                        Log.e("ResultActivity", "사용자 정보를 가져올 수 없습니다.")
-                    }
-                }
+//            getUserInfo()
+//            updateUserInfo(nickname, type)
 
-                override fun onFailure(call: Call<UserResponse>, t: Throwable) {
-                    Log.e("ResultActivity", "네트워크 오류: ${t.localizedMessage}")
-                }
-            })
-            val intent = Intent(this, MainActivity::class.java)
+            // 일단 로그인 여부 상관없이 강제로 메인으로 넘어가게 설정
+            val intent = Intent(this@ResultActivity, MainActivity::class.java)
             intent.putExtra("nickname", nickname)
-            intent.putExtra("result", result)
+            intent.putExtra("type", type)
             startActivity(intent)
             finish()
         }
     }
 
-    private fun loadSessionCookies(url: String) {
-        val sharedPreferences = getSharedPreferences("SessionPrefs", Context.MODE_PRIVATE)
-        val cookies = sharedPreferences.getString("cookies", null)
 
-        if (cookies != null) {
-            val cookieManager = java.net.CookieManager()
-            cookieManager.setCookiePolicy(java.net.CookiePolicy.ACCEPT_ALL)
-            val cookieList = cookies.split(";")
-            cookieList.forEach {
-                cookieManager.cookieStore.add(java.net.URI(url), java.net.HttpCookie.parse(it)[0])
-            }
-            Log.d("ResultActivity", "세션 쿠키 적용됨: $cookies")
-        } else {
-            Log.e("ResultActivity", "저장된 쿠키 없음")
-            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
-            finish()
+    //혹시 몰라서 놔둔 함수 => 지우지 마!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    private fun getUserInfo() {
+
+        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val receivedAccessToken = sharedPreferences.getString("received_access_token", null)
+        val authorizationHeader = "Bearer $receivedAccessToken"
+        val userService = RetrofitClient.create(UserService::class.java, this)
+
+        if (receivedAccessToken.isNullOrEmpty()) {
+            Toast.makeText(this, "저장된 액세스 토큰이 없습니다.", Toast.LENGTH_SHORT).show()
+            return
         }
+
+        userService.getUserInfo().enqueue(object : Callback<UserResponse> {
+            override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
+                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+                    val userInfo = response.body()?.success
+                    if (userInfo != null) {
+                        // JSON 형식으로 UserInfo 로그 출력
+                        val userInfoJson = Gson().toJson(userInfo)
+                        Toast.makeText(this@ResultActivity, "사용자 정보 확인", Toast.LENGTH_SHORT).show()
+                        Log.d("User Info", "UserInfo JSON: $userInfoJson")
+                    }
+
+                    // 사용자 정보 확인 후 MainActivity로 이동
+                    val intent = Intent(this@ResultActivity, MainActivity::class.java)
+                    intent.putExtra("nickname", userInfo?.nickname)
+                    startActivity(intent)
+                    finish()
+                } else {
+                    Toast.makeText(this@ResultActivity, "사용자 정보 가져오기 실패", Toast.LENGTH_SHORT).show()
+                    Log.e("User Info", "실패 코드: ${response.code()}")
+                }
+            }
+
+            override fun onFailure(call: Call<UserResponse>, t: Throwable) {
+                Toast.makeText(this@ResultActivity, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
+                Log.e("User Info", "네트워크 오류", t)
+            }
+        })
     }
 
+
     private fun updateUserInfo(nickname: String, type: String) {
+
+        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val receivedAccessToken = sharedPreferences.getString("received_access_token", null)
+        val authorizationHeader = "Bearer $receivedAccessToken"
+        val userService = RetrofitClient.create(UserService::class.java, this)
+
+        if (receivedAccessToken.isNullOrEmpty()) {
+            Toast.makeText(this, "저장된 액세스 토큰이 없습니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val request = UserUpdateRequest(nickname = nickname, type = type)
 
         Log.d("ResultActivity", "서버에 전송할 데이터: $request")
 
-        ApiService.userService.updateUser(request).enqueue(object : retrofit2.Callback<UserUpdateResponse> {
+        userService.updateUser(request).enqueue(object : Callback<UserUpdateResponse> {
             override fun onResponse(
                 call: Call<UserUpdateResponse>,
                 response: Response<UserUpdateResponse>

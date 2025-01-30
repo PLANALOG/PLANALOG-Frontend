@@ -15,6 +15,22 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        def localProperties = new Properties()
+        localProperties.load(new FileInputStream(rootProject.file("local.properties")))
+
+        def NAVER_CLIENT_ID = localProperties.getProperty("NAVER_CLIENT_ID")?:""
+        def NAVER_CLIENT_SECRET = localProperties.getProperty("NAVER_CLIENT_SECRET")?:""
+        def nativeAppKey = localProperties.getProperty("NATIVE_APP_KEY")?:""
+
+        buildConfigField "String", "NAVER_CLIENT_ID", "\"${NAVER_CLIENT_ID}\""
+        buildConfigField "String", "NAVER_CLIENT_SECRET", "\"${NAVER_CLIENT_SECRET}\""
+
+        manifestPlaceholders["NAVER_CLIENT_ID"] = NAVER_CLIENT_ID
+        manifestPlaceholders["NAVER_CLIENT_SECRET"] = NAVER_CLIENT_SECRET
+
+        buildConfigField "String", "NATIVE_APP_KEY", "\"${nativeAppKey}\""
+        manifestPlaceholders["NATIVE_APP_KEY"] = nativeAppKey
     }
 
     buildTypes {
@@ -65,4 +81,6 @@ dependencies {
     implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
     implementation "com.squareup.okhttp3:okhttp-urlconnection:4.9.1"
 
+    implementation 'com.navercorp.nid:oauth:5.10.0' // jdk 11
+    //implementation 'com.navercorp.nid:oauth-jdk8:5.10.0' // jdk 8
 }
