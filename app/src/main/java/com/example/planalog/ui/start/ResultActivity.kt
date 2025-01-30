@@ -51,6 +51,8 @@ class ResultActivity : AppCompatActivity() {
 
 //            getUserInfo()
 //            updateUserInfo(nickname, type)
+
+            // 일단 로그인 여부 상관없이 강제로 메인으로 넘어가게 설정
             val intent = Intent(this@ResultActivity, MainActivity::class.java)
             intent.putExtra("nickname", nickname)
             intent.putExtra("type", type)
