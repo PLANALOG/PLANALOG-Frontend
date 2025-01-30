@@ -14,27 +14,24 @@ class SlidePagerAdapter(
 ) : RecyclerView.Adapter<SlidePagerAdapter.SlideViewHolder>() {
 
     inner class SlideViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val imageView: ImageView = itemView.findViewById(R.id.imageView)
-        val postContent: EditText = itemView.findViewById(R.id.postContent)
-
-        init {
-            imageView.setOnClickListener {
-                onImageClick(adapterPosition)
-            }
-        }
+        private val imageView: ImageView = itemView.findViewById(R.id.imageView)
+        private val postContent: EditText = itemView.findViewById(R.id.postContent)
 
         fun bind(slide: Slide) {
-            slide.imageResId?.let { uri ->
-                imageView.setImageURI(uri) // 이미지 설정
-            }
+            // 이미지와 초기 텍스트 설정
+            slide.imageResId?.let { uri -> imageView.setImageURI(uri) }
             postContent.setText(slide.postContent)
 
-            // EditText 내용 변경 감지
-            postContent.setOnFocusChangeListener { _, hasFocus ->
-                if (!hasFocus) { // 포커스 잃었을 때
-                    slide.postContent = postContent.text.toString()
+            // 텍스트 변경 리스너 추가
+            postContent.addTextChangedListener(object : android.text.TextWatcher {
+                override fun afterTextChanged(s: android.text.Editable?) {
+                    // 텍스트 변경 즉시 리스트에 반영
+                    slide.postContent = s.toString()
                 }
-            }
+
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            })
         }
     }
 
