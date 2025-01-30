@@ -66,11 +66,26 @@
                 android:layout_height="1dp"
                 android:background="#000000" />
 
+            <EditText
+                android:id="@+id/postContent"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:hint="@string/post_content"
+                android:textSize="16sp"
+                android:fontFamily="@font/pretendard_medium"
+                android:padding="8dp"
+                android:inputType="textMultiLine"
+                android:maxLines="10"
+                android:gravity="top"
+                android:background="@color/transparent"
+                android:layout_marginTop="16dp" />
+
             <!-- ViewPager2 -->
             <androidx.viewpager2.widget.ViewPager2
                 android:id="@+id/viewPager"
                 android:layout_width="match_parent"
                 android:layout_height="400dp"
+                android:visibility="gone"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toTopOf="@+id/buttonLayout"
                 app:layout_constraintStart_toStartOf="parent"
@@ -86,15 +101,16 @@
         app:layout_constraintBottom_toBottomOf="parent"
         android:padding="16dp">
 
+        <!-- 사진 버튼 -->
         <ImageView
             android:id="@+id/photoButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_photo"
             android:contentDescription="사진"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/writeButton" />
 
         <TextView
@@ -110,16 +126,17 @@
             android:fontFamily="@font/pretendard_medium"
             android:textColor="@android:color/black" />
 
+        <!-- 글쓰기 버튼 -->
         <ImageView
             android:id="@+id/writeButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_post"
             android:contentDescription="글쓰기"
-            app:layout_constraintStart_toEndOf="@id/photoButton"
-            app:layout_constraintEnd_toStartOf="@id/arrayButton"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/photoButton"
+            app:layout_constraintEnd_toStartOf="@id/draftButton" />
 
         <TextView
             android:id="@+id/writeText"
@@ -133,40 +150,17 @@
             android:textSize="15sp"
             android:textColor="@android:color/black" />
 
-        <ImageView
-            android:id="@+id/arrayButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@drawable/ic_array"
-            android:contentDescription="정렬"
-            app:layout_constraintStart_toEndOf="@id/writeButton"
-            app:layout_constraintEnd_toStartOf="@id/draftButton"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
-
-        <TextView
-            android:id="@+id/arrayText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="정렬"
-            android:gravity="center"
-            app:layout_constraintTop_toBottomOf="@id/arrayButton"
-            app:layout_constraintStart_toStartOf="@id/arrayButton"
-            app:layout_constraintEnd_toEndOf="@id/arrayButton"
-            android:textSize="15sp"
-            android:fontFamily="@font/pretendard_medium"
-            android:textColor="@android:color/black" />
-
+        <!-- 임시 저장 버튼 -->
         <ImageView
             android:id="@+id/draftButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_draft"
             android:contentDescription="임시저장"
-            app:layout_constraintStart_toEndOf="@id/arrayButton"
-            app:layout_constraintEnd_toStartOf="@id/uploadButton"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/writeButton"
+            app:layout_constraintEnd_toStartOf="@id/uploadButton" />
 
         <TextView
             android:id="@+id/draftText"
@@ -181,16 +175,17 @@
             android:fontFamily="@font/pretendard_medium"
             android:textColor="@android:color/black" />
 
+        <!-- 등록 버튼 -->
         <ImageView
             android:id="@+id/uploadButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_upload"
             android:contentDescription="등록"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@id/draftButton" />
+            app:layout_constraintStart_toEndOf="@id/draftButton"
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <TextView
             android:id="@+id/uploadText"
@@ -205,4 +200,5 @@
             android:fontFamily="@font/pretendard_medium"
             android:textColor="@android:color/black" />
     </androidx.constraintlayout.widget.ConstraintLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
