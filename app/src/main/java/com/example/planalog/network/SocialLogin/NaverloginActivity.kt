@@ -9,7 +9,6 @@ import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.planalog.databinding.ActivityWebViewBinding
 import com.example.planalog.ui.start.StartsetActivity

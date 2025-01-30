@@ -53,6 +53,10 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // 전달된 result 값 처리
+        val type = arguments?.getString("type") ?: ""
+        updateLayoutBasedOnResult(type)
+
         // 초기 상태 버튼 설정
         setInitialBtnState()
 
@@ -142,10 +146,6 @@ class HomeFragment : Fragment() {
             transaction.commit()
         }
 
-        // 전달된 result 값 처리
-        val result = arguments?.getString("result") ?: ""
-        updateLayoutBasedOnResult(result)
-
     }
 
 
@@ -174,6 +174,8 @@ class HomeFragment : Fragment() {
     }
 
     private fun setPlanner() {
+
+
         // 카테고리형 플래너 저장 버튼 클릭 리스너
         binding.homePlannerCtgySaveBtn.setOnClickListener {
             // 모든 카테고리 제목 및 체크리스트 수정 상태 고정
@@ -301,9 +303,9 @@ class HomeFragment : Fragment() {
 
 
 
-    private fun updateLayoutBasedOnResult(result: String) {
-        when (result) {
-            "a" -> {
+    private fun updateLayoutBasedOnResult(type: String) {
+        when (type) {
+            "memo" -> {
                 binding.homePlannerMemoV.visibility = View.VISIBLE
                 binding.homePlannerCtgyV.visibility = View.GONE
             }

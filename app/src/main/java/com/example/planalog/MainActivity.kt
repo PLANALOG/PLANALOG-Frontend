@@ -1,6 +1,7 @@
 package com.example.planalog
 
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.planalog.databinding.ActivityMainBinding
@@ -21,10 +22,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // 초기 프래그먼트 설정
-        val result = intent.getStringExtra("result") ?: ""
+        val type = intent.getStringExtra("type") ?: ""
         replaceFragment(HomeFragment().apply {
             arguments = Bundle().apply {
-                putString("result", result)
+                putString("type", type)
+                Log.d("타입", "Received 타입: $type")
             }
         })
 
