@@ -58,11 +58,18 @@ class PostDetailFragment : Fragment() {
 
 
     private fun setupViewPager() {
-        slidePagerAdapter = SlidePagerAdapter(slideList) { position ->
-            // 슬라이드 클릭 시 추가 동작 가능
-        }
+        slidePagerAdapter = SlidePagerAdapter(
+            slideList,
+            onImageClick = { position ->
+                // 슬라이드 클릭 시 추가 동작 (예: 전체 화면 보기)
+            },
+            onDeleteClick = { position ->
+                // 삭제 동작이 필요한 경우 (지금은 PostFragment에서 처리 중이라면 생략 가능)
+            }
+        )
         binding.viewPager.adapter = slidePagerAdapter
     }
+
 
     private fun setupLikeButton() {
         // 초기 좋아요 개수 표시

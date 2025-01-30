@@ -1,9 +1,8 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center">
+    android:padding="16dp">
 
     <!-- 이미지 영역 -->
     <ImageView
@@ -11,8 +10,17 @@
         android:layout_width="match_parent"
         android:layout_height="400dp"
         android:scaleType="centerCrop"
-        android:background="@color/transparent"
-        android:layout_gravity="center" />
+        android:background="@color/transparent" />
+
+    <!-- X 버튼 (오른쪽 상단) -->
+    <ImageView
+        android:id="@+id/deleteButton"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:src="@drawable/ic_x"
+        android:layout_alignTop="@id/imageView"
+        android:layout_alignEnd="@id/imageView"
+        android:layout_margin="8dp" />
 
     <!-- 게시물 내용 -->
     <EditText
@@ -27,5 +35,6 @@
         android:maxLines="10"
         android:gravity="top"
         android:background="@color/transparent"
+        android:layout_below="@id/imageView"
         android:layout_marginTop="16dp" />
-</LinearLayout>
+</RelativeLayout>
