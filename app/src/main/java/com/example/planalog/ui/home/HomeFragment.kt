@@ -23,6 +23,8 @@ import com.example.planalog.ui.home.ctgy.MemoAdapter
 import com.example.planalog.ui.home.memo.ChecklistItem
 import com.example.planalog.utils.generateRandomColor
 import com.example.planalog.utils.getCurrentDate
+import com.example.planalog.utils.savePlannerDate
+import com.example.planalog.utils.updateTaskCompletion
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -119,7 +121,6 @@ class HomeFragment : Fragment() {
             addCategory("")
         }
 
-        // 메모 추가 버튼 클릭 리스너
         // 메모 추가 버튼 클릭 리스너
         binding.homePlannerMemoPlusIc.setOnClickListener {
             addCheckListItem("")
@@ -226,6 +227,7 @@ class HomeFragment : Fragment() {
             // 선택 상태 초기화 (이전 선택 항목 해제)
             checklist.forEach { memo ->
                 memo.isSelected = false
+                memo.isChecked = false
             }
 
             // SAVE 버튼 비활성화
@@ -282,6 +284,11 @@ class HomeFragment : Fragment() {
     private fun addCheckListItem(task: String) {
         checklist.add(ChecklistItem(task, true))
         memoAdapter.notifyItemInserted(checklist.size - 1)
+
+        // 오늘 날짜에 Checklists가 추가되었음을 CalendarDay에 반영
+        val currentDate = getCurrentDate()
+        calendarDays.find { it.date == currentDate }?.hasTask = true
+        calendarAdapter.notifyDataSetChanged()
     }
 
 
@@ -312,23 +319,16 @@ class HomeFragment : Fragment() {
     private fun sendTaskToApi() {
         val taskTitle = checklist.joinToString(", ") { it.task }  // 체크리스트 항목들을 하나의 텍스트로 결합
         val currentDate = getCurrentDate()  // 현재 날짜 가져오기
+        val allChecked = checklist.all { it.isChecked == false }
 
-        // 모든 체크리스트 항목이 체크되었는지 확인
-        val allChecked = checklist.all { it.isChecked }
+        savePlannerDate(requireContext(), currentDate)
 
         // 로그로 출력해서 API에 전달되는 데이터 확인
         Log.d("API SendTask", "Task Title: $taskTitle")
         Log.d("API SendTask", "Current Date: $currentDate")
 //        taskRepository.createTask(taskTitle, currentDate)  // TaskRepository에 task 전달
 
-        // 저장된 날짜와 함께 데이터를 전달하기 위해 SharedPreferences 사용 (간단한 저장 방식)
-        val sharedPreferences = requireContext().getSharedPreferences("task_prefs", Context.MODE_PRIVATE)
-        val savedDates = sharedPreferences.getStringSet("saved_dates", mutableSetOf()) ?: mutableSetOf()
-
-        // 모든 체크리스트 항목이 체크되었는지 확인
-        savedDates.add(currentDate)  // 날짜 추가 (항목이 체크되었는지 여부와 무관하게 저장)
-
-        sharedPreferences.edit().putStringSet("saved_dates", savedDates).apply()
+        updateTaskCompletion(requireContext(), currentDate, allChecked)
 
         Log.d("API SendTask", "Task Title: $taskTitle, Date: $currentDate")
     }

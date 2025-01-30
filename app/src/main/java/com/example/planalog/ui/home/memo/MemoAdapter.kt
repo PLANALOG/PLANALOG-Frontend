@@ -50,7 +50,7 @@ class MemoAdapter(
         holder.binding.homePlannerMemoCb.isChecked = memo.isChecked
 
         // 부분 삭제 아이콘 설정
-        val iconRes = if (memo.isChecked) R.drawable.ic_ctgy_delete_selected else R.drawable.ic_ctgy_delete_unselected
+        val iconRes = if (memo.isSelected) R.drawable.ic_ctgy_delete_selected else R.drawable.ic_ctgy_delete_unselected
         holder.binding.homePlannerMemoSelectBtn.setImageResource(iconRes)
         holder.binding.homePlannerMemoSelectBtn.visibility = if (isDeleteMode) View.VISIBLE else View.GONE
 

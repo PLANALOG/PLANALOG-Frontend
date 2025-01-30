@@ -38,10 +38,19 @@ class CalendarAdapter(
                     binding.calenderCircleView.visibility = View.INVISIBLE // 빈 날짜에 대해 숨김
                 } else {
                     binding.calenderDayTv.text = day.date // 날짜를 설정
-                    //binding.calenderCircleView.visibility = if (day.isTaskCompleted) View.VISIBLE else View.INVISIBLE
+                    binding.calenderCircleView.visibility = if (day.isTaskCompleted) View.VISIBLE else View.INVISIBLE
                     binding.calenderCircleView.setBackgroundResource(
                         if (day.isTaskCompleted) R.drawable.circle_checked else R.drawable.circle_unchecked
                     ) // 완료된 작업 여부에 따른 원 모양의 표시
+
+//                    if (day.hasTask) {
+//                        binding.calenderCircleView.setBackgroundResource(
+//                            if (day.isTaskCompleted) R.drawable.circle_checked
+//                            else R.drawable.circle_unchecked
+//                        )
+//                    } else {
+//                        binding.calenderCircleView.visibility = View.INVISIBLE  // 체크리스트가 없는 날은 동그라미 숨김
+//                    }
                 }
             }
         }
