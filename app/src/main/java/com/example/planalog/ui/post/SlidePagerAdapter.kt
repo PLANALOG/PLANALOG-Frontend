@@ -10,17 +10,24 @@ import com.example.planalog.R
 
 class SlidePagerAdapter(
     private val slideList: MutableList<Slide>,
-    private val onImageClick: (position: Int) -> Unit
+    private val onImageClick: (position: Int) -> Unit,
+    private val onDeleteClick: (Int) -> Unit  // 삭제 콜백 추가
 ) : RecyclerView.Adapter<SlidePagerAdapter.SlideViewHolder>() {
 
     inner class SlideViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val imageView: ImageView = itemView.findViewById(R.id.imageView)
+        val imageView: ImageView = itemView.findViewById(R.id.imageView)
         private val postContent: EditText = itemView.findViewById(R.id.postContent)
+        val deleteButton: ImageView = itemView.findViewById(R.id.deleteButton)
 
         fun bind(slide: Slide) {
             // 이미지와 초기 텍스트 설정
             slide.imageResId?.let { uri -> imageView.setImageURI(uri) }
             postContent.setText(slide.postContent)
+
+            // 이미지 클릭 리스너 설정
+            imageView.setOnClickListener {
+                onImageClick(adapterPosition)  // 이미지 클릭 콜백 호출
+            }
 
             // 텍스트 변경 리스너 추가
             postContent.addTextChangedListener(object : android.text.TextWatcher {
@@ -42,7 +49,15 @@ class SlidePagerAdapter(
     }
 
     override fun onBindViewHolder(holder: SlideViewHolder, position: Int) {
-        holder.bind(slideList[position])
+        val slide = slideList[position]
+
+        // 이미지 로드 (예: Glide 사용)
+        holder.imageView.setImageURI(slide.imageResId)
+
+        // X 버튼 클릭 시 슬라이드 제거 처리
+        holder.deleteButton.setOnClickListener {
+            onDeleteClick(position)  // 어댑터 외부에서 처리할 수 있게 콜백 호출
+        }
     }
 
     override fun getItemCount(): Int = slideList.size

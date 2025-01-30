@@ -49,11 +49,27 @@ class PostFragment : Fragment() {
     }
 
     private fun setupViewPager() {
-        slidePagerAdapter = SlidePagerAdapter(slideList) { position ->
-            // 이미지 클릭 시 추가 동작 (선택 사항)
-        }
+        slidePagerAdapter = SlidePagerAdapter(
+            slideList,
+            onImageClick = { position ->
+                // 이미지 클릭 시 추가 작업 (예: 확대보기)
+                // 필요 없으면 비워둘 수 있습니다
+            },
+            onDeleteClick = { position ->
+                slideList.removeAt(position)  // 선택된 슬라이드 삭제
+                slidePagerAdapter.notifyDataSetChanged()  // 어댑터 갱신
+
+                // 슬라이드가 비었으면 뷰페이저 숨기기
+                if (slideList.isEmpty()) {
+                    binding.viewPager.visibility = View.GONE
+                    binding.postContent.visibility = View.VISIBLE  // 텍스트 입력란 다시 보이기
+                }
+            }
+        )
         binding.viewPager.adapter = slidePagerAdapter
     }
+
+
 
     private fun setupImagePicker() {
         imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
