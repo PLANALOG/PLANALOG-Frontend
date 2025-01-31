@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
         replaceFragment(HomeFragment().apply {
             arguments = Bundle().apply {
                 putString("type", type)
-                Log.d("타입", "Received 타입: $type")
+                Log.d("MainActivity", "Received 타입: $type")
             }
         })
 
