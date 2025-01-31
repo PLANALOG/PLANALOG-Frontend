@@ -82,36 +82,34 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    // 네이버 소셜로그인 토큰 저장 함수
+    private fun saveAccessToken(token: String?) {
+        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString("naver_access_token", token)
+        editor.apply()  // 비동기적으로 저장
+        Log.d("저장한 토큰", "저장된 네이버 토큰: $token")
+    }
+
     private fun postAccessTokenToServer(accessToken: String?) {
         if (accessToken.isNullOrEmpty()) {
-            Toast.makeText(this, "Access Token이 없습니다.", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, "Access Token이 없습니다.", Toast.LENGTH_SHORT).show()
+            Log.d("Access 토큰 없음", "$accessToken")
             return
         }
 
-        // 유효하지 않은 액세스 토큰이면 리프레시 시도
-        if (isTokenExpired(accessToken)) {
-            val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-            val refreshToken = sharedPreferences.getString("naver_refresh_token", null)
-
-            if (!refreshToken.isNullOrEmpty()) {
-                refreshAccessToken(refreshToken)  // 토큰 재발급
-            } else {
-                Log.e("TokenRefresh", "저장된 리프레시 토큰이 없습니다.")
-            }
-        } else {
-
-
-        val apiService = RetrofitClient.create(NaverLoginService::class.java, this)
+        val TokenService = RetrofitClient.create(NaverLoginService::class.java, this)
         val requestBody = TokenRequestBody(accessToken)
+        Log.d("서버에 보낼 토큰", "서버에 보낼 토큰: $accessToken")
 
-        apiService.sendAccessToken(requestBody).enqueue(object : Callback<NaverTokenResponse> {
+        TokenService.sendAccessToken(requestBody).enqueue(object : Callback<NaverTokenResponse> {
             override fun onResponse(call: Call<NaverTokenResponse>, response: Response<NaverTokenResponse>) {
                 if (response.isSuccessful) {
 
                     val responseBody = response.body()
 
                     if (responseBody != null && responseBody.resultType == "SUCCESS") {
-//                        Toast.makeText(this@LoginActivity, "토큰 전송 성공", Toast.LENGTH_SHORT).show(
+    //                        Toast.makeText(this@LoginActivity, "토큰 전송 성공", Toast.LENGTH_SHORT).show(
 
                         val newAccessToken = response.body()?.success?.accessToken
 
@@ -126,11 +124,11 @@ class LoginActivity : AppCompatActivity() {
 
                     } else {
                         val errorMessage = responseBody?.error ?: "Unknown error"
-                        Log.e("네이버 응답", "오류 메시지: $errorMessage")
+                        Log.e("토큰 응답 오류", "오류 메시지: $errorMessage")
                     }
                 } else {
                     Toast.makeText(this@LoginActivity, "전송 실패: ${response.code()}", Toast.LENGTH_SHORT).show()
-                    Log.e("네이버 응답", "오류 메시지: ${response.code()}")
+                    Log.e("토큰 전송 실패", "오류 메시지: ${response.code()}")
                 }
             }
 
@@ -139,15 +137,6 @@ class LoginActivity : AppCompatActivity() {
                 Log.e("네이버 Retrofit", "전송 실패", t)
             }
         })
-        }
-    }
-
-    // 네이버 소셜로그인 토큰 저장 함수
-    private fun saveAccessToken(token: String?) {
-        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        editor.putString("naver_access_token", token)
-        editor.apply()  // 비동기적으로 저장
     }
 
     // 서버에서 자체적으로 받아온 토큰 저장 함수
@@ -158,6 +147,7 @@ class LoginActivity : AppCompatActivity() {
         editor.apply()
     }
 
+    // 리프레시토큰 받는 함수
     private fun refreshAccessToken(refreshToken: String?) {
         val apiService = RetrofitClient.create(NaverLoginService::class.java, this)
         val requestBody = RefreshTokenRequest(refreshToken)
