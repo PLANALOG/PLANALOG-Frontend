@@ -31,7 +31,7 @@ class CalendarAdapter(
             }
         }
 
-        class DayViewHolder(private val binding: ItemCalendarDayBinding) : CalendarViewHolder(binding.root) {
+        class DayViewHolder(val binding: ItemCalendarDayBinding) : CalendarViewHolder(binding.root) {
             fun bind(day: CalendarDay) {
                 if (day.isEmpty) {
                     binding.calenderDayTv.text = ""
@@ -42,15 +42,6 @@ class CalendarAdapter(
                     binding.calenderCircleView.setBackgroundResource(
                         if (day.isTaskCompleted) R.drawable.circle_checked else R.drawable.circle_unchecked
                     ) // 완료된 작업 여부에 따른 원 모양의 표시
-
-//                    if (day.hasTask) {
-//                        binding.calenderCircleView.setBackgroundResource(
-//                            if (day.isTaskCompleted) R.drawable.circle_checked
-//                            else R.drawable.circle_unchecked
-//                        )
-//                    } else {
-//                        binding.calenderCircleView.visibility = View.INVISIBLE  // 체크리스트가 없는 날은 동그라미 숨김
-//                    }
                 }
             }
         }
@@ -79,6 +70,9 @@ class CalendarAdapter(
                 val calendarDay = days[position - 7] // 7을 빼는 이유는 첫 7개 항목은 헤더이기 때문
                 holder.bind(calendarDay) // 날짜를 bind
                 holder.itemView.setOnClickListener { onDayClicked(calendarDay) } // 클릭 시 처리
+
+                // 메모가 있으면 CircleView 보이기
+//                holder.binding.calenderCircleView.visibility = if (calendarDay.hasTask) View.VISIBLE else View.INVISIBLE
             }
         }
     }

@@ -37,7 +37,7 @@ class HomeFragment : Fragment() {
     private lateinit var calendarAdapter: CalendarAdapter
 
     //private lateinit var taskRepository: TaskRepository
-    //private val sharedViewModel: SharedViewModel by activityViewModels()
+
     private val calendarDays = mutableListOf<CalendarDay>()
 
     override fun onCreateView(
@@ -60,11 +60,6 @@ class HomeFragment : Fragment() {
         // 초기 상태 버튼 설정
         setInitialBtnState()
 
-        // ViewModel의 calendarDays를 사용
-//        sharedViewModel.calendarDays.observe(viewLifecycleOwner) { calendarDays ->
-//            calendarAdapter = CalendarAdapter(calendarDays)
-//            binding.calendarRecyclerView.adapter = calendarAdapter
-//        }
         val days = mutableListOf<CalendarDay>()
         val onDayClicked: (CalendarDay) -> Unit = { day ->
             if (!day.isEmpty) {
@@ -227,10 +222,7 @@ class HomeFragment : Fragment() {
             memoAdapter.notifyDataSetChanged()
 
             // 선택 상태 초기화 (이전 선택 항목 해제)
-            checklist.forEach { memo ->
-                memo.isSelected = false
-                memo.isChecked = false
-            }
+            checklist.forEach { memo -> memo.isSelected = false }
 
             // SAVE 버튼 비활성화
             binding.homePlannerMemoSaveBtn.isEnabled = false

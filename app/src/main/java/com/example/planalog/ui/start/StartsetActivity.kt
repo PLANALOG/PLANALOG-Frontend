@@ -28,6 +28,7 @@ import retrofit2.Response
 class StartsetActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityStartsetBinding
+    private var userInfoJson: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +39,9 @@ class StartsetActivity : AppCompatActivity() {
         Log.d("StartsetActivity", "Received nickname: $nickname")
 
         setupCombinedTextView()
+
+        //본인 회원 조회
+        getUserInfo()
 
 
         binding.writeNickname.addTextChangedListener(object : TextWatcher {
@@ -72,16 +76,11 @@ class StartsetActivity : AppCompatActivity() {
                 if (nickname.isNotEmpty() && nickname.length <= 15) {
                     Log.d("StartsetActivity", "전송할 닉네임: $nickname")
 
-                    val intent = Intent(this, QnaActivity::class.java)
-                    intent.putExtra("nickname", nickname)  // 닉네임 전달
-                    startActivity(intent)
-                    finish()
+                    moveToNextActivity(nickname, userInfoJson)
                 } else {
                     Toast.makeText(this, "유효한 닉네임을 입력해 주세요.", Toast.LENGTH_SHORT).show()
                 }
             }
-
-        getUserInfo()
     }
 
     // 닉네임 확인 api 호출 함수
@@ -170,11 +169,6 @@ class StartsetActivity : AppCompatActivity() {
                         Log.d("User Info", "UserInfo JSON: $userInfoJson")
                     }
 
-                    // 사용자 정보 확인 후 MainActivity로 이동
-                    val intent = Intent(this@StartsetActivity, MainActivity::class.java)
-                    intent.putExtra("nickname", userInfo?.nickname)
-                    startActivity(intent)
-                    finish()
                 } else {
                     Toast.makeText(this@StartsetActivity, "사용자 정보 가져오기 실패", Toast.LENGTH_SHORT).show()
                     Log.e("User Info", "실패 코드: ${response.code()}")
@@ -186,6 +180,17 @@ class StartsetActivity : AppCompatActivity() {
                 Log.e("User Info", "네트워크 오류", t)
             }
         })
+    }
+
+    // 다음 액티비티로 이동
+    private fun moveToNextActivity(nickname: String, userInfoJson: String?) {
+        val intent = Intent(this, QnaActivity::class.java)
+        intent.putExtra("nickname", nickname)  // 닉네임 전달
+        userInfoJson?.let {
+            intent.putExtra("user_info", it)  // 사용자 정보 전달
+        }
+        startActivity(intent)
+        finish()  // 현재 액티비티 종료
     }
 
     // 화면 텍스트 변경 함수

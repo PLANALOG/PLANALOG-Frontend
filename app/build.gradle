@@ -22,15 +22,17 @@ android {
         def NAVER_CLIENT_ID = localProperties.getProperty("NAVER_CLIENT_ID")?:""
         def NAVER_CLIENT_SECRET = localProperties.getProperty("NAVER_CLIENT_SECRET")?:""
         def nativeAppKey = localProperties.getProperty("NATIVE_APP_KEY")?:""
+        def TEST_REFRESHTOKEN =  localProperties.getProperty("TEST_REFRESHTOKEN")?:""
 
         buildConfigField "String", "NAVER_CLIENT_ID", "\"${NAVER_CLIENT_ID}\""
         buildConfigField "String", "NAVER_CLIENT_SECRET", "\"${NAVER_CLIENT_SECRET}\""
+        buildConfigField "String", "NATIVE_APP_KEY", "\"${nativeAppKey}\""
+        buildConfigField "String", "TEST_REFRESHTOKEN", "\"${TEST_REFRESHTOKEN}\""
 
         manifestPlaceholders["NAVER_CLIENT_ID"] = NAVER_CLIENT_ID
         manifestPlaceholders["NAVER_CLIENT_SECRET"] = NAVER_CLIENT_SECRET
-
-        buildConfigField "String", "NATIVE_APP_KEY", "\"${nativeAppKey}\""
         manifestPlaceholders["NATIVE_APP_KEY"] = nativeAppKey
+        manifestPlaceholders["TEST_REFRESHTOKEN"] = TEST_REFRESHTOKEN
     }
 
     buildTypes {
