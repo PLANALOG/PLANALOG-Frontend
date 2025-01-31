@@ -36,7 +36,7 @@ class ResultActivity : AppCompatActivity() {
         Log.d("ResultActivity", "받은 닉네임: $nickname")
 
         val result = intent.getStringExtra("result") ?: "category"
-        Log.d("ResultActivity", "받은 type: $result")
+        Log.d("ResultActivity", "받은 타입: $result")
 
         if (result == "memo") {
             binding.iconImageView.setImageResource(R.drawable.ic_memotype)
@@ -49,7 +49,7 @@ class ResultActivity : AppCompatActivity() {
         updateUserInfo(nickname, type = result)
 
         binding.startButton.setOnClickListener {
-            val type = if (result == "a") "memo" else "category"
+            val type = if (result == "memo") "memo" else "category"
 
             // 일단 로그인 여부 상관없이 강제로 메인으로 넘어가게 설정
             val intent = Intent(this@ResultActivity, MainActivity::class.java)
