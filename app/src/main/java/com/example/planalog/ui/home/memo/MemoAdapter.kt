@@ -58,7 +58,6 @@ class MemoAdapter(
         holder.binding.homePlannerMemoCb.setOnCheckedChangeListener { _, isChecked ->
             memo.isChecked = isChecked
             checkCompletionState() // 모든 항목 체크 상태 확인
-            onMemoChanged()
         }
 
         // 부분 삭제 아이콘 클릭 리스너

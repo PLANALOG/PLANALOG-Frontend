@@ -35,9 +35,10 @@ class ResultActivity : AppCompatActivity() {
         val nickname = intent.getStringExtra("nickname") ?: "사용자"
         Log.d("ResultActivity", "받은 닉네임: $nickname")
 
-        val result = intent.getStringExtra("result") ?: "b"
+        val result = intent.getStringExtra("result") ?: "category"
+        Log.d("ResultActivity", "받은 type: $result")
 
-        if (result == "a") {
+        if (result == "memo") {
             binding.iconImageView.setImageResource(R.drawable.ic_memotype)
             binding.userTypeTextView.text = "${nickname}님은\n메모형 사용자입니다."
         } else {
@@ -45,12 +46,10 @@ class ResultActivity : AppCompatActivity() {
             binding.userTypeTextView.text = "${nickname}님은\n카테고리형 사용자입니다."
         }
 
+        updateUserInfo(nickname, type = result)
 
         binding.startButton.setOnClickListener {
             val type = if (result == "a") "memo" else "category"
-
-//            getUserInfo()
-//            updateUserInfo(nickname, type)
 
             // 일단 로그인 여부 상관없이 강제로 메인으로 넘어가게 설정
             val intent = Intent(this@ResultActivity, MainActivity::class.java)
@@ -62,60 +61,9 @@ class ResultActivity : AppCompatActivity() {
     }
 
 
-    //혹시 몰라서 놔둔 함수 => 지우지 마!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    private fun getUserInfo() {
-
-        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        val receivedAccessToken = sharedPreferences.getString("received_access_token", null)
-        val authorizationHeader = "Bearer $receivedAccessToken"
-        val userService = RetrofitClient.create(UserService::class.java, this)
-
-        if (receivedAccessToken.isNullOrEmpty()) {
-            Toast.makeText(this, "저장된 액세스 토큰이 없습니다.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        userService.getUserInfo().enqueue(object : Callback<UserResponse> {
-            override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
-                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                    val userInfo = response.body()?.success
-                    if (userInfo != null) {
-                        // JSON 형식으로 UserInfo 로그 출력
-                        val userInfoJson = Gson().toJson(userInfo)
-                        Toast.makeText(this@ResultActivity, "사용자 정보 확인", Toast.LENGTH_SHORT).show()
-                        Log.d("User Info", "UserInfo JSON: $userInfoJson")
-                    }
-
-                    // 사용자 정보 확인 후 MainActivity로 이동
-                    val intent = Intent(this@ResultActivity, MainActivity::class.java)
-                    intent.putExtra("nickname", userInfo?.nickname)
-                    startActivity(intent)
-                    finish()
-                } else {
-                    Toast.makeText(this@ResultActivity, "사용자 정보 가져오기 실패", Toast.LENGTH_SHORT).show()
-                    Log.e("User Info", "실패 코드: ${response.code()}")
-                }
-            }
-
-            override fun onFailure(call: Call<UserResponse>, t: Throwable) {
-                Toast.makeText(this@ResultActivity, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
-                Log.e("User Info", "네트워크 오류", t)
-            }
-        })
-    }
-
-
     private fun updateUserInfo(nickname: String, type: String) {
 
-        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        val receivedAccessToken = sharedPreferences.getString("received_access_token", null)
-        val authorizationHeader = "Bearer $receivedAccessToken"
         val userService = RetrofitClient.create(UserService::class.java, this)
-
-        if (receivedAccessToken.isNullOrEmpty()) {
-            Toast.makeText(this, "저장된 액세스 토큰이 없습니다.", Toast.LENGTH_SHORT).show()
-            return
-        }
 
         val request = UserUpdateRequest(nickname = nickname, type = type)
 

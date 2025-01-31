@@ -92,7 +92,7 @@ class QnaActivity : AppCompatActivity() {
 
     private fun navigateToResult() {
         val nickname = intent.getStringExtra("nickname") ?: "사용자"
-        val result = if (option1Count >= 2) "a" else "b"
+        val result = if (option1Count >= 2) "memo" else "category"
         val intent = Intent(this, ResultActivity::class.java).apply {
             putExtra("result", result)
             putExtra("nickname", nickname ?: "사용자")  // null 체크

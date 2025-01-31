@@ -22,7 +22,10 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class LoginActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityLoginBinding
+
+    private val temporaryRefreshToken = BuildConfig.TEST_REFRESHTOKEN
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +67,8 @@ class LoginActivity : AppCompatActivity() {
         binding.btnNaverLogin.setOnClickListener {
             //Toast.makeText(this, "Naver Login Clicked", Toast.LENGTH_SHORT).show()
             // Add your Naver login logic here
-            NaverIdLoginSDK.authenticate(this, launcher)
+//            NaverIdLoginSDK.authenticate(this, launcher)
+            refreshAccessToken(temporaryRefreshToken)
         }
 
         binding.btnKakaoLogin.setOnClickListener {
@@ -128,7 +132,7 @@ class LoginActivity : AppCompatActivity() {
                     }
                 } else {
                     Toast.makeText(this@LoginActivity, "전송 실패: ${response.code()}", Toast.LENGTH_SHORT).show()
-                    Log.e("토큰 전송 실패", "오류 메시지: ${response.code()}")
+                    Log.e("토큰 전송 실패", "오류 메시지: ${response}")
                 }
             }
 
@@ -162,12 +166,16 @@ class LoginActivity : AppCompatActivity() {
 
                             // Save the new tokens
                             saveReceivedAccessToken(newAccessToken)
+
                             if (!newRefreshToken.isNullOrEmpty()) {
                                 saveRefreshToken(newRefreshToken)
                             }
 
                             Log.d("TokenRefresh", "Access token 재발급 성공: $newAccessToken")
                             newRefreshToken?.let { Log.d("TokenRefresh", "Refresh token 재발급: $it") }
+
+                            // 새 액세스 토큰을 저장하고 다음 액티비티로 이동
+                            moveToNextActivity(newAccessToken)
                         } else {
                             Log.e("TokenRefresh", "오류 발생: ${responseBody.error}")
                         }
@@ -188,6 +196,16 @@ class LoginActivity : AppCompatActivity() {
         val editor = sharedPreferences.edit()
         editor.putString("naver_refresh_token", token)
         editor.apply()
+    }
+
+    // 새 액세스 토큰을 저장하고 다음 액티비티로 이동
+    private fun moveToNextActivity(accessToken: String?) {
+        val intent = Intent(this, StartsetActivity::class.java)
+        accessToken?.let {
+            intent.putExtra("access_token", it)
+        }
+        startActivity(intent)
+        finish()  // 현재 액티비티 종료
     }
 
 }
