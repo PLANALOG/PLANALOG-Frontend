@@ -236,25 +236,54 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/home_planner_ctgy_v">
 
-            <ImageView
-                android:id="@+id/home_blog_friend_iv"
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/home_blog_friend_cv"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
-                android:src="@drawable/img_friend_ex"
+                app:cardElevation="3dp"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:cardCornerRadius="1000dp"
+                android:layout_margin="4dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/edge_home_profile_img">
+
+                    <ImageView
+                        android:id="@+id/home_blog_friend_iv"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="4dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_friend_3"
+                        android:background="@drawable/edge_home_profile_img"/>
+
+                </FrameLayout>
+
+            </androidx.cardview.widget.CardView>
+
+
+
+
+
+
+
 
             <TextView
                 android:id="@+id/home_blog_user_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="15dp"
                 android:text="@string/user_name_ex_1"
                 android:textColor="@color/main_1"
                 android:textSize="20sp"
                 android:fontFamily="@font/pretendard_medium"
-                app:layout_constraintBottom_toBottomOf="@id/home_blog_friend_iv"
-                app:layout_constraintStart_toEndOf="@id/home_blog_friend_iv"
-                app:layout_constraintTop_toTopOf="@id/home_blog_friend_iv" />
+                app:layout_constraintBottom_toBottomOf="@id/home_blog_friend_cv"
+                app:layout_constraintStart_toEndOf="@id/home_blog_friend_cv"
+                app:layout_constraintTop_toTopOf="@id/home_blog_friend_cv" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/home_blog_v"
@@ -265,7 +294,7 @@
                 android:padding="20dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/home_blog_friend_iv">
+                app:layout_constraintTop_toBottomOf="@id/home_blog_friend_cv">
 
                 <TextView
                     android:id="@+id/home_blog_date_tv"
@@ -335,14 +364,27 @@
             app:layout_constraintTop_toBottomOf="@id/home_blog_wrapper"
             android:src="@drawable/ic_like"/>
 
+        <TextView
+            android:id="@+id/home_like_count_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="@string/like_count_ex"
+            android:textSize="20sp"
+            android:textColor="@color/main_1"
+            android:fontFamily="@font/pretendard_medium"
+            app:layout_constraintTop_toTopOf="@id/home_like_iv"
+            app:layout_constraintBottom_toBottomOf="@id/home_like_iv"
+            app:layout_constraintStart_toEndOf="@id/home_like_iv"/>
+
         <ImageView
             android:id="@+id/home_reply_iv"
             android:layout_width="31dp"
             android:layout_height="31dp"
             android:src="@drawable/ic_reply"
-            android:layout_marginStart="10dp"
+            android:layout_marginStart="15dp"
             android:padding="2dp"
-            app:layout_constraintStart_toEndOf="@id/home_like_iv"
+            app:layout_constraintStart_toEndOf="@id/home_like_count_tv"
             app:layout_constraintTop_toTopOf="@id/home_like_iv"
             app:layout_constraintBottom_toBottomOf="@id/home_like_iv"/>
 

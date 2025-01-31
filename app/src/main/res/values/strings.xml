@@ -62,6 +62,7 @@
     <string name="planner_memo_ex_2">의미론 보강 온라인</string>
     <string name="save_btn">SAVE</string>
     <string name="delete_btn">DELETE</string>
+    <string name="like_count_ex">7</string>
 
     <!--  캘린더  -->
     <string name="calendar">calendar</string>
