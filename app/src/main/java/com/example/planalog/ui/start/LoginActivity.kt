@@ -196,6 +196,8 @@ class LoginActivity : AppCompatActivity() {
         val editor = sharedPreferences.edit()
         editor.putString("naver_refresh_token", token)
         editor.apply()
+        Log.d("TokenRefresh", "저장된 리프레시 토큰: $token")
+
     }
 
     // 새 액세스 토큰을 저장하고 다음 액티비티로 이동
