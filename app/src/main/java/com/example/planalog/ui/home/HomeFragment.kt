@@ -1,6 +1,7 @@
 package com.example.planalog.ui.home
 
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -12,6 +13,9 @@ import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentHomeBinding
+import com.example.planalog.network.RetrofitClient
+import com.example.planalog.network.planner.PlannerResponse
+import com.example.planalog.network.planner.PlannerService
 //import com.example.planalog.repository.TaskRepository
 import com.example.planalog.ui.comment.CommentFragment
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarAdapter
@@ -23,8 +27,12 @@ import com.example.planalog.ui.home.ctgy.MemoAdapter
 import com.example.planalog.ui.home.memo.ChecklistItem
 import com.example.planalog.utils.generateRandomColor
 import com.example.planalog.utils.getCurrentDate
+import com.example.planalog.utils.getCurrentMonth
 import com.example.planalog.utils.savePlannerDate
 import com.example.planalog.utils.updateTaskCompletion
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -37,6 +45,8 @@ class HomeFragment : Fragment() {
     private lateinit var calendarAdapter: CalendarAdapter
 
     //private lateinit var taskRepository: TaskRepository
+
+    private lateinit var plannerService: PlannerService
 
     private val calendarDays = mutableListOf<CalendarDay>()
 
@@ -56,6 +66,14 @@ class HomeFragment : Fragment() {
         // 전달된 result 값 처리
         val type = arguments?.getString("type") ?: ""
         updateLayoutBasedOnResult(type)
+
+        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
+        val userId = sharedPreferences.getString("user_id", null)
+
+        val date = getCurrentDate()
+        val month = getCurrentMonth()
+
+        getPlanner(userId, date, month)
 
         // 초기 상태 버튼 설정
         setInitialBtnState()
@@ -141,6 +159,35 @@ class HomeFragment : Fragment() {
             transaction.commit()
         }
 
+    }
+
+
+    private fun getPlanner(userId: String?, date: String?, month: String?) {
+        plannerService = RetrofitClient.create(PlannerService::class.java, requireContext())
+
+        plannerService.getPlanners(userId, date, month).enqueue(object : Callback<PlannerResponse> {
+            override fun onResponse(call: Call<PlannerResponse>, response: Response<PlannerResponse>) {
+                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+                    val planners = response.body()?.success ?: emptyList()
+
+                    // 플래너 데이터를 UI에 반영
+                    planners.forEach { planner ->
+                        Log.d("Planner", "Date: ${planner.date}, Completed: ${planner.isCompleted}")
+                    }
+
+                    Toast.makeText(requireContext(), "플래너 데이터 조회 성공", Toast.LENGTH_SHORT).show()
+                    Log.d("Planner", "Completed: $planners")
+                } else {
+                    Log.e("Planner", "서버 오류: ${response.code()}, ${response.message()}")
+                    Toast.makeText(requireContext(), "플래너 데이터 조회 실패", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<PlannerResponse>, t: Throwable) {
+                Log.e("Planner", "네트워크 오류: ${t.message}", t)
+                Toast.makeText(requireContext(), "네트워크 오류 발생", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
 
