@@ -29,16 +29,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <ImageView
-            android:id="@+id/ic_addprofile"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/ic_addprofile"
-            android:layout_gravity="end|bottom"
-            android:layout_marginEnd="4dp"
-            android:layout_marginBottom="4dp"
-            android:elevation="8dp"
-            />
 
         <!-- 원형 프로필 이미지 CardView -->
         <androidx.cardview.widget.CardView
@@ -205,7 +195,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/btn_rounddark"
-            android:text="@string/planner_set"
+            android:text="@string/editplaney"
             android:textColor="@color/white"
             android:fontFamily="@font/pretendard_medium"
             android:textSize="14sp"

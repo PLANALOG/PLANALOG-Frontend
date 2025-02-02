@@ -166,7 +166,7 @@ class ProfileFragment : Fragment() {
         // 프로필 편집 버튼 클릭 이벤트 설정
         binding.editProfileButton.setOnClickListener {
             val intent = Intent(requireContext(), EditprofileActivity::class.java)
-            startActivity(intent)
+            editProfileLauncher.launch(intent)
         }
 
         // 플래너 설정 버튼 클릭 이벤트 설정
@@ -176,6 +176,13 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    private val editProfileLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            fetchUserProfile()
+        }
+    }
     private val editCharacterLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
