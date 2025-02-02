@@ -5,7 +5,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 
-data class TokenRequestBody(val accessToken: String?)
+data class TokenRequestBody(val accessToken: String?, val refreshToken: String?)
 
 data class RefreshTokenRequest(val refreshToken: String?)
 
