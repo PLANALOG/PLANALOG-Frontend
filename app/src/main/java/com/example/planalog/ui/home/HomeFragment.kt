@@ -16,6 +16,9 @@ import com.example.planalog.databinding.FragmentHomeBinding
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.planner.PlannerResponse
 import com.example.planalog.network.planner.PlannerService
+import com.example.planalog.network.task.AddTaskResponse
+import com.example.planalog.network.task.TaskService
+import com.example.planalog.network.task.addTaskRequest
 //import com.example.planalog.repository.TaskRepository
 import com.example.planalog.ui.comment.CommentFragment
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarAdapter
@@ -47,6 +50,7 @@ class HomeFragment : Fragment() {
     //private lateinit var taskRepository: TaskRepository
 
     private lateinit var plannerService: PlannerService
+    private lateinit var taskService: TaskService
 
     private val calendarDays = mutableListOf<CalendarDay>()
 
@@ -168,12 +172,7 @@ class HomeFragment : Fragment() {
         plannerService.getPlanners(userId, date, month).enqueue(object : Callback<PlannerResponse> {
             override fun onResponse(call: Call<PlannerResponse>, response: Response<PlannerResponse>) {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                    val planners = response.body()?.success ?: emptyList()
-
-                    // 플래너 데이터를 UI에 반영
-                    planners.forEach { planner ->
-                        Log.d("Planner", "Date: ${planner.date}, Completed: ${planner.isCompleted}")
-                    }
+                    val planners = response.body()?.success
 
                     Toast.makeText(requireContext(), "플래너 데이터 조회 성공", Toast.LENGTH_SHORT).show()
                     Log.d("Planner", "Completed: $planners")
@@ -358,6 +357,9 @@ class HomeFragment : Fragment() {
 
     // 텍스트 전송 함수
     private fun sendTaskToApi() {
+
+        taskService = RetrofitClient.create(TaskService::class.java, requireContext())
+
         val taskTitle = checklist.joinToString(", ") { it.task }  // 체크리스트 항목들을 하나의 텍스트로 결합
         val currentDate = getCurrentDate()  // 현재 날짜 가져오기
         val allChecked = checklist.all { it.isChecked == false }
@@ -367,11 +369,30 @@ class HomeFragment : Fragment() {
         // 로그로 출력해서 API에 전달되는 데이터 확인
         Log.d("API SendTask", "Task Title: $taskTitle")
         Log.d("API SendTask", "Current Date: $currentDate")
-//        taskRepository.createTask(taskTitle, currentDate)  // TaskRepository에 task 전달
 
         updateTaskCompletion(requireContext(), currentDate, allChecked)
 
         Log.d("API SendTask", "Task Title: $taskTitle, Date: $currentDate")
+
+        val addTaskRequest = addTaskRequest(taskTitle, currentDate)
+
+        taskService.addTask(addTaskRequest).enqueue(object : Callback<AddTaskResponse> {
+            override fun onResponse(call: Call<AddTaskResponse>, response: Response<AddTaskResponse>) {
+                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+                    val task = response.body()?.success
+                    Log.d("TaskAPI", "할일 생성 성공: $task")
+                    Toast.makeText(requireContext(), "할일이 생성되었습니다.", Toast.LENGTH_SHORT).show()
+                } else {
+                    Log.e("TaskAPI", "할일 생성 실패: 응답 코드=${response.code()}, 메시지=${response.message()}")
+                    Toast.makeText(requireContext(), "할일 생성 실패: ${response.code()}", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<AddTaskResponse>, t: Throwable) {
+                Log.e("TaskAPI", "네트워크 오류 발생: ${t.message}", t)
+                Toast.makeText(requireContext(), "네트워크 오류 발생: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     private fun checkAllItemsChecked() {
