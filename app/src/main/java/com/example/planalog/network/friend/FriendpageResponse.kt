@@ -1,4 +1,4 @@
-package com.example.planalog.network.user
+package com.example.planalog.network.friend
 
 import com.example.planalog.network.user.response.MypageMoment
 

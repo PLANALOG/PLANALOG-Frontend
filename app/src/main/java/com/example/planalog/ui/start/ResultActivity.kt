@@ -46,7 +46,6 @@ class ResultActivity : AppCompatActivity() {
             binding.userTypeTextView.text = "${nickname}님은\n카테고리형 사용자입니다."
         }
 
-        updateUserInfo(nickname, type = result)
 
         binding.startButton.setOnClickListener {
             val type = if (result == "memo_user") "memo_user" else "category_user"
@@ -55,6 +54,7 @@ class ResultActivity : AppCompatActivity() {
             val intent = Intent(this@ResultActivity, MainActivity::class.java)
             intent.putExtra("nickname", nickname)
             intent.putExtra("type", type)
+            updateUserInfo(nickname, type = result)
             startActivity(intent)
             finish()
         }

@@ -1,4 +1,4 @@
-package com.example.planalog.network.user
+package com.example.planalog.network.friend
 
 import retrofit2.Call
 import retrofit2.http.GET

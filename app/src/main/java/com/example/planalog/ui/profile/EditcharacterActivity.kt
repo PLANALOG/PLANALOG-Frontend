@@ -1,14 +1,17 @@
 package com.example.planalog.ui.profile
 
+import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityEditcharacterBinding
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.user.UserService
 import com.example.planalog.network.user.response.UserProfileImgResponse
+import com.example.planalog.network.user.response.UserResponse
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -33,6 +36,7 @@ class EditcharacterActivity : AppCompatActivity() {
         // Retrofit 서비스 초기화
         userService = RetrofitClient.create(UserService::class.java, this)
         Log.d("EditcharacterActivity", "Retrofit ProfileimageService initialized.")
+        fetchUserProfile()
 
         // 캐릭터 이미지 배열
         val characterImages = arrayOf(
@@ -73,6 +77,7 @@ class EditcharacterActivity : AppCompatActivity() {
         // 뒤로가기 버튼 클릭 리스너
         binding.backButton.setOnClickListener {
             Log.d("EditcharacterActivity", "Back button clicked, finishing activity.")
+            setResult(Activity.RESULT_OK)  // 결과 값을 설정하여 ProfileFragment에서 감지할 수 있도록 설정
             finish()
         }
     }
@@ -102,4 +107,38 @@ class EditcharacterActivity : AppCompatActivity() {
             }
         })
     }
+
+    private fun fetchUserProfile() {
+        userService.getUserInfo().enqueue(object : Callback<UserResponse> {
+            override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
+                if (response.isSuccessful) {
+                    val userInfo = response.body()?.success
+
+                    if (userInfo != null) {
+                        val profileImageUrl = userInfo.profileImage
+
+                        // 프로필 이미지가 null이 아니고 비어 있지 않을 경우 이미지 로드
+                        if (!profileImageUrl.isNullOrEmpty()) {
+                            Glide.with(this@EditcharacterActivity)
+                                .load(profileImageUrl)
+                                .placeholder(R.drawable.ic_profile)  // 로딩 중 기본 이미지
+                                .error(R.drawable.ic_profile)  // 로딩 실패 시 기본 이미지
+                                .into(binding.profileImage)
+                        } else {
+                            Toast.makeText(this@EditcharacterActivity, "프로필 이미지가 설정되어 있지 않습니다.", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(this@EditcharacterActivity, "사용자 정보를 가져오지 못했습니다.", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this@EditcharacterActivity, "응답 오류: ${response.message()}", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<UserResponse>, t: Throwable) {
+                Toast.makeText(this@EditcharacterActivity, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
 }
