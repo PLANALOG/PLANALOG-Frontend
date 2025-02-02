@@ -3,11 +3,14 @@ package com.example.planalog.ui.profile
 import android.Manifest
 import android.app.Activity
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,6 +24,8 @@ import com.example.planalog.databinding.ActivityEditprofileBinding
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.SocialLogin.LoginService
 import com.example.planalog.network.SocialLogin.LogoutResponse
+import com.example.planalog.network.startset.IdcheckService
+import com.example.planalog.network.startset.NicknameCheckResponse
 import com.example.planalog.network.user.UserService
 import com.example.planalog.network.user.request.UserUpdateRequest
 import com.example.planalog.network.user.response.UserProfileImgResponse
@@ -38,15 +43,19 @@ import java.io.File
 class EditprofileActivity : AppCompatActivity() {
     private lateinit var binding: ActivityEditprofileBinding
     private lateinit var userService: UserService
+    private lateinit var idcheckService: IdcheckService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate: Activity started")
         binding = ActivityEditprofileBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         userService = RetrofitClient.create(UserService::class.java, this)
+        idcheckService = RetrofitClient.create(IdcheckService::class.java, this)
 
         loadUserProfile()
+
 
         // 버튼 클릭 리스너 설정
         binding.backButton.setOnClickListener {
@@ -67,6 +76,8 @@ class EditprofileActivity : AppCompatActivity() {
                 requestGalleryPermission()
             }
         }
+        binding.confirmButton.isEnabled = false
+
 
         binding.confirmButton.setOnClickListener {
             val nickname = binding.nameEditText.text.toString()
@@ -74,6 +85,20 @@ class EditprofileActivity : AppCompatActivity() {
             val link = binding.linkEditText.text.toString()
             updateUserProfile(nickname, introduction, link)
         }
+
+        binding.nameEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val nickname = s.toString().trim()
+                if (nickname.isNotEmpty()) {
+                    checkNicknameAvailability(nickname)
+                } else {
+                    binding.confirmButton.isEnabled = false
+                }
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
 
         binding.logout.setOnClickListener {
             Log.d(TAG, "Logout button clicked")
@@ -128,10 +153,10 @@ class EditprofileActivity : AppCompatActivity() {
                 response: Response<UserUpdateResponse>
             ) {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                    val resultName = response.body()?.success?.name
+                    val resultName = response.body()?.success?.nickname
                     Log.d(TAG, "업데이트 서버 응답 성공: ${response.body()}")
                     Toast.makeText(this@EditprofileActivity, "프로필이 업데이트되었습니다. 바뀐 닉네임: $resultName", Toast.LENGTH_SHORT).show()
-
+                    setResult(Activity.RESULT_OK)
                     finish()
 
                 } else {
@@ -289,6 +314,65 @@ class EditprofileActivity : AppCompatActivity() {
             Toast.makeText(this, "갤러리 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
         }
     }
+
+
+    private fun checkNicknameAvailability(nickname: String) {
+        Log.d(TAG, "checkNicknameAvailability: Checking availability for nickname=$nickname")
+
+        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val receivedAccessToken = sharedPreferences.getString("received_access_token", null)
+        val idCheckService = RetrofitClient.create(IdcheckService::class.java, this)
+
+        idCheckService.idcheck(nickname).enqueue(object : Callback<NicknameCheckResponse> {
+            override fun onResponse(
+                call: Call<NicknameCheckResponse>,
+                response: Response<NicknameCheckResponse>
+            ) {
+                Log.d(TAG, "checkNicknameAvailability: Response received")
+                if (response.isSuccessful) {
+                    response.body()?.let { body ->
+                        Log.d(
+                            TAG,
+                            "서버 응답 성공. 닉네임: $nickname, 응답: ${body.resultType}"
+                        )
+
+                        when (body.resultType) {
+                            "SUCCESS" -> {
+                                Log.d(
+                                    TAG,
+                                    "닉네임 중복 여부: ${body.success?.isDuplicated}"
+                                )
+                                handleSuccessResponse(body.success?.isDuplicated ?: true)
+                            }
+
+                            else -> {
+                                Log.e(TAG, "오류 발생: ${body.error ?: "알 수 없는 오류"}")
+                                showErrorMessage(body.error ?: "알 수 없는 오류가 발생했습니다.")
+                            }
+                        }
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<NicknameCheckResponse>, t: Throwable) {
+                Log.e(TAG, "checkNicknameAvailability: Network error - ${t.localizedMessage}")
+                showErrorMessage("네트워크 오류: ${t.localizedMessage}")
+            }
+        })
+    }
+
+    private fun handleSuccessResponse(isDuplicated: Boolean) {
+        binding.confirmButton.isEnabled = !isDuplicated
+        if (isDuplicated) {
+            Toast.makeText(this, "닉네임이 중복됩니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showErrorMessage(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+
 
     companion object {
         private const val galleryRequestCode = 100
