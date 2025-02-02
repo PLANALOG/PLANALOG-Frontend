@@ -78,7 +78,7 @@ class LoginActivity : AppCompatActivity() {
 
         Toast.makeText(this, "로그인 성공", Toast.LENGTH_SHORT).show()
         saveAccessToken(accessToken)
-        postAccessTokenToServer(accessToken)
+        postAccessTokenToServer(accessToken, refreshToken)
     }
 
     // 네이버 로그인 실패 처리
@@ -95,7 +95,7 @@ class LoginActivity : AppCompatActivity() {
         Log.d("저장한 토큰", "저장된 토큰: $token")
     }
 
-    private fun postAccessTokenToServer(accessToken: String?) {
+    private fun postAccessTokenToServer(accessToken: String?, refreshToken: String?) {
         if (accessToken.isNullOrEmpty()) {
             Toast.makeText(this, "Access Token이 없습니다.", Toast.LENGTH_SHORT).show()
             Log.d("Access 토큰 없음", "$accessToken")
@@ -103,7 +103,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         val tokenService = RetrofitClient.create(LoginService::class.java, this)
-        val requestBody = TokenRequestBody(accessToken)
+        val requestBody = TokenRequestBody(accessToken, refreshToken)
         Log.d("서버에 보낼 토큰", "서버에 보낼 토큰: $accessToken")
 
         tokenService.sendAccessToken(requestBody).enqueue(object : Callback<TokenResponse> {
