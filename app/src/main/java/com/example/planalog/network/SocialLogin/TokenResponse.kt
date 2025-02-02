@@ -1,6 +1,6 @@
 package com.example.planalog.network.SocialLogin
 
-data class NaverTokenResponse(
+data class TokenResponse(
     val resultType: String,
     val error: String?,
     val success: accessTokenSuccessResponse?
