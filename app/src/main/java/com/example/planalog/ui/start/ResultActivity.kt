@@ -77,6 +77,16 @@ class ResultActivity : AppCompatActivity() {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
                     Log.d("ResultActivity", "업데이트 서버 응답 성공: ${response.body()}")
                     Toast.makeText(this@ResultActivity, "프로필이 업데이트되었습니다.", Toast.LENGTH_SHORT).show()
+
+                    // 유저 정보를 가져와 SharedPreferences에 저장
+                    val userId = response.body()?.success?.userId
+                    if (userId != null) {
+                        val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
+                        val editor = sharedPreferences.edit()
+                        editor.putString("user_id", userId)
+                        editor.apply()  // 비동기로 저장
+                        Log.d("ResultActivity", "저장된 user_id: $userId")
+                    }
                 } else {
                     Log.e("ResultActivity", "업데이트 실패: ${response.body()?.error}")
                     Toast.makeText(this@ResultActivity, "업데이트 실패: ${response.body()?.error}", Toast.LENGTH_SHORT).show()
