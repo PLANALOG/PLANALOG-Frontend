@@ -109,6 +109,7 @@ class QnaActivity : AppCompatActivity() {
         }
 
         Log.d("QnaActivity", "ResultActivity로 전달할 닉네임: $nickname")
+        Log.d("QnaActivity", "ResultActivity로 전달할 type: $result")
         startActivity(intent)
         finish()
     }
