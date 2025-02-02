@@ -7,8 +7,10 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityEditcharacterBinding
 import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.user.ProfileimageService
+import com.example.planalog.network.user.UserService
+import com.example.planalog.network.user.response.UserProfileImgResponse
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.Callback
@@ -17,7 +19,7 @@ import retrofit2.Response
 class EditcharacterActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityEditcharacterBinding
-    private lateinit var profileimageService: ProfileimageService
+    private lateinit var userService: UserService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +31,7 @@ class EditcharacterActivity : AppCompatActivity() {
         Log.d("EditcharacterActivity", "Activity created and binding initialized.")
 
         // Retrofit 서비스 초기화
-        profileimageService = RetrofitClient.create(ProfileimageService::class.java, this)
+        userService = RetrofitClient.create(UserService::class.java, this)
         Log.d("EditcharacterActivity", "Retrofit ProfileimageService initialized.")
 
         // 캐릭터 이미지 배열
@@ -77,11 +79,14 @@ class EditcharacterActivity : AppCompatActivity() {
 
     private fun sendBasicImageToServer(basicImage: Int) {
         Log.d("EditcharacterActivity", "Sending basicImage value to server: $basicImage")
+        // 빈 이미지로 설정 (null 처리)
+        val imagePart: MultipartBody.Part? = null
 
-        val requestBody = RequestBody.create("application/json".toMediaTypeOrNull(), "{}") // 빈 요청 본문
+        // 선택한 기본 이미지 번호를 요청 바디에 추가
+        val basicImageBody = RequestBody.create("text/plain".toMediaTypeOrNull(), basicImage.toString())
 
-        profileimageService.uploadProfileImage(requestBody, basicImage).enqueue(object : Callback<Void> {
-            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+        userService.uploadProfileImage(imagePart, basicImageBody).enqueue(object : Callback<UserProfileImgResponse> {
+            override fun onResponse(call: Call<UserProfileImgResponse>, response: Response<UserProfileImgResponse>) {
                 if (response.isSuccessful) {
                     Log.d("EditcharacterActivity", "Profile image updated successfully. Response code: ${response.code()}")
                     Toast.makeText(this@EditcharacterActivity, "프로필 이미지가 업데이트되었습니다.", Toast.LENGTH_SHORT).show()
@@ -91,7 +96,7 @@ class EditcharacterActivity : AppCompatActivity() {
                 }
             }
 
-            override fun onFailure(call: Call<Void>, t: Throwable) {
+            override fun onFailure(call: Call<UserProfileImgResponse>, t: Throwable) {
                 Log.e("EditcharacterActivity", "Network error while updating profile image: ${t.message}", t)
                 Toast.makeText(this@EditcharacterActivity, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
             }

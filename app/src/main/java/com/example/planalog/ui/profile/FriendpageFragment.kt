@@ -1,6 +1,5 @@
 package com.example.planalog.ui.profile
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -13,7 +12,7 @@ import com.example.planalog.databinding.FragmentFriendpageBinding
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.user.FriendpageService
 import com.example.planalog.network.user.FriendpageResponse
-import com.example.planalog.network.user.MypageMoment
+import com.example.planalog.network.user.response.MypageMoment
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response

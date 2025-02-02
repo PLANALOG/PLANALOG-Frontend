@@ -297,7 +297,7 @@ class HomeFragment : Fragment() {
 
     private fun updateLayoutBasedOnResult(type: String) {
         when (type) {
-            "memo" -> {
+            "memo_user" -> {
                 binding.homePlannerMemoV.visibility = View.VISIBLE
                 binding.homePlannerCtgyV.visibility = View.GONE
             }

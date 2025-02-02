@@ -4,7 +4,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.planalog.databinding.ItemMypageMomentBinding
-import com.example.planalog.network.user.MypageMoment
+import com.example.planalog.network.user.response.MypageMoment
 
 class FriendpageMomentAdapter(private var moments: List<MypageMoment>) :
     RecyclerView.Adapter<FriendpageMomentAdapter.MomentViewHolder>() {

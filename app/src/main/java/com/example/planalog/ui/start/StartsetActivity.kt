@@ -12,13 +12,12 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
-import com.example.planalog.MainActivity
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityStartsetBinding
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.startset.IdcheckService
 import com.example.planalog.network.startset.NicknameCheckResponse
-import com.example.planalog.network.user.UserResponse
+import com.example.planalog.network.user.response.UserResponse
 import com.example.planalog.network.user.UserService
 import com.google.gson.Gson
 import retrofit2.Call
@@ -37,6 +36,14 @@ class StartsetActivity : AppCompatActivity() {
 
         val nickname = intent.getStringExtra("nickname") ?: ""
         Log.d("StartsetActivity", "Received nickname: $nickname")
+
+        val accessToken = intent.getStringExtra("access_token") ?: ""
+        Log.d("StartsetActivity", "Received AccessToken: $accessToken")
+
+
+        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val receivedAccessToken = sharedPreferences.getString("new_access_token_from_refresh", null)
+        Log.d("StartsetActivity", "Received AccessToken: $receivedAccessToken")
 
         setupCombinedTextView()
 
@@ -164,7 +171,7 @@ class StartsetActivity : AppCompatActivity() {
                     val userInfo = response.body()?.success
                     if (userInfo != null) {
                         // JSON 형식으로 UserInfo 로그 출력
-                        val userInfoJson = Gson().toJson(userInfo)
+                        userInfoJson = Gson().toJson(userInfo)
                         Toast.makeText(this@StartsetActivity, "사용자 정보 확인", Toast.LENGTH_SHORT).show()
                         Log.d("User Info", "UserInfo JSON: $userInfoJson")
                     }

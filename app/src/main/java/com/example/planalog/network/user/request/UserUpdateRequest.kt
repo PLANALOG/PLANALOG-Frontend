@@ -1,4 +1,4 @@
-package com.example.planalog.network.user
+package com.example.planalog.network.user.request
 
 data class UserUpdateRequest(
     val nickname: String,

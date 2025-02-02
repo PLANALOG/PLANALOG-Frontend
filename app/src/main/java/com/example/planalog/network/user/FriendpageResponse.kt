@@ -1,5 +1,7 @@
 package com.example.planalog.network.user
 
+import com.example.planalog.network.user.response.MypageMoment
+
 data class FriendpageResponse(
     val resultType: String,
     val error: String?,
