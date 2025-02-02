@@ -17,14 +17,23 @@ class QnaActivity : AppCompatActivity() {
     private var option1Count = 0
     private var option2Count = 0
     private var currentQuestion = 1
-    private var nickname: String? = null  // null 허용 타입으로 변경
+
+    private var nickname: String? = null
+    private var result: String? = null
+    private var userInfoJson: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityQnaBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        nickname = intent.getStringExtra("nickname") ?: ""
         Log.d("QnaActivity", "받은 닉네임: $nickname")
+
+        userInfoJson = intent.getStringExtra("user_info") ?: ""
+        userInfoJson?.let {
+            Log.d("QnaActivity", "Received user info: $it")
+        }
 
         setupCombinedTextView()
         // 초기 질문 설정
@@ -91,11 +100,12 @@ class QnaActivity : AppCompatActivity() {
     }
 
     private fun navigateToResult() {
-        val nickname = intent.getStringExtra("nickname") ?: "사용자"
-        val result = if (option1Count >= 2) "memo" else "category"
+        nickname = intent.getStringExtra("nickname") ?: "사용자"
+        result = if (option1Count >= 2) "memo_user" else "category_user"
         val intent = Intent(this, ResultActivity::class.java).apply {
             putExtra("result", result)
             putExtra("nickname", nickname ?: "사용자")  // null 체크
+            putExtra("user_info", userInfoJson)
         }
 
         Log.d("QnaActivity", "ResultActivity로 전달할 닉네임: $nickname")

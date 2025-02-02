@@ -65,8 +65,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.btnNaverLogin.setOnClickListener {
-            //Toast.makeText(this, "Naver Login Clicked", Toast.LENGTH_SHORT).show()
-            // Add your Naver login logic here
+
 //            NaverIdLoginSDK.authenticate(this, launcher)
             refreshAccessToken(temporaryRefreshToken)
         }
@@ -173,6 +172,11 @@ class LoginActivity : AppCompatActivity() {
 
                             Log.d("TokenRefresh", "Access token 재발급 성공: $newAccessToken")
                             newRefreshToken?.let { Log.d("TokenRefresh", "Refresh token 재발급: $it") }
+
+                            val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                            val editor = sharedPreferences.edit()
+                            editor.putString("new_access_token_from_refresh", newAccessToken)
+                            editor.apply()
 
                             // 새 액세스 토큰을 저장하고 다음 액티비티로 이동
                             moveToNextActivity(newAccessToken)

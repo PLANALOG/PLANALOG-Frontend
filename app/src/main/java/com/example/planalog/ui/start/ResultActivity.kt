@@ -1,6 +1,5 @@
 package com.example.planalog.ui.start
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.SpannableStringBuilder
@@ -13,11 +12,9 @@ import com.example.planalog.MainActivity
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityResultBinding
 import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.user.UserResponse
 import com.example.planalog.network.user.UserService
-import com.example.planalog.network.user.UserUpdateRequest
-import com.example.planalog.network.user.UserUpdateResponse
-import com.google.gson.Gson
+import com.example.planalog.network.user.request.UserUpdateRequest
+import com.example.planalog.network.user.response.UserUpdateResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -35,10 +32,13 @@ class ResultActivity : AppCompatActivity() {
         val nickname = intent.getStringExtra("nickname") ?: "사용자"
         Log.d("ResultActivity", "받은 닉네임: $nickname")
 
-        val result = intent.getStringExtra("result") ?: "category"
+        val result = intent.getStringExtra("result") ?: "category_user"
         Log.d("ResultActivity", "받은 타입: $result")
 
-        if (result == "memo") {
+        val userInfo = intent.getStringExtra("user_info") ?: ""
+        Log.d("ResultActivity", "받은 유저 정보: $userInfo")
+
+        if (result == "memo_user") {
             binding.iconImageView.setImageResource(R.drawable.ic_memotype)
             binding.userTypeTextView.text = "${nickname}님은\n메모형 사용자입니다."
         } else {
@@ -49,7 +49,7 @@ class ResultActivity : AppCompatActivity() {
         updateUserInfo(nickname, type = result)
 
         binding.startButton.setOnClickListener {
-            val type = if (result == "memo") "memo" else "category"
+            val type = if (result == "memo_user") "memo_user" else "category_user"
 
             // 일단 로그인 여부 상관없이 강제로 메인으로 넘어가게 설정
             val intent = Intent(this@ResultActivity, MainActivity::class.java)
@@ -65,7 +65,7 @@ class ResultActivity : AppCompatActivity() {
 
         val userService = RetrofitClient.create(UserService::class.java, this)
 
-        val request = UserUpdateRequest(nickname = nickname, type = type)
+        val request = UserUpdateRequest(nickname, type)
 
         Log.d("ResultActivity", "서버에 전송할 데이터: $request")
 
@@ -75,7 +75,7 @@ class ResultActivity : AppCompatActivity() {
                 response: Response<UserUpdateResponse>
             ) {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                    Log.d("ResultActivity", "서버 응답 성공: ${response.body()}")
+                    Log.d("ResultActivity", "업데이트 서버 응답 성공: ${response.body()}")
                     Toast.makeText(this@ResultActivity, "프로필이 업데이트되었습니다.", Toast.LENGTH_SHORT).show()
                 } else {
                     Log.e("ResultActivity", "업데이트 실패: ${response.body()?.error}")

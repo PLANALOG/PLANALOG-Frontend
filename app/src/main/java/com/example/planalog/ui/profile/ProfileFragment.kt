@@ -20,13 +20,14 @@ import com.bumptech.glide.Glide
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentProfileBinding
 import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.user.MypageMoment
-import com.example.planalog.network.user.MypageResponse
+import com.example.planalog.network.user.response.MypageMoment
+import com.example.planalog.network.user.response.MypageResponse
 import com.example.planalog.network.user.MypageService
-import com.example.planalog.network.user.UserResponse
+import com.example.planalog.network.user.response.UserResponse
 import com.example.planalog.network.user.UserService
 import android.Manifest
-import com.example.planalog.network.user.ProfileimageService
+import com.example.planalog.network.user.response.UserInfo
+import com.example.planalog.network.user.response.UserProfileImgResponse
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -79,6 +80,7 @@ class ProfileFragment : Fragment() {
                     val userInfo = response.body()?.success
                     if (userInfo != null) {
                         updateUI(userInfo)  // UI에 유저 정보 표시
+                        Log.d("ProfileFragment", "유저 정보: $userInfo")
                     } else {
                         Toast.makeText(requireContext(), "유저 정보를 가져오지 못했습니다.", Toast.LENGTH_SHORT)
                             .show()
@@ -146,7 +148,7 @@ class ProfileFragment : Fragment() {
         mypageMomentAdapter?.updateData(moments)
     }
 
-    private fun updateUI(userInfo: com.example.planalog.network.user.UserInfo) {
+    private fun updateUI(userInfo: UserInfo) {
         if (!isAdded) {
             // Fragment가 Activity에 붙어 있지 않으면 UI 업데이트를 중단
             return
@@ -234,31 +236,40 @@ class ProfileFragment : Fragment() {
     }
 
     private fun updateProfileImage(imageUri: Uri) {
+
         val imageFile = getFileFromUri(imageUri)
+
         if (imageFile != null) {
             // 이미지 데이터를 바이너리로 변환하여 RequestBody 생성
-            val requestBody = RequestBody.create("application/octet-stream".toMediaTypeOrNull(), imageFile)
-
-            val profileImageService = RetrofitClient.create(ProfileimageService::class.java, requireContext())
+            val requestFile = RequestBody.create("image/*".toMediaTypeOrNull(), imageFile)
+            val imagePart = MultipartBody.Part.createFormData("image", imageFile.name, requestFile)
 
             Log.d("ProfileImageUpload", "업로드 시작 - 이미지 파일 경로: ${imageFile.path}")
 
-            // 기본 이미지를 null로 설정하여 서버에 전송하지 않음
-            val basicImageValue: Int? = null
+            // basicImage는 빈 값으로 설정
+            val basicImageBody = RequestBody.create("text/plain".toMediaTypeOrNull(), "")
 
-            profileImageService.uploadProfileImage(requestBody, basicImageValue)
-                .enqueue(object : Callback<Void> {
-                    override fun onResponse(call: Call<Void>, response: Response<Void>) {
+            userService.uploadProfileImage(imagePart, basicImageBody).enqueue(object : Callback<UserProfileImgResponse> {
+                    override fun onResponse(call: Call<UserProfileImgResponse>, response: Response<UserProfileImgResponse>) {
                         if (response.isSuccessful) {
                             Log.d("ProfileImageUpload", "업로드 성공 - 상태 코드: ${response.code()}")
                             Toast.makeText(requireContext(), "프로필 이미지가 업데이트되었습니다.", Toast.LENGTH_SHORT).show()
+
+                            val savedUrl = response.body()?.success?.savedUrl
+                            // UI에 새 프로필 이미지 반영
+                            savedUrl?.let {
+                                Glide.with(requireContext())
+                                    .load(it)
+                                    .placeholder(R.drawable.ic_myprofile)
+                                    .into(binding.profileImage)
+                            }
                         } else {
                             Log.e("ProfileImageUpload", "업로드 실패 - 상태 코드: ${response.code()}, 메시지: ${response.message()}")
                             Toast.makeText(requireContext(), "서버 오류: ${response.message()}", Toast.LENGTH_SHORT).show()
                         }
                     }
 
-                    override fun onFailure(call: Call<Void>, t: Throwable) {
+                    override fun onFailure(call: Call<UserProfileImgResponse>, t: Throwable) {
                         Log.e("ProfileImageUpload", "업로드 실패 - 네트워크 오류: ${t.message}", t)
                         Toast.makeText(requireContext(), "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
                     }
