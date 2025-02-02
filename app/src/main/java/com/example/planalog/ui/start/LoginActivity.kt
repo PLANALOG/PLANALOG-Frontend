@@ -119,19 +119,15 @@ class LoginActivity : AppCompatActivity() {
                         val newRefreshToken = response.body()?.success?.refreshToken
 
                         //토큰 저장
-                        newAccessToken?.let { saveAccessToken(it) }
-                        newRefreshToken?.let { saveRefreshToken(it) }
+//                        newAccessToken?.let { saveAccessToken(it) }
+//                        newRefreshToken?.let { saveRefreshToken(it) }
 
-//                        saveReceivedAccessToken(newAccessToken)
+
+                        saveReceivedAccessToken(newAccessToken)
 
                         Log.d("전송 토큰", "전송 네이버 토큰: $accessToken")
                         Log.d("응답 토큰", "응답 토큰: $newAccessToken")
                         Log.d("응답 토큰", "응답 토큰: $newRefreshToken")
-
-//                        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-//                        val refreshToken = sharedPreferences.getString("naver_refresh_token", null)
-//                        refreshAccessToken(refreshToken)
-
                         moveToNextActivity(newAccessToken)
 
                     } else {
@@ -152,12 +148,12 @@ class LoginActivity : AppCompatActivity() {
     }
 
     // 서버에서 자체적으로 받아온 토큰 저장 함수
-//    private fun saveReceivedAccessToken(receivedAccessToken: String?) {
-//        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-//        val editor = sharedPreferences.edit()
-//        editor.putString("received_access_token", receivedAccessToken)
-//        editor.apply()
-//    }
+    private fun saveReceivedAccessToken(receivedAccessToken: String?) {
+        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString("received_access_token", receivedAccessToken)
+        editor.apply()
+    }
 
 
 
