@@ -1,4 +1,4 @@
-package com.example.planalog.ui.post
+package com.example.planalog.network.post
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
