@@ -84,6 +84,7 @@ class ResultActivity : AppCompatActivity() {
                         val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
                         val editor = sharedPreferences.edit()
                         editor.putString("user_id", userId)
+                        editor.putString("type", type)
                         editor.apply()  // 비동기로 저장
                         Log.d("ResultActivity", "저장된 user_id: $userId")
                     }

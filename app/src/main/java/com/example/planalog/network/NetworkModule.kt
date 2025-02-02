@@ -37,18 +37,25 @@ object RetrofitClient {
                 if (response.code == 401) {
                     response.close() // 기존 응답 종료
 
-                    val refreshToken = sharedPreferences.getString("naver_refresh_token", null)
+                    val refreshToken = sharedPreferences.getString("received_refresh_token", null)
                     if (!refreshToken.isNullOrEmpty()) {
                         // Refresh 토큰으로 새 Access 토큰 요청
-                        refreshAccessToken(context, refreshToken)
+                        refreshAccessToken(context, refreshToken, object : TokenRefreshCallback {
+                            override fun onSuccess(newAccessToken: String?) {
+                                if (!newAccessToken.isNullOrEmpty()) {
+                                    // 새 토큰으로 원래 요청 다시 시도
+                                    val newRequest = chain.request().newBuilder()
+                                        .addHeader("Authorization", "Bearer $newAccessToken")
+                                        .build()
+                                    chain.proceed(newRequest)  // 새 토큰으로 요청 진행
+                                }
+                            }
 
-                        // 새 토큰으로 원래 요청 다시 시도
-                        accessToken = sharedPreferences.getString("received_access_token", null)
-                        val newRequest = chain.request().newBuilder()
-                            .addHeader("Authorization", "Bearer $accessToken")
-                            .build()
-
-                        return chain.proceed(newRequest)
+                            override fun onFailure() {
+                                // 토큰 갱신 실패 시 로그아웃 처리
+                                handleExpiredTokens(context)
+                            }
+                        })
                     } else {
                         // Refresh 토큰도 없으면 다시 로그인
                         handleExpiredTokens(context)
@@ -59,7 +66,7 @@ object RetrofitClient {
         }
 
     // 리프레시토큰 받는 함수
-    private fun refreshAccessToken(context: Context, refreshToken: String?) {
+    fun refreshAccessToken(context: Context, refreshToken: String?, callback: TokenRefreshCallback) {
 
         val apiService = create(LoginService::class.java, context)
         val requestBody = RefreshTokenRequest(refreshToken)
@@ -77,16 +84,19 @@ object RetrofitClient {
 
                             // 새 토큰 저장
                             newAccessToken?.let { editor.putString("received_access_token", it) }
-                            newRefreshToken?.let { editor.putString("naver_refresh_token", it) }
+                            newRefreshToken?.let { editor.putString("received_refresh_token", it) }
                             editor.apply()
 
                             Log.d("TokenRefresh", "Access 토큰 재발급 성공: $newAccessToken")
+                            callback.onSuccess(newAccessToken)
                         } else {
                             Log.e("TokenRefresh", "오류 발생: ${responseBody.error}")
+                            callback.onFailure()
                         }
                     }
                 } else {
                     Log.e("TokenRefresh", "응답 실패: ${response.code()}")
+                    callback.onFailure()  // 실패 콜백 호출
                 }
             }
 
