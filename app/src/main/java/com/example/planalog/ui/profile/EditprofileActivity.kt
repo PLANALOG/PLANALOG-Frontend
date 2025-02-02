@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
+import com.example.planalog.MainActivity
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityEditprofileBinding
 import com.example.planalog.network.RetrofitClient
@@ -113,8 +114,11 @@ class EditprofileActivity : AppCompatActivity() {
 
         val userService = RetrofitClient.create(UserService::class.java, this)
 
+        val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
+        val type = sharedPreferences.getString("type", "")
+
         // 요청 객체 생성
-        val request = UserUpdateRequest(nickname, "USER", introduction, link)
+        val request = UserUpdateRequest(nickname, type?: "" , introduction, link)
 
         Log.d(TAG, "서버에 전송할 데이터: $request")
 
@@ -124,18 +128,12 @@ class EditprofileActivity : AppCompatActivity() {
                 response: Response<UserUpdateResponse>
             ) {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+                    val resultName = response.body()?.success?.name
                     Log.d(TAG, "업데이트 서버 응답 성공: ${response.body()}")
-                    Toast.makeText(this@EditprofileActivity, "프로필이 업데이트되었습니다.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@EditprofileActivity, "프로필이 업데이트되었습니다. 바뀐 닉네임: $resultName", Toast.LENGTH_SHORT).show()
 
-                    // 유저 정보를 가져와 SharedPreferences에 저장
-                    val userId = response.body()?.success?.userId
-                    if (userId != null) {
-                        val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
-                        val editor = sharedPreferences.edit()
-                        editor.putString("user_id", userId)
-                        editor.apply()  // 비동기로 저장
-                        Log.d(TAG, "저장된 user_id: $userId")
-                    }
+                    finish()
+
                 } else {
                     Log.e(TAG, "업데이트 실패: ${response.body()?.error}")
                     Toast.makeText(this@EditprofileActivity, "업데이트 실패: ${response.body()?.error}", Toast.LENGTH_SHORT).show()

@@ -47,6 +47,10 @@
             android:exported="true"
             android:theme="@style/SplashStatusTheme" />
 
+        <activity android:name=".ui.start.StartActivity"
+            android:exported="true"
+            android:theme="@style/SplashStatusTheme"/>
+
         <activity
             android:name=".ui.start.StartsetActivity"
             android:exported="true"

@@ -134,12 +134,13 @@ class LoginActivity : AppCompatActivity() {
                         val existingUserId = sharedPreferences.getString("user_id", null)
                         val existingType = sharedPreferences.getString("type", null)
 
-                        if (!existingUserId.isNullOrEmpty()) {
-                            Log.d("LoginActivity", "기존 유저 ID 발견: $existingUserId. 메인 액티비티로 바로 이동.")
-                            moveToMainActivity(existingUserId, existingType)
-                        } else {
-                            moveToNextActivity(newAccessToken)
-                        }
+//                        if (!existingUserId.isNullOrEmpty()) {
+//                            Log.d("LoginActivity", "기존 유저 ID 발견: $existingUserId. 메인 액티비티로 바로 이동.")
+//                            moveToMainActivity(existingUserId, existingType)
+//                        } else {
+//                            moveToNextActivity(newAccessToken)
+//                        }
+                        moveToNextActivity(newAccessToken)
 
                     } else {
                         val errorMessage = responseBody?.error ?: "Unknown error"
@@ -173,6 +174,7 @@ class LoginActivity : AppCompatActivity() {
         val editor = sharedPreferences.edit()
         editor.putString("received_access_token", receivedAccessToken)
         editor.putString("received_refresh_token", receivedRefreshToken)
+        Log.d("응답 토큰 저장됨", "token: Success")
         editor.apply()
     }
 
@@ -189,7 +191,7 @@ class LoginActivity : AppCompatActivity() {
 
     // 새 액세스 토큰을 저장하고 다음 액티비티로 이동
     private fun moveToNextActivity(accessToken: String?) {
-        val intent = Intent(this, StartsetActivity::class.java)
+        val intent = Intent(this, StartActivity::class.java)
         accessToken?.let {
             intent.putExtra("access_token", it)
         }
