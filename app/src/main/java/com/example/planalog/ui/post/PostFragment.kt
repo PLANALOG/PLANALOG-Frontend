@@ -4,15 +4,26 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentPostBinding
+import com.example.planalog.network.RetrofitClient
+import com.example.planalog.network.planner.PlannerResponse
+import com.example.planalog.network.post.PostApiService
+import com.example.planalog.network.post.PostContent
+import com.example.planalog.network.post.PostRequest
+import com.example.planalog.network.post.PostResponse
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class PostFragment : Fragment() {
     private lateinit var binding: FragmentPostBinding
@@ -112,6 +123,8 @@ class PostFragment : Fragment() {
     private fun uploadPost() {
         val title = binding.postTitle.text.toString().trim()
         val content = binding.postContent.text.toString().trim()
+        val status = "draft"
+        val plannerId = 1
 
         // 제목이나 내용이 비어 있으면 경고 메시지
         if (title.isBlank() || (content.isBlank() && slideList.isEmpty())) {
@@ -123,15 +136,27 @@ class PostFragment : Fragment() {
         val imageUris = ArrayList<Uri>()
         val slideContents = ArrayList<String>()
 
-        slideList.forEach {
-            imageUris.add(it.imageResId!!)
-            slideContents.add(it.postContent)
+        // momentContents를 담을 리스트 생성
+        val momentContents = mutableListOf<PostContent>()
+
+        // 슬라이드가 없으면 메인 텍스트를 하나의 페이지로 추가
+        if (slideList.isEmpty()) {
+            momentContents.add(
+                PostContent(
+                    sortOrder = 1,
+                    content = content,
+                    url = ""  // 이미지가 없는 경우 빈 URL
+                )
+            )
         }
 
-        // 슬라이드가 없을 경우에는 EditText의 텍스트를 번들에 포함
-        if (slideList.isEmpty()) {
-            slideContents.add(content)
-        }
+        // PostRequest 생성
+        val postRequest = PostRequest(
+            title = title,
+            status = status,
+            plannerId = plannerId,
+            momentContents = momentContents
+        )
 
         val bundle = Bundle().apply {
             putString("title", title)
@@ -143,10 +168,33 @@ class PostFragment : Fragment() {
             replace(R.id.main_frm, PostDetailFragment().apply { arguments = bundle })
             addToBackStack(null)
         }
+
+        // 게시물 생성 api 연결
+        val postApiService = RetrofitClient.create(PostApiService::class.java, requireContext())
+//        val requestBody = PostRequest(title, status, plannerId, postContents)
+
+        postApiService.createPost(postRequest).enqueue(object : Callback<PostResponse> {
+            override fun onResponse(call: Call<PostResponse>, response: Response<PostResponse>) {
+                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+                    val post = response.body()?.success
+
+                    Toast.makeText(requireContext(), "게시물 작성 성공", Toast.LENGTH_SHORT).show()
+                    Log.d("Post", "Completed: $post")
+                } else {
+                    Log.e("Post", "서버 오류: ${response.code()}, ${response.message()}")
+                    Toast.makeText(requireContext(), "게시물 작성 실패", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<PostResponse>, t: Throwable) {
+                Log.e("Planner", "네트워크 오류: ${t.message}", t)
+                Toast.makeText(requireContext(), "네트워크 오류 발생", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
 
     private fun showToast(message: String) {
-        android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 }

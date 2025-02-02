@@ -1,10 +1,10 @@
-package com.example.planalog.ui.post
+package com.example.planalog.network.post
 
 data class PostRequest(
     val title: String,
     val status: String,
     val plannerId: Int,
-    val postContents: List<PostContent>
+    val momentContents: List<PostContent>
 )
 
 data class PostContent(
