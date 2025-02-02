@@ -2,6 +2,7 @@ package com.example.planalog.ui.profile
 
 import android.Manifest
 import android.app.Activity
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -24,6 +25,7 @@ import com.example.planalog.network.user.request.UserUpdateRequest
 import com.example.planalog.network.user.response.UserProfileImgResponse
 import com.example.planalog.network.user.response.UserResponse
 import com.example.planalog.network.user.response.UserUpdateResponse
+import com.example.planalog.ui.start.LoginActivity
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -149,22 +151,50 @@ class EditprofileActivity : AppCompatActivity() {
 
 
     private fun logout() {
-        Log.d(TAG, "logout: Logging out user")
         val logoutService = RetrofitClient.create(LoginService::class.java, this)
+
         logoutService.logout().enqueue(object : Callback<LogoutResponse> {
             override fun onResponse(call: Call<LogoutResponse>, response: Response<LogoutResponse>) {
                 if (response.isSuccessful) {
-                    Log.d(TAG, "logout: Success")
-                    Toast.makeText(this@EditprofileActivity, "로그아웃 성공", Toast.LENGTH_SHORT).show()
+                    response.body()?.let { responseBody ->
+                        if (responseBody.resultType == "SUCCESS") {
+                            val responseBody = responseBody.success
+                            Toast.makeText(this@EditprofileActivity, "로그아웃 성공: ${response.body()}", Toast.LENGTH_SHORT).show()
+                            Log.d("EditProfileActivity", "로그아웃 성공: $responseBody")
+
+                            // SharedPreferences 초기화
+//                            clearUserPreferences()
+
+                            // 로그인 화면으로 이동
+                            navigateToLoginScreen()
+                        } else {
+                            Log.e("EditProfileActivity", "오류 발생: ${responseBody.error}")
+                        }
+                    }
                 } else {
-                    Log.e(TAG, "logout: Failed - ${response.code()}")
+                    Log.e("EditProfileActivity", "응답 실패: ${response.code()}")
                 }
             }
 
             override fun onFailure(call: Call<LogoutResponse>, t: Throwable) {
-                Log.e(TAG, "logout: Network error - ${t.localizedMessage}")
+                Log.e("EditProfileActivity", "네트워크 오류: ${t.localizedMessage}")
             }
         })
+    }
+
+    // SharedPreferences 초기화
+//    private fun clearUserPreferences() {
+//        val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+//        sharedPreferences.edit().clear().apply()  // 모든 데이터 삭제
+//        Log.d("EditProfileActivity", "SharedPreferences 초기화 완료")
+//    }
+
+    // 로그인 화면으로 이동하는 함수
+    private fun navigateToLoginScreen() {
+        val intent = Intent(this@EditprofileActivity, LoginActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK  // 이전 스택 비우기
+        startActivity(intent)
+        finish()  // 현재 액티비티 종료
     }
 
     private fun hasGalleryPermission(): Boolean {

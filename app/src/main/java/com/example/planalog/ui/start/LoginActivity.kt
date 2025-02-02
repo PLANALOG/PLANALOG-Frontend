@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.example.planalog.BuildConfig
+import com.example.planalog.MainActivity
 import com.example.planalog.databinding.ActivityLoginBinding
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.SocialLogin.KakaologinActivity
@@ -123,12 +124,22 @@ class LoginActivity : AppCompatActivity() {
 //                        newRefreshToken?.let { saveRefreshToken(it) }
 
 
-                        saveReceivedAccessToken(newAccessToken)
+                        saveReceivedAccessToken(newAccessToken, newRefreshToken)
 
                         Log.d("전송 토큰", "전송 네이버 토큰: $accessToken")
                         Log.d("응답 토큰", "응답 토큰: $newAccessToken")
                         Log.d("응답 토큰", "응답 토큰: $newRefreshToken")
-                        moveToNextActivity(newAccessToken)
+
+                        val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                        val existingUserId = sharedPreferences.getString("user_id", null)
+                        val existingType = sharedPreferences.getString("type", null)
+
+                        if (!existingUserId.isNullOrEmpty()) {
+                            Log.d("LoginActivity", "기존 유저 ID 발견: $existingUserId. 메인 액티비티로 바로 이동.")
+                            moveToMainActivity(existingUserId, existingType)
+                        } else {
+                            moveToNextActivity(newAccessToken)
+                        }
 
                     } else {
                         val errorMessage = responseBody?.error ?: "Unknown error"
@@ -147,11 +158,21 @@ class LoginActivity : AppCompatActivity() {
         })
     }
 
+    private fun moveToMainActivity(userId: String, type: String?) {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra("user_id", userId)
+        intent.putExtra("type", type)
+        startActivity(intent)
+        finish()
+    }
+
+
     // 서버에서 자체적으로 받아온 토큰 저장 함수
-    private fun saveReceivedAccessToken(receivedAccessToken: String?) {
+    private fun saveReceivedAccessToken(receivedAccessToken: String?, receivedRefreshToken: String?) {
         val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
         val editor = sharedPreferences.edit()
         editor.putString("received_access_token", receivedAccessToken)
+        editor.putString("received_refresh_token", receivedRefreshToken)
         editor.apply()
     }
 

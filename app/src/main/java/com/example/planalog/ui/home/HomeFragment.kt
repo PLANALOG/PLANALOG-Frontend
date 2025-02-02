@@ -68,11 +68,12 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // 전달된 result 값 처리
-        val type = arguments?.getString("type") ?: ""
-        updateLayoutBasedOnResult(type)
+//        val type = arguments?.getString("type") ?: ""
+        val (userId, type) = loadUserPreferences()
+        updateLayoutBasedOnResult(type ?: "")
 
-        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
-        val userId = sharedPreferences.getString("user_id", null)
+//        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
+//        val userId = sharedPreferences.getString("user_id", null)
 
         val date = getCurrentDate()
         val month = getCurrentMonth()
@@ -414,6 +415,14 @@ class HomeFragment : Fragment() {
             }
         }
         calendarAdapter.notifyDataSetChanged()
+    }
+
+    // SharedPreferences에서 결과값 불러오기
+    private fun loadUserPreferences(): Pair<String?, String?> {
+        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
+        val userId = sharedPreferences.getString("user_id", null)
+        val type = sharedPreferences.getString("type", "memo_user") // 기본값 설정
+        return Pair(userId, type)
     }
 
     override fun onDestroyView() {
