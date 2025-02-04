@@ -173,10 +173,11 @@ class HomeFragment : Fragment() {
         plannerService.getPlanners(userId, date, month).enqueue(object : Callback<PlannerResponse> {
             override fun onResponse(call: Call<PlannerResponse>, response: Response<PlannerResponse>) {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                    val planners = response.body()?.success
-
-                    Toast.makeText(requireContext(), "플래너 데이터 조회 성공", Toast.LENGTH_SHORT).show()
-                    Log.d("Planner", "Completed: $planners")
+                    response.body()?.let { responseBody ->
+                        val planners = responseBody.success  // 필요한 데이터만 추출
+                        Toast.makeText(requireContext(), "플래너 데이터 조회 성공", Toast.LENGTH_SHORT).show()
+                        Log.d("Planner", "플래너 데이터: $planners")
+                    }
                 } else {
                     Log.e("Planner", "서버 오류: ${response.code()}, ${response.message()}")
                     Toast.makeText(requireContext(), "플래너 데이터 조회 실패", Toast.LENGTH_SHORT).show()
@@ -189,6 +190,7 @@ class HomeFragment : Fragment() {
             }
         })
     }
+
 
 
     private fun initializeInitialCtgyState() {

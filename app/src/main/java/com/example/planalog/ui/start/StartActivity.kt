@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
+import com.example.planalog.MainActivity
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityStartBinding
 import com.example.planalog.databinding.ActivityStartsetBinding
@@ -34,10 +35,22 @@ class StartActivity : AppCompatActivity() {
         binding = ActivityStartBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+
+        val spf = getSharedPreferences("user_prefs", MODE_PRIVATE)
+        val userId = spf.getString("user_id", null)
+        val type = spf.getString("type", null)
+
         binding.btnStart.setOnClickListener {
-            val intent = Intent(this, StartsetActivity::class.java)
-            startActivity(intent)
-            finish()  // 현재 액티비티 종료
+            if (!userId.isNullOrEmpty()) {
+                val intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
+                finish()  // 현재 액티비티 종료
+            } else {
+                val intent = Intent(this, StartsetActivity::class.java)
+                startActivity(intent)
+                finish()  // 현재 액티비티 종료
+            }
+
         }
     }
 }

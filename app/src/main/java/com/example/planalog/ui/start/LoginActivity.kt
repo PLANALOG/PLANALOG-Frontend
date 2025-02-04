@@ -49,9 +49,19 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.btnNaverLogin.setOnClickListener {
+            val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+            val accessToken = sharedPreferences.getString("received_access_token", null)
 
-            NaverIdLoginSDK.authenticate(this, launcher)
-//            refreshAccessToken(temporaryRefreshToken)
+
+
+            if (!accessToken.isNullOrEmpty()) {
+                Toast.makeText(this, "이미 로그인되어 메인 화면으로 이동합니다.", Toast.LENGTH_SHORT).show()
+                val intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
+                finish()
+            } else {
+                NaverIdLoginSDK.authenticate(this, launcher)
+            }
         }
 
         binding.btnKakaoLogin.setOnClickListener {
@@ -93,13 +103,13 @@ class LoginActivity : AppCompatActivity() {
     private fun saveAccessToken(token: String?) {
         val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
         sharedPreferences.edit().putString("naver_access_token", token).apply()
-        Log.d("저장한 토큰", "저장된 토큰: $token")
+        Log.d("저장한 네이버 토큰", "저장된 토큰: $token")
     }
 
     private fun postAccessTokenToServer(accessToken: String?, refreshToken: String?) {
         if (accessToken.isNullOrEmpty()) {
-            Toast.makeText(this, "Access Token이 없습니다.", Toast.LENGTH_SHORT).show()
-            Log.d("Access 토큰 없음", "$accessToken")
+            Toast.makeText(this, "네이버 Access Token이 없습니다.", Toast.LENGTH_SHORT).show()
+            Log.d("네이버 Access 토큰 없음", "$accessToken")
             return
         }
 
@@ -127,8 +137,8 @@ class LoginActivity : AppCompatActivity() {
                         saveReceivedAccessToken(newAccessToken, newRefreshToken)
 
                         Log.d("전송 토큰", "전송 네이버 토큰: $accessToken")
-                        Log.d("응답 토큰", "응답 토큰: $newAccessToken")
-                        Log.d("응답 토큰", "응답 토큰: $newRefreshToken")
+                        Log.d("new Aceess 토큰", "응답 Access 토큰: $newAccessToken")
+                        Log.d("new Refresh  토큰", "응답 Refresh 토큰: $newRefreshToken")
 
                         val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
                         val existingUserId = sharedPreferences.getString("user_id", null)
@@ -174,8 +184,10 @@ class LoginActivity : AppCompatActivity() {
         val editor = sharedPreferences.edit()
         editor.putString("received_access_token", receivedAccessToken)
         editor.putString("received_refresh_token", receivedRefreshToken)
-        Log.d("응답 토큰 저장됨", "token: Success")
         editor.apply()
+
+        Log.d("응답 토큰 저장됨", "access: $receivedAccessToken")
+        Log.d("응답 토큰 저장됨", "refresh: $receivedRefreshToken")
     }
 
 
