@@ -8,7 +8,6 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.example.planalog.databinding.ActivitySplashBinding
 import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.RetrofitClient.refreshAccessToken
 import com.example.planalog.network.SocialLogin.LoginService
 import com.example.planalog.network.SocialLogin.RefreshTokenRequest
 import com.example.planalog.network.SocialLogin.TokenRefreshResponse
@@ -29,37 +28,23 @@ class SplashActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         Handler(Looper.getMainLooper()).postDelayed({
-//            checkLoginStatus()
-            val intent = Intent(this, LoginActivity::class.java)
-            startActivity(intent)
-            finish()
-        }, 2000)
+            checkLoginStatus()
+        }, 3000)
     }
 
     private fun checkLoginStatus() {
         val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
         val userId = sharedPreferences.getString("user_id", null)
         val type = sharedPreferences.getString("type", null)
-        getSharedPreferences("auth_prefs", MODE_PRIVATE)
-        val newAccessToken = sharedPreferences.getString("received_access_token", null)
-        val newRefreshToken = sharedPreferences.getString("received_refresh_token", null)
+
+        val spf = getSharedPreferences("auth_prefs", MODE_PRIVATE)
+        val newAccessToken = spf.getString("received_access_token", null)
+        val newRefreshToken = spf.getString("received_refresh_token", null)
+
         Log.d("SplashActivity", "반환받은 저장된 액세스 토큰: $newAccessToken")
         Log.d("SplashActivity", "반환받은 저장된 리프레시 토큰: $newRefreshToken")
 
         Log.d("SplashActivity", "저장된 user_id: $userId, type: $type")
-
-//        if (userId != null) {
-//            // 유저 정보가 있으면 바로 메인 화면으로 이동
-//            val intent = Intent(this, MainActivity::class.java)
-//            startActivity(intent)
-//            finish()
-//        } else {
-//            // 유저 정보가 없으면 로그인 화면으로 이동
-//            Log.d("SplashActivity", "유저 정보가 없습니다. 로그인 화면으로 이동합니다.")
-//            val intent = Intent(this, LoginActivity::class.java)
-//            startActivity(intent)
-//            finish()
-//        }
 
         if (!newAccessToken.isNullOrEmpty()) {
             // 액세스 토큰이 존재하면 바로 메인 액티비티로 이동

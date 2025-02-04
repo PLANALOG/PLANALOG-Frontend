@@ -186,7 +186,7 @@ class EditprofileActivity : AppCompatActivity() {
                             Log.d("EditProfileActivity", "로그아웃 성공: $responseBody")
 
                             // SharedPreferences 초기화
-//                            clearUserPreferences()
+                            clearUserPreferences()
 
                             // 로그인 화면으로 이동
                             navigateToLoginScreen()
@@ -206,11 +206,16 @@ class EditprofileActivity : AppCompatActivity() {
     }
 
     // SharedPreferences 초기화
-//    private fun clearUserPreferences() {
-//        val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-//        sharedPreferences.edit().clear().apply()  // 모든 데이터 삭제
-//        Log.d("EditProfileActivity", "SharedPreferences 초기화 완료")
-//    }
+    private fun clearUserPreferences() {
+        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        sharedPreferences.edit().clear().apply()  // 모든 데이터 삭제
+        // 초기화 후 SharedPreferences에 데이터가 남아 있는지 확인
+        val accessToken = sharedPreferences.getString("received_access_token", "토큰 없음")
+        val refreshToken = sharedPreferences.getString("received_refresh_token", "토큰 없음")
+        Log.d("EditProfileActivity", "SharedPreferences 초기화 완료")
+        Log.d("EditProfileActivity", "초기화 후 Access Token: $accessToken")
+        Log.d("EditProfileActivity", "초기화 후 Refresh Token: $refreshToken")
+    }
 
     // 로그인 화면으로 이동하는 함수
     private fun navigateToLoginScreen() {
