@@ -1,6 +1,5 @@
 package com.example.planalog.ui.home
 
-import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.os.Bundle
 import android.util.Log
@@ -9,21 +8,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentHomeBinding
-import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.planner.PlannerResponse
 import com.example.planalog.network.planner.PlannerService
-import com.example.planalog.network.task.AddTaskResponse
 import com.example.planalog.network.task.TaskService
-import com.example.planalog.network.task.addTaskRequest
-//import com.example.planalog.repository.TaskRepository
 import com.example.planalog.ui.comment.CommentFragment
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarAdapter
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarDay
-import com.example.planalog.ui.home.calender.SharedViewModel
+import com.example.planalog.ui.home.api.PlannerApiHelper
+import com.example.planalog.ui.home.api.TaskApiHelper
 import com.example.planalog.ui.home.ctgy.Category
 import com.example.planalog.ui.home.ctgy.CategoryAdapter
 import com.example.planalog.ui.home.ctgy.MemoAdapter
@@ -33,9 +27,6 @@ import com.example.planalog.utils.getCurrentDate
 import com.example.planalog.utils.getCurrentMonth
 import com.example.planalog.utils.savePlannerDate
 import com.example.planalog.utils.updateTaskCompletion
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -47,10 +38,12 @@ class HomeFragment : Fragment() {
     private lateinit var memoAdapter: MemoAdapter
     private lateinit var calendarAdapter: CalendarAdapter
 
-    //private lateinit var taskRepository: TaskRepository
+    private val taskIdsToDelete = mutableListOf<Int>()
 
     private lateinit var plannerService: PlannerService
     private lateinit var taskService: TaskService
+    private lateinit var taskApiHelper: TaskApiHelper
+    private lateinit var plannerApiHelper: PlannerApiHelper
 
     private val calendarDays = mutableListOf<CalendarDay>()
 
@@ -78,7 +71,8 @@ class HomeFragment : Fragment() {
         val date = getCurrentDate()
         val month = getCurrentMonth()
 
-        getPlanner(userId, date, month)
+        plannerApiHelper = PlannerApiHelper(requireContext())
+        plannerApiHelper.getPlanner(userId, date, month)
 
         // 초기 상태 버튼 설정
         setInitialBtnState()
@@ -147,7 +141,6 @@ class HomeFragment : Fragment() {
         binding.homePlannerMemoPlusIc.setOnClickListener {
             addCheckListItem("")
             binding.homePlannerMemoSaveBtn.isEnabled = true
-            //taskRepository = TaskRepository(requireContext())
         }
 
 
@@ -165,33 +158,6 @@ class HomeFragment : Fragment() {
         }
 
     }
-
-
-    private fun getPlanner(userId: String?, date: String?, month: String?) {
-        plannerService = RetrofitClient.create(PlannerService::class.java, requireContext())
-
-        plannerService.getPlanners(userId, date, month).enqueue(object : Callback<PlannerResponse> {
-            override fun onResponse(call: Call<PlannerResponse>, response: Response<PlannerResponse>) {
-                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                    response.body()?.let { responseBody ->
-                        val planners = responseBody.success  // 필요한 데이터만 추출
-                        Toast.makeText(requireContext(), "플래너 데이터 조회 성공", Toast.LENGTH_SHORT).show()
-                        Log.d("Planner", "플래너 데이터: $planners")
-                    }
-                } else {
-                    Log.e("Planner", "서버 오류: ${response.code()}, ${response.message()}")
-                    Toast.makeText(requireContext(), "플래너 데이터 조회 실패", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onFailure(call: Call<PlannerResponse>, t: Throwable) {
-                Log.e("Planner", "네트워크 오류: ${t.message}", t)
-                Toast.makeText(requireContext(), "네트워크 오류 발생", Toast.LENGTH_SHORT).show()
-            }
-        })
-    }
-
-
 
     private fun initializeInitialCtgyState() {
         // 초기 카테고리 상태에서 "변경되지 않은 상태"로 간주하고 처리
@@ -289,8 +255,19 @@ class HomeFragment : Fragment() {
 
             if (binding.homePlannerMemoDeleteBtn.isEnabled) {
                 if (memoAdapter.hasSelectedItems()) {
+                    // 선택된 할 일의 ID 가져오기
+                    val selectedTaskIds = memoAdapter.getSelectedTaskIds()
+
+                    if (selectedTaskIds.isNotEmpty()) {
+                        // API 호출로 선택된 할 일 삭제
+//                        taskApiHelper = TaskApiHelper(requireContext())
+//                        taskApiHelper.deleteTasks(selectedTaskIds)
+                        binding.homePlannerMemoDeleteBtn.isEnabled = false
+                    }
+
                     memoAdapter.deleteSelectedItems()
-                    binding.homePlannerMemoDeleteBtn.isEnabled = false
+//                    binding.homePlannerMemoDeleteBtn.isEnabled = false
+
                 } else {
                     memoAdapter.toggleDeleteMode(true)
                 }
@@ -361,9 +338,7 @@ class HomeFragment : Fragment() {
     // 텍스트 전송 함수
     private fun sendTaskToApi() {
 
-        taskService = RetrofitClient.create(TaskService::class.java, requireContext())
-
-        val taskTitle = checklist.joinToString(", ") { it.task }  // 체크리스트 항목들을 하나의 텍스트로 결합
+        val taskTitle = checklist.map { it.task }  // 체크리스트 항목들을 하나의 텍스트로 결합
         val currentDate = getCurrentDate()  // 현재 날짜 가져오기
         val allChecked = checklist.all { it.isChecked == false }
 
@@ -377,25 +352,8 @@ class HomeFragment : Fragment() {
 
         Log.d("API SendTask", "Task Title: $taskTitle, Date: $currentDate")
 
-        val addTaskRequest = addTaskRequest(taskTitle, currentDate)
-
-        taskService.addTask(addTaskRequest).enqueue(object : Callback<AddTaskResponse> {
-            override fun onResponse(call: Call<AddTaskResponse>, response: Response<AddTaskResponse>) {
-                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                    val task = response.body()?.success
-                    Log.d("TaskAPI", "할일 생성 성공: $task")
-                    Toast.makeText(requireContext(), "할일이 생성되었습니다.", Toast.LENGTH_SHORT).show()
-                } else {
-                    Log.e("TaskAPI", "할일 생성 실패: 응답 코드=${response.code()}, 메시지=${response.message()}")
-                    Toast.makeText(requireContext(), "할일 생성 실패: ${response.code()}", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onFailure(call: Call<AddTaskResponse>, t: Throwable) {
-                Log.e("TaskAPI", "네트워크 오류 발생: ${t.message}", t)
-                Toast.makeText(requireContext(), "네트워크 오류 발생: ${t.message}", Toast.LENGTH_SHORT).show()
-            }
-        })
+//        taskApiHelper = TaskApiHelper(requireContext())
+//        taskApiHelper.addMultipleTasks(taskTitle, currentDate)
     }
 
     private fun checkAllItemsChecked() {

@@ -84,6 +84,11 @@ class MemoAdapter(
         holder.textWatcher = textWatcher
     }
 
+    fun getSelectedTaskIds(): List<Int> {
+        return checklists.filter { it.isSelected && it.taskId != null }.map { it.taskId!! }
+    }
+
+
 
     // DELETE 모드 활성화/비활성화
     fun toggleDeleteMode(enabled: Boolean) {

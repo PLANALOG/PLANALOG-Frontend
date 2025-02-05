@@ -54,14 +54,14 @@ class LoginActivity : AppCompatActivity() {
 
 
 
-            if (!accessToken.isNullOrEmpty()) {
-                Toast.makeText(this, "이미 로그인되어 메인 화면으로 이동합니다.", Toast.LENGTH_SHORT).show()
-                val intent = Intent(this, MainActivity::class.java)
-                startActivity(intent)
-                finish()
-            } else {
+//            if (!accessToken.isNullOrEmpty()) {
+//                Toast.makeText(this, "이미 로그인되어 메인 화면으로 이동합니다.", Toast.LENGTH_SHORT).show()
+//                val intent = Intent(this, MainActivity::class.java)
+//                startActivity(intent)
+//                finish()
+//            } else {
                 NaverIdLoginSDK.authenticate(this, launcher)
-            }
+//            }
         }
 
         binding.btnKakaoLogin.setOnClickListener {
