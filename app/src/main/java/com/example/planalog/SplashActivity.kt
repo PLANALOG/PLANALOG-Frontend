@@ -38,24 +38,24 @@ class SplashActivity : AppCompatActivity() {
         val type = sharedPreferences.getString("type", null)
 
         val spf = getSharedPreferences("auth_prefs", MODE_PRIVATE)
-        val newAccessToken = spf.getString("received_access_token", null)
-        val newRefreshToken = spf.getString("received_refresh_token", null)
+//        val newAccessToken = spf.getString("received_access_token", null)
+//        val newRefreshToken = spf.getString("received_refresh_token", null)
 
-        Log.d("SplashActivity", "반환받은 저장된 액세스 토큰: $newAccessToken")
-        Log.d("SplashActivity", "반환받은 저장된 리프레시 토큰: $newRefreshToken")
+//        Log.d("SplashActivity", "반환받은 저장된 액세스 토큰: $newAccessToken")
+//        Log.d("SplashActivity", "반환받은 저장된 리프레시 토큰: $newRefreshToken")
 
         Log.d("SplashActivity", "저장된 user_id: $userId, type: $type")
 
-        if (!newAccessToken.isNullOrEmpty()) {
+//        if (!newAccessToken.isNullOrEmpty()) {
             // 액세스 토큰이 존재하면 바로 메인 액티비티로 이동
-            moveToMainActivity()
-        } else if (!newRefreshToken.isNullOrEmpty()) {
-            // 액세스 토큰이 없고 리프레시 토큰이 존재하면 새 액세스 토큰 요청
-            refreshAccessToken(newRefreshToken)
-        } else {
+//            moveToMainActivity()
+//        } else if (!newRefreshToken.isNullOrEmpty()) {
+//            // 액세스 토큰이 없고 리프레시 토큰이 존재하면 새 액세스 토큰 요청
+//            refreshAccessToken(newRefreshToken)
+//        } else {
             // 토큰이 모두 없으면 로그인 화면으로 이동
             moveToLoginActivity()
-        }
+//        }
     }
 
     private fun refreshAccessToken(refreshToken: String) {

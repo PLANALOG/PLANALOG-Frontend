@@ -6,4 +6,5 @@ data class ChecklistItem(
     var isChecked: Boolean = false,
     var isSelected: Boolean = false,
     var isDeleteMode: Boolean = false,
+    var taskId: Int? = null,
 )

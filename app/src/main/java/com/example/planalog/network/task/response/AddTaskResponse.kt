@@ -1,4 +1,4 @@
-package com.example.planalog.network.task
+package com.example.planalog.network.task.response
 
 data class AddTaskResponse(
     val resultType: String,

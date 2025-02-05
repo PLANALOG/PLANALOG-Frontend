@@ -1,4 +1,4 @@
-package com.example.planalog.network.task
+package com.example.planalog.network.task.request
 
 data class addTaskRequest(
     var title: String,
