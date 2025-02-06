@@ -63,24 +63,22 @@ class PostFragment : Fragment() {
         slidePagerAdapter = SlidePagerAdapter(
             slideList,
             onImageClick = { position ->
-                // 이미지 클릭 시 추가 작업 (예: 확대보기)
-                // 필요 없으면 비워둘 수 있습니다
+                // 필요 시 이미지 클릭 처리 로직
             },
             onDeleteClick = { position ->
-                slideList.removeAt(position)  // 선택된 슬라이드 삭제
-                slidePagerAdapter.notifyDataSetChanged()  // 어댑터 갱신
+                // 슬라이드 삭제 로직
+                slideList.removeAt(position)  // 데이터 직접 관리
+                slidePagerAdapter.notifyItemRemoved(position)  // RecyclerView 갱신
 
-                // 슬라이드가 비었으면 뷰페이저 숨기기
+                // 슬라이드가 비었으면 UI 변경
                 if (slideList.isEmpty()) {
                     binding.viewPager.visibility = View.GONE
-                    binding.postContent.visibility = View.VISIBLE  // 텍스트 입력란 다시 보이기
+                    binding.postContent.visibility = View.VISIBLE
                 }
             }
         )
         binding.viewPager.adapter = slidePagerAdapter
     }
-
-
 
     private fun setupImagePicker() {
         imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -107,6 +105,9 @@ class PostFragment : Fragment() {
                     }
                     slidePagerAdapter.notifyDataSetChanged()
                     binding.viewPager.visibility = View.VISIBLE
+
+                    slidePagerAdapter.notifyDataSetChanged()
+                    binding.viewPager.visibility = View.VISIBLE
                 }
             }
         }
@@ -122,35 +123,37 @@ class PostFragment : Fragment() {
 
     private fun uploadPost() {
         val title = binding.postTitle.text.toString().trim()
-        val content = binding.postContent.text.toString().trim()
         val status = "draft"
         val plannerId = 1
 
-        // 제목이나 내용이 비어 있으면 경고 메시지
-        if (title.isBlank() || (content.isBlank() && slideList.isEmpty())) {
+        if (title.isBlank() || (binding.postContent.text.isBlank() && slideList.isEmpty())) {
             showToast("제목과 내용을 입력해 주세요.")
             return
         }
 
-        // 모든 슬라이드 이미지 URI와 텍스트를 ArrayList로 변환
-        val imageUris = ArrayList<Uri>()
-        val slideContents = ArrayList<String>()
-
-        // momentContents를 담을 리스트 생성
+        // 슬라이드 데이터 수집
         val momentContents = mutableListOf<PostContent>()
-
-        // 슬라이드가 없으면 메인 텍스트를 하나의 페이지로 추가
-        if (slideList.isEmpty()) {
+        slideList.forEachIndexed { index, slide ->
             momentContents.add(
                 PostContent(
-                    sortOrder = 1,
-                    content = content,
-                    url = ""  // 이미지가 없는 경우 빈 URL
+                    sortOrder = index + 1,
+                    content = slide.postContent,
+                    url = slide.imageResId.toString()  // 이미지 URI를 문자열로 변환
                 )
             )
         }
 
-        // PostRequest 생성
+        // 메인 텍스트 추가 (슬라이드가 없을 경우)
+        if (slideList.isEmpty()) {
+            momentContents.add(
+                PostContent(
+                    sortOrder = 1,
+                    content = binding.postContent.text.toString(),
+                    url = ""
+                )
+            )
+        }
+
         val postRequest = PostRequest(
             title = title,
             status = status,
@@ -158,41 +161,21 @@ class PostFragment : Fragment() {
             momentContents = momentContents
         )
 
-        val bundle = Bundle().apply {
-            putString("title", title)
-            putStringArrayList("slideContents", slideContents)
-            putParcelableArrayList("imageUris", imageUris)
-        }
-
-        parentFragmentManager.commit {
-            replace(R.id.main_frm, PostDetailFragment().apply { arguments = bundle })
-            addToBackStack(null)
-        }
-
-        // 게시물 생성 api 연결
         val postApiService = RetrofitClient.create(PostApiService::class.java, requireContext())
-//        val requestBody = PostRequest(title, status, plannerId, postContents)
-
         postApiService.createPost(postRequest).enqueue(object : Callback<PostResponse> {
             override fun onResponse(call: Call<PostResponse>, response: Response<PostResponse>) {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                    val post = response.body()?.success
-
-                    Toast.makeText(requireContext(), "게시물 작성 성공", Toast.LENGTH_SHORT).show()
-                    Log.d("Post", "Completed: $post")
+                    showToast("게시물 작성 성공")
                 } else {
-                    Log.e("Post", "서버 오류: ${response.code()}, ${response.message()}")
-                    Toast.makeText(requireContext(), "게시물 작성 실패", Toast.LENGTH_SHORT).show()
+                    showToast("게시물 작성 실패")
                 }
             }
 
             override fun onFailure(call: Call<PostResponse>, t: Throwable) {
-                Log.e("Planner", "네트워크 오류: ${t.message}", t)
-                Toast.makeText(requireContext(), "네트워크 오류 발생", Toast.LENGTH_SHORT).show()
+                showToast("네트워크 오류 발생")
             }
         })
     }
-
 
     private fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()

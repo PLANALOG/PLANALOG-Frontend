@@ -16,7 +16,7 @@ class SlidePagerAdapter(
 
     inner class SlideViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val imageView: ImageView = itemView.findViewById(R.id.imageView)
-        private val postContent: EditText = itemView.findViewById(R.id.postContent)
+        val postContent: EditText = itemView.findViewById(R.id.postContent)
         val deleteButton: ImageView = itemView.findViewById(R.id.deleteButton)
 
         fun bind(slide: Slide) {
@@ -51,14 +51,27 @@ class SlidePagerAdapter(
     override fun onBindViewHolder(holder: SlideViewHolder, position: Int) {
         val slide = slideList[position]
 
-        // 이미지 로드 (예: Glide 사용)
+        // 이미지 설정
         holder.imageView.setImageURI(slide.imageResId)
 
-        // X 버튼 클릭 시 슬라이드 제거 처리
+        // X 버튼 클릭 시 삭제는 Fragment에서 처리하도록 콜백 호출만
         holder.deleteButton.setOnClickListener {
-            onDeleteClick(position)  // 어댑터 외부에서 처리할 수 있게 콜백 호출
+            onDeleteClick(position)
         }
+
+        // 텍스트 초기화 및 변경 리스너 설정
+        holder.postContent.setText(slide.postContent)
+        holder.postContent.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) {
+                // 즉시 Slide 객체에 텍스트 반영
+                slide.postContent = s.toString()
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
     }
+
 
     override fun getItemCount(): Int = slideList.size
 }
