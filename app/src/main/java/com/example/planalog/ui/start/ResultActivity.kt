@@ -32,7 +32,7 @@ class ResultActivity : AppCompatActivity() {
         val nickname = intent.getStringExtra("nickname") ?: "사용자"
         Log.d("ResultActivity", "받은 닉네임: $nickname")
 
-        val result = intent.getStringExtra("result") ?: "category_user"
+        val result = intent.getStringExtra("result") ?: "null"
         Log.d("ResultActivity", "받은 타입: $result")
 
         val userInfo = intent.getStringExtra("user_info") ?: ""
@@ -84,8 +84,9 @@ class ResultActivity : AppCompatActivity() {
                         val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
                         val editor = sharedPreferences.edit()
                         editor.putString("user_id", userId)
+                        editor.putString("type", type)
                         editor.apply()  // 비동기로 저장
-                        Log.d("ResultActivity", "저장된 user_id: $userId")
+                        Log.d("ResultActivity", "저장된 user_id: $userId, type: $type")
                     }
                 } else {
                     Log.e("ResultActivity", "업데이트 실패: ${response.body()?.error}")
