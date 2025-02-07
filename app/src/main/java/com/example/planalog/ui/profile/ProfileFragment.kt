@@ -24,6 +24,7 @@ import com.example.planalog.network.user.UserService
 import com.example.planalog.network.user.FriendCountResponse
 import com.example.planalog.network.user.FriendcountService
 import com.example.planalog.network.user.response.UserInfo
+import com.example.planalog.ui.friends.FriendListActivity
 
 
 import retrofit2.Call
@@ -57,8 +58,17 @@ class ProfileFragment : Fragment() {
         fetchUserProfile()
         fetchMypageMoments()
         fetchFriendCount()
+        setupRecyclerView()
 
         setupUI()
+
+
+        binding.friendCountLayout.setOnClickListener {
+            // FriendListActivity로 이동하는 Intent 설정
+            val intent = Intent(requireContext(), FriendListActivity::class.java)
+            startActivity(intent)
+        }
+
 
         return binding.root
     }

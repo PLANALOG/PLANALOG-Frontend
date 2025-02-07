@@ -48,12 +48,15 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <FrameLayout
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/main_frm"
+        android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/main_bottom_nav"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:navGraph="@navigation/navigation_graph"
+        app:defaultNavHost="true" />
 
     <FrameLayout
         android:id="@+id/fragment_calendar"

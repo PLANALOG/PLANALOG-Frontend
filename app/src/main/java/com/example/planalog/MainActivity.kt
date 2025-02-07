@@ -4,6 +4,9 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.NavigationUI
 import com.example.planalog.databinding.ActivityMainBinding
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarFragment
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.notify.NotifyFragment
@@ -15,11 +18,20 @@ import com.example.planalog.ui.search.SearchFragment
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var navController: NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // 네비게이션 호스트 설정
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.main_frm) as? NavHostFragment
+            ?: throw IllegalStateException("NavHostFragment를 찾을 수 없습니다.")
+        navController = navHostFragment.navController
+
+        // 네비게이션과 BottomNavigationView 연결
+        NavigationUI.setupWithNavController(binding.mainBottomNav, navController)
 
         // 초기 프래그먼트 설정
         val type = intent.getStringExtra("type") ?: ""

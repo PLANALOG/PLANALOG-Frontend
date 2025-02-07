@@ -67,6 +67,11 @@
             android:theme="@style/FullStatusTheme"/>
 
         <activity
+            android:name=".ui.friends.FriendListActivity"
+            android:exported="true"
+            android:theme="@style/FullStatusTheme"/>
+
+        <activity
             android:name=".ui.profile.ExitpopupActivity"
             android:theme="@style/Theme.AppCompat.Dialog"/>
 
