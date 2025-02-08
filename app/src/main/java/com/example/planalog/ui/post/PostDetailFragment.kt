@@ -40,10 +40,10 @@ class PostDetailFragment : Fragment() {
             binding.postContent.setText(slideContents?.getOrNull(0) ?: "")  // 텍스트 설정
             binding.viewPager.visibility = View.GONE  // 슬라이드 숨김
         } else {
-            // 슬라이드가 있을 경우
+            // 슬라이드가 있을 경우 데이터를 슬라이드 리스트에 추가
             if (slideContents != null) {
                 for (i in imageUris.indices) {
-                    slideList.add(Slide(imageUris[i], slideContents[i]))
+                    slideList.add(Slide(imageUris[i], slideContents[i]))  // URI만 추가
                 }
             }
             setupViewPager()
@@ -54,7 +54,6 @@ class PostDetailFragment : Fragment() {
 
         return binding.root
     }
-
 
 
     private fun setupViewPager() {
@@ -69,7 +68,6 @@ class PostDetailFragment : Fragment() {
         )
         binding.viewPager.adapter = slidePagerAdapter
     }
-
 
     private fun setupLikeButton() {
         // 초기 좋아요 개수 표시
