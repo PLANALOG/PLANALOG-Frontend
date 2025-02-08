@@ -36,6 +36,6 @@ interface UserService {
         @Part("basicImage") basicImage: RequestBody  // 기본 플래닛 이미지 번호
     ): Call<UserProfileImgResponse>
 
-    @GET("user/")
-    fun getFriendProfile(@Path("userId") userId: String): Call<FriendProfileResponse>
+    @GET("/users/{userId}")
+    fun getFriendProfile(@Path("userId") userId: String?): Call<FriendProfileResponse>
 }

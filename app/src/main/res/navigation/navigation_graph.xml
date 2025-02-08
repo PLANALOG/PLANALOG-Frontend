@@ -4,6 +4,18 @@
     xmlns:tools="http://schemas.android.com/tools"
     app:startDestination="@id/friendListFragment">
 
+    <!-- 검색 프래그먼트 -->
+    <fragment
+        android:id="@+id/searchFragment"
+        android:name="com.example.planalog.ui.search.SearchFragment"
+        tools:layout="@layout/fragment_search">
+
+        <!-- 액션: SearchFragment에서 FriendpageFragment로 이동 -->
+        <action
+            android:id="@+id/action_searchFragment_to_friendpageFragment"
+            app:destination="@id/friendpageFragment" />
+    </fragment>
+
     <!-- 친구 목록 프래그먼트 -->
     <fragment
         android:id="@+id/friendListFragment"
@@ -20,7 +32,7 @@
     <fragment
         android:id="@+id/friendpageFragment"
         android:name="com.example.planalog.ui.friends.FriendpageFragment"
-        tools:layout="@layout/fragment_friendpage">
+        tools:layout="@layout/activity_friendpage">
         <!-- 전달할 번들 데이터 설정 -->
         <argument
             android:name="friendId"
