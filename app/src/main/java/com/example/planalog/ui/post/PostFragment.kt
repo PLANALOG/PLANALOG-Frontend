@@ -12,18 +12,13 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.commit
-import com.example.planalog.R
+import androidx.lifecycle.lifecycleScope
 import com.example.planalog.databinding.FragmentPostBinding
 import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.planner.PlannerResponse
+import com.example.planalog.network.post.MomentContent
+import com.example.planalog.network.post.MomentRequest
 import com.example.planalog.network.post.PostApiService
-import com.example.planalog.network.post.PostContent
-import com.example.planalog.network.post.PostRequest
-import com.example.planalog.network.post.PostResponse
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.launch
 
 class PostFragment : Fragment() {
     private lateinit var binding: FragmentPostBinding
@@ -53,7 +48,9 @@ class PostFragment : Fragment() {
 
         // 등록 버튼 클릭 시 PostDetailFragment로 이동
         binding.uploadButton.setOnClickListener {
-            uploadPost()
+            requireActivity().lifecycleScope.launch {
+                uploadPost()
+            }
         }
 
         return binding.root
@@ -121,9 +118,8 @@ class PostFragment : Fragment() {
         imagePickerLauncher.launch(intent)
     }
 
-    private fun uploadPost() {
+    private suspend fun uploadPost() {
         val title = binding.postTitle.text.toString().trim()
-        val status = "draft"
         val plannerId = 1
 
         if (title.isBlank() || (binding.postContent.text.isBlank() && slideList.isEmpty())) {
@@ -131,22 +127,17 @@ class PostFragment : Fragment() {
             return
         }
 
-        // 슬라이드 데이터 수집
-        val momentContents = mutableListOf<PostContent>()
-        slideList.forEachIndexed { index, slide ->
-            momentContents.add(
-                PostContent(
-                    sortOrder = index + 1,
-                    content = slide.postContent,
-                    url = slide.imageResId.toString()  // 이미지 URI를 문자열로 변환
-                )
+        val momentContents = slideList.mapIndexed { index, slide ->
+            MomentContent(
+                sortOrder = index + 1,
+                content = slide.postContent,
+                url = slide.imageResId.toString()
             )
-        }
+        }.toMutableList()
 
-        // 메인 텍스트 추가 (슬라이드가 없을 경우)
         if (slideList.isEmpty()) {
             momentContents.add(
-                PostContent(
+                MomentContent(
                     sortOrder = 1,
                     content = binding.postContent.text.toString(),
                     url = ""
@@ -154,27 +145,38 @@ class PostFragment : Fragment() {
             )
         }
 
-        val postRequest = PostRequest(
+        val postRequest = MomentRequest(
             title = title,
-            status = status,
             plannerId = plannerId,
             momentContents = momentContents
         )
 
         val postApiService = RetrofitClient.create(PostApiService::class.java, requireContext())
-        postApiService.createPost(postRequest).enqueue(object : Callback<PostResponse> {
-            override fun onResponse(call: Call<PostResponse>, response: Response<PostResponse>) {
-                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+        try {
+            val response = postApiService.createMoment(postRequest)
+
+            // HTTP 상태 코드 확인
+            val statusCode = response.code()
+            Log.d("PostFragment", "HTTP 상태 코드: $statusCode")
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.resultType == "SUCCESS") {
                     showToast("게시물 작성 성공")
                 } else {
-                    showToast("게시물 작성 실패")
+                    val errorReason = body?.error?.reason ?: "알 수 없는 오류"
+                    Log.e("PostFragment", "게시물 작성 실패: $errorReason")
+                    showToast("게시물 작성 실패: $errorReason")
                 }
+            } else {
+                val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                Log.e("PostFragment", "서버 오류 발생: $errorBody")
+                showToast("서버 오류 발생: $errorBody (HTTP 상태 코드: $statusCode)")
             }
-
-            override fun onFailure(call: Call<PostResponse>, t: Throwable) {
-                showToast("네트워크 오류 발생")
-            }
-        })
+        } catch (e: Exception) {
+            Log.e("PostFragment", "네트워크 오류 발생", e)
+            showToast("네트워크 오류 발생: ${e.localizedMessage}")
+        }
     }
 
     private fun showToast(message: String) {

@@ -1,13 +1,12 @@
 package com.example.planalog.network.post
 
-data class PostRequest(
+data class MomentRequest(
     val title: String,
-    val status: String,
     val plannerId: Int,
-    val momentContents: List<PostContent>
+    val momentContents: List<MomentContent>
 )
 
-data class PostContent(
+data class MomentContent(
     val sortOrder: Int,
     val content: String,
     val url: String
