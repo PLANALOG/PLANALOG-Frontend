@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentHomeBinding
@@ -16,8 +17,10 @@ import com.example.planalog.network.task.TaskService
 import com.example.planalog.ui.comment.CommentFragment
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarAdapter
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarDay
+import com.example.planalog.ui.comment.com.example.planalog.utils.generateCalendarDays
 import com.example.planalog.ui.home.api.PlannerApiHelper
 import com.example.planalog.ui.home.api.TaskApiHelper
+import com.example.planalog.ui.home.calender.SharedViewModel
 import com.example.planalog.ui.home.ctgy.Category
 import com.example.planalog.ui.home.ctgy.CategoryAdapter
 import com.example.planalog.ui.home.ctgy.MemoAdapter
@@ -27,6 +30,7 @@ import com.example.planalog.utils.getCurrentDate
 import com.example.planalog.utils.getCurrentMonth
 import com.example.planalog.utils.savePlannerDate
 import com.example.planalog.utils.updateTaskCompletion
+import java.util.Calendar
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -37,6 +41,9 @@ class HomeFragment : Fragment() {
     private lateinit var ctgyAdapter : CategoryAdapter
     private lateinit var memoAdapter: MemoAdapter
     private lateinit var calendarAdapter: CalendarAdapter
+    private val sharedViewModel: SharedViewModel by activityViewModels()
+    private val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+    private val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
 
     private val taskIdsToDelete = mutableListOf<Int>()
 
@@ -85,6 +92,20 @@ class HomeFragment : Fragment() {
         }
 
         calendarAdapter = CalendarAdapter(days, onDayClicked)
+
+        // ViewModel 초기화
+        sharedViewModel.calendarDays.value = generateCalendarDays(currentYear, currentMonth)
+
+        sharedViewModel.calendarDays.observe(viewLifecycleOwner) { updatedDays ->
+            calendarDays.clear()
+            calendarDays.addAll(updatedDays)
+            calendarAdapter.notifyDataSetChanged()
+        }
+
+        // 캘린더 초기화
+        if (sharedViewModel.calendarDays.value.isNullOrEmpty()) {
+            initializeCalendar() // ViewModel에 데이터가 없는 경우에만 호출
+        }
 
         // 카테고리형 RecyclerView 설정
         ctgyAdapter = CategoryAdapter(categories, {
@@ -302,14 +323,69 @@ class HomeFragment : Fragment() {
 
     // 체크리스트 추가 함수
     private fun addCheckListItem(task: String) {
-        checklist.add(ChecklistItem(task, true))
+        checklist.add(ChecklistItem(task, true, false))
         memoAdapter.notifyItemInserted(checklist.size - 1)
 
-        // 오늘 날짜에 Checklists가 추가되었음을 CalendarDay에 반영
+        // 오늘 날짜에 할 일이 추가되었음을 캘린더에 반영
         val currentDate = getCurrentDate()
-        calendarDays.find { it.date == currentDate }?.hasTask = true
+        val currentDay = calendarDays.find { it.date == currentDate }
+
+        if (currentDay != null) {
+            currentDay.hasTask = true // 할 일이 있는 상태로 설정
+            Log.d("HomeFragment Calendar", "날짜: ${currentDay.date}, hasTask: ${currentDay.hasTask}, isTaskCompleted: ${currentDay.isTaskCompleted}")
+            calendarAdapter.notifyDataSetChanged()
+        }
+    }
+
+    fun updateCalendarTaskStatus() {
+        val updatedDays = sharedViewModel.calendarDays.value ?: return  // Null인 경우 바로 리턴하여 충돌 방지
+
+        val currentDate = getCurrentDate().trim()  // 날짜 포맷 공백 제거
+        val checklistCompleted = checklist.isNotEmpty() && checklist.all { it.isChecked }  // 모든 항목이 체크되었는지 확인
+
+        updatedDays.forEach { day ->
+            if (day.date.trim() == currentDate) {
+                day.hasTask = checklist.isNotEmpty()  // 체크리스트에 항목이 있으면 hasTask 설정
+                day.isTaskCompleted = checklistCompleted  // 모든 체크 완료 상태 반영
+                Log.d("HomeFragment updateCalendarTaskStatus", "업데이트된 날짜: ${day.date}, hasTask: ${day.hasTask}, isTaskCompleted: ${day.isTaskCompleted}")
+            }
+        }
+
+        // 변경된 상태를 ViewModel에 반영
+        sharedViewModel.calendarDays.setValue(updatedDays.toMutableList())
         calendarAdapter.notifyDataSetChanged()
     }
+
+    private fun initializeCalendar() {
+        // 새로운 달의 날짜 목록 생성
+        val generatedDays = generateCalendarDays(
+            Calendar.getInstance().get(Calendar.YEAR),
+            Calendar.getInstance().get(Calendar.MONTH) + 1
+        )
+
+        // 기존 ViewModel의 데이터 가져오기
+        val existingDays = sharedViewModel.calendarDays.value ?: mutableListOf()
+
+        // 병합 로직: 기존의 `hasTask`와 `isTaskCompleted` 상태 유지
+        val mergedDays = generatedDays.map { newDay ->
+            val existingDay = existingDays.find { it.date == newDay.date }
+            if (existingDay != null) {
+                // 기존 상태 유지
+                newDay.hasTask = existingDay.hasTask
+                newDay.isTaskCompleted = existingDay.isTaskCompleted
+            } else {
+                newDay.isTaskCompleted = false
+            }
+            newDay
+        }
+
+        // 병합된 결과를 ViewModel에 저장
+        sharedViewModel.calendarDays.value = mergedDays.toMutableList()
+
+        // 로그로 확인
+        Log.d("Home InitializeCalendar", "초기화된 CalendarDays: ${mergedDays.map { "${it.date}: ${it.hasTask}" }}")
+    }
+
 
 
     // 카테고리 추가 함수
@@ -343,6 +419,8 @@ class HomeFragment : Fragment() {
         val allChecked = checklist.all { it.isChecked == false }
 
         savePlannerDate(requireContext(), currentDate)
+
+        updateCalendarTaskStatus()
 
         // 로그로 출력해서 API에 전달되는 데이터 확인
         Log.d("API SendTask", "Task Title: $taskTitle")

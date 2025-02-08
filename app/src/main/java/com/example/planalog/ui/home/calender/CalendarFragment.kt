@@ -2,6 +2,7 @@ package com.example.planalog.ui.comment.com.example.planalog.ui.home.calender
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,8 +23,8 @@ class CalendarFragment : Fragment() {
 
     private lateinit var calendarAdapter: CalendarAdapter
     private val calendarDays = mutableListOf<CalendarDay>()
-    private var currentYear = 2025 // 초기 연도
-    private var currentMonth = 1 // 초기 월
+    private val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+    private val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
     private val minYear = 2024 // 최소 연도
     private val maxYear = 2025 // 최대 연도
 
@@ -42,14 +43,26 @@ class CalendarFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+//        sharedViewModel.calendarDays.value = generateCalendarDays(currentYear, currentMonth)
+
+        var currentYear = Calendar.getInstance().get(Calendar.YEAR)
+        var currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
         sharedViewModel.calendarDays.value = generateCalendarDays(currentYear, currentMonth)
+
+        sharedViewModel.calendarDays.observe(viewLifecycleOwner) { updatedDays ->
+            calendarDays.clear()
+            calendarDays.addAll(updatedDays)
+            calendarAdapter.notifyDataSetChanged()
+        }
 
         setupRecyclerView() // RecyclerView 설정
 
-        // 초기 캘린더 데이터 생성 및 표시
+        // 현재 연월을 초기값으로 설정
         val initialYearMonth = "$currentYear. $currentMonth"
         binding.calendarDropdown.text = initialYearMonth
         updateCalendar(initialYearMonth)
+
+//        initializeCalendar()
 
         binding.calendarDropdownBtn.setOnClickListener {
             showDropdownMenu(binding.calendarDropdown, dateList) { selectedItem ->
@@ -86,6 +99,12 @@ class CalendarFragment : Fragment() {
             }
             updateCalendar("$currentYear. $currentMonth")
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // 화면에 복귀할 때 최신 데이터를 보장
+        updateCalendar("$currentYear. $currentMonth")
     }
 
     override fun onDestroyView() {
@@ -132,9 +151,12 @@ class CalendarFragment : Fragment() {
 
         // 저장된 날짜 확인 후 해당 날짜에 표시 추가
         for (day in daysInMonth) {
-            val fullDate = "$year-$formattedMonth-${day.date}"
-            day.isTaskCompleted = savedDates.contains(fullDate)
-            calendarDays.add(day)
+
+            if (!day.isEmpty) { // 빈 날짜가 아닌 경우에만 추가
+                day.isTaskCompleted = savedDates.contains(day.date.trim()) // 정확한 포맷 비교
+                day.hasTask = savedDates.contains(day.date)
+                calendarDays.add(day)
+            }
         }
 
         // RecyclerView에 데이터 변경 알림
@@ -152,6 +174,31 @@ class CalendarFragment : Fragment() {
         calendar.set(year, month - 1, 1) // 월은 0부터 시작 (1월은 0)
         return calendar.get(Calendar.DAY_OF_WEEK) - 1 // 일요일=1 -> 0으로 변환
     }
+
+//    private fun initializeCalendar() {
+//        val updatedDays = generateCalendarDays(
+//            Calendar.getInstance().get(Calendar.YEAR),
+//            Calendar.getInstance().get(Calendar.MONTH) + 1
+//        )
+//
+//        // 기존 ViewModel 값 병합
+//        val existingDays = sharedViewModel.calendarDays.value ?: mutableListOf()
+//
+//        updatedDays.forEach { newDay ->
+//            val existingDay = existingDays.find { it.date == newDay.date }
+//            if (existingDay != null) {
+//                // 기존 데이터가 있으면 상태 병합
+//                newDay.hasTask = existingDay.hasTask
+//                newDay.isTaskCompleted = existingDay.isTaskCompleted
+//            }
+//        }
+//
+//        sharedViewModel.calendarDays.value = updatedDays.toMutableList()
+//
+//        Log.d("InitializeCalendar", "초기화된 CalendarDays: ${updatedDays.map { "${it.date}: ${it.hasTask}" }}")
+//    }
+
+
 
 
     private fun handleButtonState() {

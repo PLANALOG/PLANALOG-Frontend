@@ -1,8 +1,6 @@
-package com.example.planalog.network.friend
+package com.example.planalog.network.user.response
 
-import retrofit2.Call
-import retrofit2.http.GET
-import retrofit2.http.Path
+import com.example.planalog.network.friend.ErrorResponse
 
 data class FriendProfileResponse(
     val resultType: String,
@@ -19,8 +17,3 @@ data class FriendProfile(
     val createdAt: String,
     val updatedAt: String
 )
-
-interface FriendDataService {
-    @GET("user/{userId}")
-    fun getFriendProfile(@Path("userId") userId: String): Call<FriendProfileResponse>
-}

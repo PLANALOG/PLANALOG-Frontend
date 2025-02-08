@@ -1,5 +1,6 @@
 package com.example.planalog.network.user
 
+import com.example.planalog.network.user.response.FriendProfileResponse
 import com.example.planalog.network.user.request.UserUpdateRequest
 import com.example.planalog.network.user.response.UserProfileImgResponse
 import com.example.planalog.network.user.response.UserResponse
@@ -13,7 +14,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Part
-import retrofit2.http.Query
+import retrofit2.http.Path
 
 interface UserService {
 
@@ -34,4 +35,7 @@ interface UserService {
         @Part image: MultipartBody.Part?,  // 업로드할 이미지 파일 (nullable)
         @Part("basicImage") basicImage: RequestBody  // 기본 플래닛 이미지 번호
     ): Call<UserProfileImgResponse>
+
+    @GET("user/")
+    fun getFriendProfile(@Path("userId") userId: String): Call<FriendProfileResponse>
 }
