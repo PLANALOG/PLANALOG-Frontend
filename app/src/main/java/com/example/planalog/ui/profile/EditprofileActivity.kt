@@ -56,7 +56,6 @@ class EditprofileActivity : AppCompatActivity() {
 
         loadUserProfile()
 
-
         // 버튼 클릭 리스너 설정
         binding.backButton.setOnClickListener {
             Log.d(TAG, "Back button clicked")
