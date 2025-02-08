@@ -1,5 +1,6 @@
 package com.example.planalog.ui.comment.com.example.planalog.ui.home.calender
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -36,12 +37,14 @@ class CalendarAdapter(
                 if (day.isEmpty) {
                     binding.calenderDayTv.text = ""
                     binding.calenderCircleView.visibility = View.INVISIBLE // 빈 날짜에 대해 숨김
+                    Log.d("Calendar", "day.isEmpty: ${day.isEmpty}")
                 } else {
-                    binding.calenderDayTv.text = day.date // 날짜를 설정
-                    binding.calenderCircleView.visibility = if (day.isTaskCompleted) View.VISIBLE else View.INVISIBLE
+                    binding.calenderDayTv.text = day.getDayOfMonth() // 날짜를 설정
+                    binding.calenderCircleView.visibility = if (day.hasTask) View.VISIBLE else View.INVISIBLE
                     binding.calenderCircleView.setBackgroundResource(
                         if (day.isTaskCompleted) R.drawable.circle_checked else R.drawable.circle_unchecked
                     ) // 완료된 작업 여부에 따른 원 모양의 표시
+                    Log.d("CalendarAdapter", "날짜: ${day.date}, hasTask: ${day.hasTask}, day.isEmpty: ${day.isEmpty}, day.isTaskComplete: ${day.isTaskCompleted}")
                 }
             }
         }
@@ -69,8 +72,15 @@ class CalendarAdapter(
             is CalendarViewHolder.DayViewHolder -> {
                 val calendarDay = days[position - 7] // 7을 빼는 이유는 첫 7개 항목은 헤더이기 때문
                 holder.bind(calendarDay) // 날짜를 bind
+
+                // 상태에 따라 이미지 업데이트
+                holder.binding.calenderCircleView.setBackgroundResource(
+                    if (calendarDay.isTaskCompleted) R.drawable.circle_checked else R.drawable.circle_unchecked
+                )
+
                 holder.itemView.setOnClickListener { onDayClicked(calendarDay) } // 클릭 시 처리
 
+                Log.d("CalendarAdapter", "최종 날짜: ${calendarDay.date}, hasTask: ${calendarDay.hasTask}, isTaskComplete: ${calendarDay.isTaskCompleted}")
                 // 메모가 있으면 CircleView 보이기
 //                holder.binding.calenderCircleView.visibility = if (calendarDay.hasTask) View.VISIBLE else View.INVISIBLE
             }

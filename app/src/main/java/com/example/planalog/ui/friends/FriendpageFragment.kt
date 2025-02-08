@@ -7,17 +7,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
 import com.example.planalog.databinding.FragmentFriendpageBinding
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.friend.FriendApiService
-import com.example.planalog.network.friend.FriendDataService
-import com.example.planalog.network.friend.FriendProfileResponse
+import com.example.planalog.network.user.response.FriendProfileResponse
 import com.example.planalog.network.friend.FriendResponse
-import com.example.planalog.network.user.response.MypageMoment
+import com.example.planalog.network.user.UserService
+import com.example.planalog.network.user.response.FriendProfile
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -25,7 +23,7 @@ import retrofit2.Response
 class FriendpageFragment : Fragment() {
 
     private lateinit var binding: FragmentFriendpageBinding
-    private lateinit var friendDataService: FriendDataService
+    private lateinit var userService: UserService
     private lateinit var friendApiService: FriendApiService
     private var friendId: Int? = null  // 전달받은 friendId 저장
     private var userId: String? = null  // SharedPreferences에서 불러올 유저 ID (문자열로 변환됨)
@@ -34,6 +32,10 @@ class FriendpageFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        userId = sharedPreferences.getString("user_id", null)
+        Log.d("FriendpageFragment", "userId: ${userId}" )
 
         // SharedPreferences에서 id 가져오기
         friendId = arguments?.getInt("friendId")
@@ -56,7 +58,7 @@ class FriendpageFragment : Fragment() {
             Log.d("FriendpageFragment", "전달받은 friendId: $it")
         }
         // Retrofit 서비스 초기화
-        friendDataService = RetrofitClient.create(FriendDataService::class.java, requireContext())
+        userService = RetrofitClient.create(UserService::class.java, requireContext())
         friendApiService = RetrofitClient.create(FriendApiService::class.java, requireContext())
 
 
@@ -110,7 +112,7 @@ class FriendpageFragment : Fragment() {
 
 
     private fun fetchFriendProfile(userId: String) {
-        friendDataService.getFriendProfile(userId)
+        userService.getFriendProfile(userId)
             .enqueue(object : Callback<FriendProfileResponse> {
                 override fun onResponse(
                     call: Call<FriendProfileResponse>,
@@ -138,7 +140,7 @@ class FriendpageFragment : Fragment() {
     }
 
 
-    private fun updateProfileUI(friendProfile: com.example.planalog.network.friend.FriendProfile) {
+    private fun updateProfileUI(friendProfile: FriendProfile) {
         binding.userName.text = friendProfile.nickname
         binding.introText.text = friendProfile.introduction
         Log.d(

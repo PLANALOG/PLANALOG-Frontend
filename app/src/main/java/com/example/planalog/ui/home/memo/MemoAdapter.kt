@@ -1,5 +1,6 @@
 package com.example.planalog.ui.home.ctgy
 
+import android.content.Context
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -8,8 +9,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.planalog.R
 import com.example.planalog.databinding.HomePlannerMemoItemBinding
+import com.example.planalog.ui.home.HomeFragment
 import com.example.planalog.ui.home.memo.ChecklistItem
 import com.example.planalog.utils.getCurrentDate
+import com.example.planalog.utils.updateTaskCompletion
 
 class MemoAdapter(
     private val context: android.content.Context,  // 추가된 context
@@ -44,8 +47,8 @@ class MemoAdapter(
         // 메모 초기 설정
         holder.binding.homePlannerMemoEt.setText(memo.task)
         holder.binding.homePlannerMemoEt.isEnabled = memo.isEditable
-        holder.binding.homePlannerMemoEt.isFocusable = memo.isEditable
-        holder.binding.homePlannerMemoEt.isFocusableInTouchMode = memo.isEditable
+//        holder.binding.homePlannerMemoEt.isFocusable = memo.isEditable
+//        holder.binding.homePlannerMemoEt.isFocusableInTouchMode = memo.isEditable
         holder.binding.homePlannerMemoSelectBtn.isSelected = memo.isSelected
         holder.binding.homePlannerMemoCb.isChecked = memo.isChecked
 
@@ -58,6 +61,7 @@ class MemoAdapter(
         holder.binding.homePlannerMemoCb.setOnCheckedChangeListener { _, isChecked ->
             memo.isChecked = isChecked
             checkCompletionState() // 모든 항목 체크 상태 확인
+            (context as? HomeFragment)?.updateCalendarTaskStatus()  // 캘린더 상태 즉시 반영
         }
 
         // 부분 삭제 아이콘 클릭 리스너
@@ -128,22 +132,25 @@ class MemoAdapter(
     }
 
     // 체크 상태 업데이트 및 콜백 호출
+    // MemoAdapter 클래스 안에 있는 함수
     private fun checkCompletionState() {
-        val allChecked = checklists.all { it.isChecked }
+        val allChecked = checklists.all { it.isChecked } // 모든 항목이 체크되었는지 확인
 
-        val sharedPreferences = context.getSharedPreferences("task_prefs", android.content.Context.MODE_PRIVATE)
+        // SharedPreferences에 현재 날짜와 상태 저장
+        val sharedPreferences = context.getSharedPreferences("task_prefs", Context.MODE_PRIVATE)
         val savedDates = sharedPreferences.getStringSet("saved_dates", mutableSetOf()) ?: mutableSetOf()
         val currentDate = getCurrentDate()
 
         if (allChecked) {
-            savedDates.add(currentDate)
+            savedDates.add(currentDate) // 모든 항목이 체크되었으면 날짜 저장
         } else {
-            savedDates.remove(currentDate)
+            savedDates.remove(currentDate) // 하나라도 체크 해제되면 날짜 제거
         }
 
         sharedPreferences.edit().putStringSet("saved_dates", savedDates).apply()
 
-        // 콜백을 호출하여 프래그먼트에 알림
+        // onAllChecked 콜백 호출 (프래그먼트로 알림)
         onAllChecked(allChecked)
     }
+
 }
