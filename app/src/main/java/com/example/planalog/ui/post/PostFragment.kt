@@ -13,6 +13,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.example.planalog.R
 import com.example.planalog.databinding.FragmentPostBinding
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.post.MomentContent
@@ -55,6 +56,31 @@ class PostFragment : Fragment() {
 
         return binding.root
     }
+
+    private fun navigateToPostDetailFragment() {
+        val postDetailFragment = PostDetailFragment()
+
+        // 전달할 데이터 담기
+        val bundle = Bundle().apply {
+            putString("title", binding.postTitle.text.toString())  // 제목 전달
+
+            // 슬라이드에서 오직 이미지 URI만 추출해서 전달
+            val imageUris = slideList.map { it.imageResId }.toCollection(ArrayList())
+            val slideContents = slideList.map { it.postContent }.toCollection(ArrayList())
+
+            putParcelableArrayList("imageUris", imageUris)  // 이미지 URI만 전달
+            putStringArrayList("slideContents", slideContents)  // 텍스트 내용 전달
+        }
+
+        postDetailFragment.arguments = bundle  // 데이터 전달
+
+        // 프래그먼트 전환
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.main_frm, postDetailFragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
 
     private fun setupViewPager() {
         slidePagerAdapter = SlidePagerAdapter(
@@ -163,6 +189,9 @@ class PostFragment : Fragment() {
                 val body = response.body()
                 if (body?.resultType == "SUCCESS") {
                     showToast("게시물 작성 성공")
+
+                    // 프래그먼트 전환 추가
+                    navigateToPostDetailFragment()
                 } else {
                     val errorReason = body?.error?.reason ?: "알 수 없는 오류"
                     Log.e("PostFragment", "게시물 작성 실패: $errorReason")
