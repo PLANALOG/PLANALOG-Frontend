@@ -11,6 +11,7 @@ import com.example.planalog.network.search.SearchPostRequest
 import com.example.planalog.network.search.SearchRecordsResponse
 import com.example.planalog.network.search.SearchService
 import com.example.planalog.network.search.SearchUsersResponse
+import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -21,7 +22,7 @@ class SearchApiHelper(private val context: Context) {
         RetrofitClient.create(SearchService::class.java, context)
     }
 
-    fun getSearch(name: String, callback: (List<String>) -> Unit) {
+    fun getSearch(name: String, callback: (List<Map<String, Any>>) -> Unit) {
         searchService.getSearch(name).enqueue(object : Callback<SearchUsersResponse> {
             override fun onResponse(
                 call: Call<SearchUsersResponse>,
@@ -29,8 +30,20 @@ class SearchApiHelper(private val context: Context) {
             ) {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
                     response.body()?.let { responseBody ->
-                        val searchResults = responseBody.success?.data?.map { it.name } ?: emptyList()
-                        Log.d("검색 기능", "검색 성공: $searchResults")
+                        val searchResults = responseBody.success?.data?.map { user ->
+                            mapOf(
+                                "id" to user.id,
+                                "name" to user.name,
+                                "email" to user.email,
+                                "introduction" to user.introduction,
+                                "link" to user.link,
+                                "nickname" to user.nickname
+                            )
+                        } ?: emptyList()
+
+                        // Gson으로 JSON 형식으로 변환해서 전체 출력
+                        val jsonResult = Gson().toJson(searchResults)
+                        Log.d("검색 기능", "검색 성공: $jsonResult")
                         Toast.makeText(context, "검색 성공", Toast.LENGTH_SHORT).show()
                         callback(searchResults)
                     }

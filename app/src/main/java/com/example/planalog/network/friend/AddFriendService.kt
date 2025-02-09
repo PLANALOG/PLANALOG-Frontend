@@ -5,7 +5,7 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 data class FriendRequest(
-    val toUserId: Int
+    val toUserId: String
 )
 
 data class FriendRequestResponse(

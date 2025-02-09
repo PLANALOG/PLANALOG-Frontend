@@ -108,15 +108,16 @@
                 android:visibility="visible" />
 
             <!-- 게시물 내용: 슬라이드가 없을 때 사용 -->
-            <EditText
+            <TextView
                 android:id="@+id/postContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/post_content"
+                android:text="@string/post_content"
                 android:textSize="16sp"
+                android:textColor="@color/black"
                 android:fontFamily="@font/pretendard_medium"
+                android:singleLine="false"
                 android:padding="8dp"
-                android:inputType="textMultiLine"
                 android:gravity="top"
                 android:visibility="gone"
                 android:background="@color/transparent"

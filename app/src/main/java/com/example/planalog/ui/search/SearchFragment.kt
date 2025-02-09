@@ -26,6 +26,8 @@ import com.example.planalog.network.user.response.FriendProfileResponse
 import com.example.planalog.ui.friends.FriendpageActivity
 import com.example.planalog.ui.home.api.SearchApiHelper
 import com.example.planalog.utils.VerticalSpaceItemDecoration
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -88,8 +90,12 @@ class SearchFragment : Fragment() {
     private fun setupRecyclerView() {
         searchAdapter = SearchAdapter(mutableListOf()) { item ->
             when (item) {
-                is Int -> navigateToFriendPage(item)  // friendId가 Int인 경우 친구 페이지로 이동
-                is String -> performSearch(item)  // 문자열인 경우 검색 실행
+                is String -> {
+                    // JSON 데이터를 FriendpageActivity로 전달
+                    val intent = Intent(requireContext(), FriendpageActivity::class.java)
+                    intent.putExtra("friendData", item)
+                    startActivity(intent)
+                }
                 else -> Toast.makeText(requireContext(), "알 수 없는 데이터 유형입니다.", Toast.LENGTH_SHORT).show()
             }
         }
@@ -170,10 +176,12 @@ class SearchFragment : Fragment() {
 
     private fun performSearch(query: String) {
         searchApiHelper.getSearch(query) { results ->
-            searchAdapter.updateSearchResults(results)  // 실시간 결과는 UI에만 표시
-            saveSearchResults(query, results)  // 검색 결과 저장
+            // 검색 결과 업데이트 (전체 사용자 정보 포함)
+            searchAdapter.updateSearchResults(results)
+            saveSearchResults(query, results)
         }
     }
+
 
     /** 검색 기록 저장 */
     private fun saveSearchHistory(query: String) {
@@ -184,14 +192,17 @@ class SearchFragment : Fragment() {
     }
 
     /** 검색 결과 저장 */
-    private fun saveSearchResults(query: String, results: List<String>) {
+    private fun saveSearchResults(query: String, results: List<Map<String, Any>>) {
         val existingResults = sharedPreferences.getStringSet("saved_results", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        val gson = Gson()
+
         results.forEach { result ->
-            existingResults.add("$query:$result")
+            val jsonResult = gson.toJson(result)
+            existingResults.add(jsonResult)
         }
+
         sharedPreferences.edit().putStringSet("saved_results", existingResults).apply()
     }
-
 
     private fun loadSearchHistory() {
         searchApiHelper.fetchSearchHistory(
@@ -211,22 +222,20 @@ class SearchFragment : Fragment() {
 
     private fun loadSavedSearchResults() {
         val savedResults = sharedPreferences.getStringSet("saved_results", emptySet()) ?: emptySet()
-        val resultMap = mutableMapOf<String, MutableList<String>>()
+        val gson = Gson()
 
         // 저장된 검색어와 결과를 맵에 정리
-        savedResults.forEach {
-            val splitResult = it.split(":")
-            if (splitResult.size == 2) {
-                val query = splitResult[0]
-                val result = splitResult[1]
-                resultMap.getOrPut(query) { mutableListOf() }.add(result)
+        val parsedResults = savedResults.mapNotNull { json ->
+            try {
+                gson.fromJson<Map<String, Any>>(json, object : TypeToken<Map<String, Any>>() {}.type)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
             }
         }
 
-        // 저장된 결과를 최신순으로 추가
-        resultMap.forEach { (query, results) ->
-            searchAdapter.updateSearchResults(results)
-        }
+        // 저장된 결과를 어댑터에 업데이트
+        searchAdapter.updateSearchResults(parsedResults)
 
         // 리사이클러뷰를 맨 위로 스크롤
         binding.searchRv.scrollToPosition(0)
