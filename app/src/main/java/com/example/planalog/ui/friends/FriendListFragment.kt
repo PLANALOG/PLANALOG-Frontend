@@ -10,8 +10,10 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.databinding.FragmentFriendlistBinding
 import com.example.planalog.network.RetrofitClient
+import com.example.planalog.network.friend.Friend
 import com.example.planalog.network.friend.FriendApiService
 import com.example.planalog.network.friend.FriendResponse
+import com.example.planalog.network.friend.ErrorResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -58,9 +60,15 @@ class FriendListFragment : Fragment() {
         call.enqueue(object : Callback<FriendResponse> {
             override fun onResponse(call: Call<FriendResponse>, response: Response<FriendResponse>) {
                 if (response.isSuccessful) {
-                    val friends = response.body()?.success ?: emptyList()
+                    val successData = response.body()?.success
 
-                    // binding이 null이 아닌 경우에만 업데이트
+                    // success가 List<Friend>인지 확인하고 처리
+                    val friends = if (successData is List<*>) {
+                        successData.filterIsInstance<Friend>()
+                    } else {
+                        emptyList()
+                    }
+
                     if (isAdded && _binding != null) {
                         updateFriendCountText(friends.size)
                         if (friends.isNotEmpty()) {
@@ -69,6 +77,10 @@ class FriendListFragment : Fragment() {
                             Toast.makeText(requireContext(), "친구 목록이 비어 있습니다.", Toast.LENGTH_SHORT).show()
                         }
                     }
+                } else {
+                    val errorResponse = response.body()?.error
+                    val errorMessage = errorResponse?.reason ?: "알 수 없는 오류가 발생했습니다."
+                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -79,16 +91,12 @@ class FriendListFragment : Fragment() {
             }
         })
     }
+
     private fun updateFriendCountText(count: Int) {
-        val countText = if (tabType == "내가 응원하는") {
-            "$count 명"
-        } else {
-            "$count 명"
-        }
+        val countText = "$count 명"
         binding.friendCount.text = countText
         Log.d("FriendListFragment", "업데이트된 친구 수: $count 명")
     }
-
 
     override fun onDestroyView() {
         super.onDestroyView()

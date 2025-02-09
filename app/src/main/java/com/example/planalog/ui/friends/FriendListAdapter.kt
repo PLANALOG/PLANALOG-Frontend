@@ -25,7 +25,7 @@ class FriendListAdapter(private var friendList: List<Friend>) :
             binding.friendName.text = friend.nickname
             val clickListener = View.OnClickListener {
                 val bundle = Bundle().apply {
-                    putInt("friendId", friend.friendId)  // 전달할 friendId
+                    putInt("id", friend.id)
                 }
                 it.findNavController().navigate(R.id.action_friendListFragment_to_friendpageFragment, bundle)
 
