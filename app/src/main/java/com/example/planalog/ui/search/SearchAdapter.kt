@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.planalog.databinding.ItemSearchBinding
 import com.example.planalog.databinding.ItemSearchHistoryBinding
 import com.example.planalog.ui.search.SearchItem
+import com.google.gson.Gson
 
 class SearchAdapter(
     private val items: MutableList<SearchItem>,
@@ -28,7 +29,7 @@ class SearchAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = items[position]) {
             is SearchItem.SearchHistory -> (holder as SearchHistoryViewHolder).bind(item.historyText)
-            is SearchItem.SearchResult -> (holder as SearchResultViewHolder).bind(item.resultText)
+            is SearchItem.SearchResult -> (holder as SearchResultViewHolder).bind(item)
         }
     }
 
@@ -42,18 +43,28 @@ class SearchAdapter(
     override fun getItemCount(): Int = items.size
 
     /** 검색 결과 업데이트 */
-    fun updateSearchResults(newResults: List<String>) {
-        // 기존 검색 결과 제거
-        items.removeAll { it is SearchItem.SearchResult }
+    fun updateSearchResults(newResults: List<Map<String, Any>>) {
+        items.clear()
 
-        // 새로운 검색 결과를 맨 앞에 추가
-        val searchResults = newResults.map { SearchItem.SearchResult(it) }
-        items.addAll(0, searchResults)
+        // 새로운 검색 결과 추가
+        val searchResults = newResults.map { user ->
+            // 닉네임을 문자열로 변환 후 비어 있는지 확인
+            val nickname = user["nickname"] as? String
+            val name = user["name"] as? String ?: "이름 없음"
 
-        // 데이터 변경 알림 및 맨 위로 스크롤
+            // 닉네임이 비어 있지 않으면 닉네임, 그렇지 않으면 이름을 표시
+            val displayText = if (!nickname.isNullOrEmpty()) {
+                nickname
+            } else {
+                name
+            }
+
+            SearchItem.SearchResult(displayText, user)
+        }
+        items.addAll(searchResults)
+
         notifyDataSetChanged()
     }
-
 
 
     /** 최종 검색어만 검색 기록에 추가 후 스크롤 이동 */
@@ -81,18 +92,14 @@ class SearchAdapter(
 
     inner class SearchResultViewHolder(private val binding: ItemSearchBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        fun bind(resultText: String) {
-            binding.searchPfTv.text = resultText
+        fun bind(item: SearchItem.SearchResult) {
+            binding.searchPfTv.text = item.resultText
 
-            // 클릭 시 friendId 추출 후 액티비티로 전달
+            // 클릭 시 전체 사용자 데이터를 JSON으로 변환해 콜백 전달
             binding.root.setOnClickListener {
-                val friendId = extractFriendId(resultText)
-                if (friendId != -1) {
-                    onItemClick(friendId.toString())
-                    Log.d("friendId", "${friendId}")
-                } else {
-                    Toast.makeText(binding.root.context, "유효하지 않은 데이터입니다.", Toast.LENGTH_SHORT).show()
-                }
+                val userJson = Gson().toJson(item.userData)
+                Log.d("SearchAdapter", "전달되는 JSON 데이터: $userJson")
+                onItemClick(userJson)
             }
         }
 

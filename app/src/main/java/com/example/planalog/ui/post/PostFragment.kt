@@ -63,6 +63,7 @@ class PostFragment : Fragment() {
         // 전달할 데이터 담기
         val bundle = Bundle().apply {
             putString("title", binding.postTitle.text.toString())  // 제목 전달
+            putString("content", binding.postContent.text.toString())
 
             // 슬라이드에서 오직 이미지 URI만 추출해서 전달
             val imageUris = slideList.map { it.imageResId }.toCollection(ArrayList())
@@ -189,6 +190,7 @@ class PostFragment : Fragment() {
                 val body = response.body()
                 if (body?.resultType == "SUCCESS") {
                     showToast("게시물 작성 성공")
+                    Log.d("PostFragment", "게시물 데이터: ${body.success?.data}")
 
                     // 프래그먼트 전환 추가
                     navigateToPostDetailFragment()

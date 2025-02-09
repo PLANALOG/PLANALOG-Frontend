@@ -2,6 +2,7 @@ package com.example.planalog.ui.post
 
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,16 +29,20 @@ class PostDetailFragment : Fragment() {
 
         // 번들로부터 데이터 받기
         val title = arguments?.getString("title")
+        val content = arguments?.getString("content")
         val slideContents = arguments?.getStringArrayList("slideContents")
         val imageUris = arguments?.getParcelableArrayList<Uri>("imageUris")
 
         // 제목 설정
         binding.postTitle.text = title ?: ""
+//        binding.postContent.text = content ?: ""
+        Log.d("PostDetailFragment", "내용: $content")
 
         if (imageUris.isNullOrEmpty()) {
             // 슬라이드가 없을 경우
             binding.postContent.visibility = View.VISIBLE
-            binding.postContent.setText(slideContents?.getOrNull(0) ?: "")  // 텍스트 설정
+//            binding.postContent.setText(slideContents?.getOrNull(0) ?: "")  // 텍스트 설정
+            binding.postContent.text = content ?: ""
             binding.viewPager.visibility = View.GONE  // 슬라이드 숨김
         } else {
             // 슬라이드가 있을 경우 데이터를 슬라이드 리스트에 추가
@@ -48,6 +53,7 @@ class PostDetailFragment : Fragment() {
             }
             setupViewPager()
             binding.postContent.visibility = View.GONE  // 텍스트 숨김
+            binding.postContent.text = content ?: ""
         }
 
         setupLikeButton()
