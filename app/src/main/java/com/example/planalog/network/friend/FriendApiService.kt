@@ -5,7 +5,7 @@ import retrofit2.http.GET
 
 data class FriendResponse(
     val resultType: String,
-    val success: List<Friend>?,
+    val success: Any?,
     val error: ErrorResponse?
 )
 
@@ -23,6 +23,7 @@ data class ErrorResponse(
     val errorCode: String,
     val reason: String
 )
+
 
 interface FriendApiService {
     @GET("/friends/following")
