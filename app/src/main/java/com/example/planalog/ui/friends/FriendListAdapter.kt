@@ -1,18 +1,15 @@
 package com.example.planalog.ui.friends
 
-import android.content.Context
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.fragment.app.FragmentActivity
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.example.planalog.R
 import com.example.planalog.databinding.ItemFriendlistBinding
-import com.example.planalog.network.friend.Friend
+import com.example.planalog.network.friend.response.Friend
 
 class FriendListAdapter(private var friendList: List<Friend>) :
     RecyclerView.Adapter<FriendListAdapter.FriendViewHolder>() {

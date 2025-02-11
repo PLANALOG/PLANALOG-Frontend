@@ -10,24 +10,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.databinding.ActivityFriendpageBinding
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.api.FriendApiHelper
-import com.example.planalog.network.friend.FriendApiService
 import com.example.planalog.network.friend.FriendRequestCallback
-import com.example.planalog.network.friend.response.Friend
-import com.example.planalog.network.friend.response.FriendResponse
+import com.example.planalog.network.friend.FriendService
 import com.example.planalog.network.user.UserService
-import com.example.planalog.network.user.response.FriendProfile
-import com.example.planalog.network.user.response.FriendProfileResponse
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 class FriendpageActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityFriendpageBinding
     private lateinit var userService: UserService
-    private lateinit var friendApiService: FriendApiService
+    private lateinit var friendApiService: FriendService
     private var friendUserId: Int? = null
     private var friendFollowId : String? = null
     private val momentAdapter by lazy { FriendpageMomentAdapter(emptyList()) }
@@ -50,13 +43,13 @@ class FriendpageActivity : AppCompatActivity() {
         // JSON 문자열을 Map<String, Any>로 변환
         val userData: Map<String, Any> = Gson().fromJson(userJson, object : TypeToken<Map<String, Any>>() {}.type)
 
-            // 필요한 정보 추출 예제
+        // 필요한 정보 추출 예제
         friendUserId = (userData["id"] as? Double)?.toInt()  // id가 Double일 경우 Int로 변환
         val name = userData["name"] as? String ?: "이름 없음"
         val email = userData["email"] as? String ?: "이메일 없음"
         val nickname = userData["nickname"] as? String ?: "닉네임 없음"
 
-            // UI에 표시하거나 로그로 확인
+        // UI에 표시하거나 로그로 확인
         Log.d("받아온 친구 정보", "friendUserId: ${friendUserId}, Name: $name, Email: $email, Nickname: $nickname")
 
         binding.userName.text = nickname
@@ -71,7 +64,7 @@ class FriendpageActivity : AppCompatActivity() {
         }
 
         userService = RetrofitClient.create(UserService::class.java, this)
-        friendApiService = RetrofitClient.create(FriendApiService::class.java, this)
+        friendApiService = RetrofitClient.create(FriendService::class.java, this)
 
         setupRecyclerView()
 //        userId.toString()?.let { fetchFollowingList(it) }
@@ -84,57 +77,6 @@ class FriendpageActivity : AppCompatActivity() {
             adapter = momentAdapter
         }
     }
-
-//    private fun fetchFollowingList(userId: String) {
-//        friendApiService.getFollowing().enqueue(object : Callback<FriendResponse> {
-//            override fun onResponse(call: Call<FriendResponse>, response: Response<FriendResponse>) {
-//                if (response.isSuccessful) {
-//                    val successData = response.body()?.success
-//                    val followingList = if (successData is List<*>) {
-//                        successData.filterIsInstance<Friend>()
-//                    } else {
-//                        emptyList()
-//                    }
-//                    Log.d("친구 팔로우 목록", "follow ${followingList}")
-//                    followStatus = followingList.any { it.id.toString() == userId }
-//                    toggleFollowButton(followStatus)  // 초기 상태 설정
-//                } else {
-//                    Toast.makeText(this@FriendpageActivity, "팔로우 목록을 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//
-//            override fun onFailure(call: Call<FriendResponse>, t: Throwable) {
-//                Log.e("FriendpageActivity", "네트워크 오류: ${t.localizedMessage}", t)
-//                Toast.makeText(this@FriendpageActivity, "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
-//            }
-//        })
-//    }
-//
-//    private fun fetchFriendProfile(userId: String) {
-//        userService.getFriendProfile(userId)
-//            .enqueue(object : Callback<FriendProfileResponse> {
-//                override fun onResponse(call: Call<FriendProfileResponse>, response: Response<FriendProfileResponse>) {
-//                    if (response.isSuccessful) {
-//                        response.body()?.success?.let { updateProfileUI(it) }
-//                    } else {
-//                        Toast.makeText(this@FriendpageActivity, "프로필 정보를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
-//                    }
-//                }
-//
-//                override fun onFailure(call: Call<FriendProfileResponse>, t: Throwable) {
-//                    Log.e("FriendpageActivity", "네트워크 오류: ${t.localizedMessage}", t)
-//                    Toast.makeText(this@FriendpageActivity, "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
-//                }
-//            })
-//    }
-//
-//    private fun updateProfileUI(friendProfile: FriendProfile) {
-//        binding.userName.text = friendProfile.nickname
-//        binding.introText.text = friendProfile.introduction
-//
-//        // 팔로우 상태 설정
-//        toggleFollowButton(followStatus)
-//    }
 
 
     private fun setupFollowButton() {
@@ -163,9 +105,20 @@ class FriendpageActivity : AppCompatActivity() {
                 friendFollowId = getSavedFollowId(friendUserId.toString())
                 Log.d("friendFollowId", "friendFollowId: ${friendFollowId}")
 
-                friendApiHelper.deleteFollowers(friendFollowId.toString())
-                saveFollowStatus(friendUserId.toString(), false)
-                toggleFollowButton(false)
+                friendApiHelper.deleteFollowers(friendFollowId.toString(), object : FriendRequestCallback {
+                    override fun onRequestSuccess(friendId: String?) {
+                        Log.d("FriendpageActivity", "친구 삭제 성공")
+                        saveFollowStatus(friendUserId.toString(), false)
+                        toggleFollowButton(false)
+                    }
+
+                    override fun onRequestFailure(message: String) {
+                        Log.e("FriendpageActivity", "친구 삭제 실패: $message")
+                        Toast.makeText(this@FriendpageActivity, message, Toast.LENGTH_SHORT).show()
+                    }
+
+                })
+
             }
         }
     }

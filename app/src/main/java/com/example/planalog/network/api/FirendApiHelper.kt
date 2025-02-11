@@ -2,68 +2,84 @@ package com.example.planalog.network.api
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.friend.FriendApiService
-import com.example.planalog.network.friend.response.FriendDeleteResponse
 import com.example.planalog.network.friend.FriendRequestCallback
-import com.example.planalog.network.friend.request.FriendRequest
-import com.example.planalog.network.friend.request.FriendRequestResponse
+import com.example.planalog.network.friend.FriendService
+import com.example.planalog.network.friend.request.FriendAddRequest
+import com.example.planalog.network.friend.response.FriendAddResponse
+import com.example.planalog.network.friend.response.FriendDeleteResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class FriendApiHelper(private val context: Context) {
-    private val friendService = RetrofitClient.create(FriendApiService::class.java, context)
+    private val friendService = RetrofitClient.create(FriendService::class.java, context)
 
     fun sendFriendRequest(toUserId: String, callback: FriendRequestCallback) {
-        if (toUserId.isEmpty()) {
-            callback.onRequestFailure("유효하지 않은 사용자입니다.")
-            Log.e("FriendApiHelper", "유효하지 않은 사용자 ID: $toUserId")
+        if (toUserId.isNullOrEmpty()) {
+            Toast.makeText(context, "유효하지 않은 사용자입니다.", Toast.LENGTH_SHORT).show()
+            Log.e("친구 요청", "유효하지 않은 사용자 ID: $toUserId")
             return
         }
-        Log.d("FriendApiHelper", "친구 요청할 사용자 ID: $toUserId")
+        Log.d("친구 요청", "요청할 사용자 ID: $toUserId")
 
-        val request = FriendRequest(toUserId)
-        friendService.sendFriendRequest(request).enqueue(object : Callback<FriendRequestResponse> {
-            override fun onResponse(call: Call<FriendRequestResponse>, response: Response<FriendRequestResponse>) {
+        val request = FriendAddRequest(toUserId)
+        friendService.sendFriendRequest(request).enqueue(object : Callback<FriendAddResponse> {
+            override fun onResponse(call: Call<FriendAddResponse>, response: Response<FriendAddResponse>) {
                 if (response.isSuccessful) {
+                    val successMessage = response.body()?.success?.message
                     Log.d("FriendApiHelper", "친구 요청 성공: ${response.body()?.success?.message}")
                     val friendId = response.body()?.success?.data?.id
                     Log.d("FriendApiHelper", "친구 Id: ${friendId}")
-                    callback.onRequestSuccess(friendId.toString())  // 성공 콜백 호출
+                    Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+                    callback.onRequestSuccess(friendId.toString())
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    Log.e("FriendApiHelper", "친구 요청 실패: 코드 ${response.code()}, 응답: $errorBody")
-                    callback.onRequestFailure("친구 요청에 실패했습니다.")
+                    Log.e("친구 요청", "서버 응답 실패: 코드 ${response.code()}, 메시지 ${response.message()}, 응답: $errorBody")
+
+
+                    if (errorBody?.contains("이미 친구 관계가 존재합니다.") == true) {
+                        Log.d("친구 요청", "이미 친구 관계가 존재합니다.")
+                        callback.onRequestFailure("친구 요청에 실패했습니다.")
+//                        saveFollowStatus(toUserId, true)  // 이미 친구 관계인 경우 상태 저장
+//                        toggleFollowButton(true)  // UI 업데이트
+                    } else {
+                        Toast.makeText(context, "친구 요청에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                        callback.onRequestFailure("네트워크 오류가 발생했습니다.")
+                    }
                 }
             }
 
-            override fun onFailure(call: Call<FriendRequestResponse>, t: Throwable) {
-                Log.e("FriendApiHelper", "네트워크 오류 발생: ${t.localizedMessage}")
-                callback.onRequestFailure("네트워크 오류가 발생했습니다.")
+            override fun onFailure(call: Call<FriendAddResponse>, t: Throwable) {
+                Log.e("친구 요청", "네트워크 오류 발생: ${t.localizedMessage}", t)
+                Toast.makeText(context, "네트워크 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
             }
         })
     }
 
-    fun deleteFollowers(friendId: String) {
-        if (friendId.isEmpty()) {
-            Log.e("FriendApiHelper", "유효하지 않은 사용자 ID: $friendId")
+    fun deleteFollowers(followId: String, callback: FriendRequestCallback) {
+        if (followId.isEmpty()) {
+            Log.e("FriendApiHelper", "유효하지 않은 사용자 ID: $followId")
             return
         }
-        Log.d("FriendApiHelper", "친구 삭제할 사용자 ID: $friendId")
+        Log.d("FriendApiHelper", "친구 삭제할 사용자 ID: $followId")
 
-        friendService.deleteFollowers(friendId).enqueue(object : Callback<FriendDeleteResponse> {
+        friendService.deleteFollowers(followId).enqueue(object : Callback<FriendDeleteResponse> {
             override fun onResponse(call: Call<FriendDeleteResponse>, response: Response<FriendDeleteResponse>) {
                 if (response.isSuccessful) {
                     Log.d("FriendApiHelper", "친구 삭제 성공: ${response.body()?.success}")
+                    callback.onRequestSuccess(followId)
                 } else {
                     val errorBody = response.errorBody()?.string()
                     Log.e("FriendApiHelper", "친구 삭제 실패: 코드 ${response.code()}, 응답: $errorBody")
+                    callback.onRequestFailure("친구 삭제에 실패했습니다.")
                 }
             }
 
             override fun onFailure(call: Call<FriendDeleteResponse>, t: Throwable) {
                 Log.e("FriendApiHelper", "네트워크 오류 발생: ${t.localizedMessage}")
+                callback.onRequestFailure("네트워크에 오류가 발생했습니다.")
             }
         })
     }
