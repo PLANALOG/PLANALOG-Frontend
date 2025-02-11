@@ -10,7 +10,8 @@ import com.google.gson.Gson
 
 class SearchAdapter(
     private val items: MutableList<SearchItem>,
-    private val onItemClick: (Any) -> Unit
+    private val onHistoryClick: (String) -> Unit,
+    private val onResultClick: (String) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -68,25 +69,41 @@ class SearchAdapter(
 
 
     /** 최종 검색어만 검색 기록에 추가 후 스크롤 이동 */
-    fun addSearchHistory(newHistory: String, recyclerView: RecyclerView) {
-        val existingIndex = items.indexOfFirst { it is SearchItem.SearchHistory && (it as SearchItem.SearchHistory).historyText == newHistory }
+    fun addSearchHistory(newHistory: String?, recyclerView: RecyclerView) {
+        if (newHistory.isNullOrBlank()) {
+            Log.e("SearchAdapter", "빈 검색 기록은 추가할 수 없습니다.")
+            return
+        }
+
+        // 중복 항목을 제거
+        val existingIndex = items.indexOfFirst {
+            it is SearchItem.SearchHistory && (it as SearchItem.SearchHistory).historyText == newHistory
+        }
         if (existingIndex != -1) {
             items.removeAt(existingIndex)  // 중복된 항목 제거
             notifyItemRemoved(existingIndex)
         }
 
+        // 새로운 항목 추가
         items.add(0, SearchItem.SearchHistory(newHistory))
         notifyItemInserted(0)
 
-        // 스크롤을 맨 위로 이동
+        // RecyclerView의 스크롤을 맨 위로 이동
         recyclerView.scrollToPosition(0)
+
+        Log.d("SearchAdapter", "추가된 검색 기록: $newHistory")
     }
+
 
     inner class SearchHistoryViewHolder(private val binding: ItemSearchHistoryBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(historyText: String) {
+            Log.d("SearchHistoryViewHolder", "바인딩된 검색 기록: $historyText")
             binding.searchRecentWord.text = historyText
-            binding.root.setOnClickListener { onItemClick(historyText) }
+            binding.root.setOnClickListener {
+                Log.d("SearchHistoryViewHolder", "클릭된 검색 기록: $historyText")
+                onHistoryClick(historyText)
+            }
         }
     }
 
@@ -99,17 +116,7 @@ class SearchAdapter(
             binding.root.setOnClickListener {
                 val userJson = Gson().toJson(item.userData)
                 Log.d("SearchAdapter", "전달되는 JSON 데이터: $userJson")
-                onItemClick(userJson)
-            }
-        }
-
-        private fun extractFriendId(resultText: String): Int {
-            // 예: "Alice:123"에서 "123"을 추출
-            val parts = resultText.split(":")
-            return if (parts.size == 2 && parts[1].isNotEmpty()) {
-                parts[1].toIntOrNull() ?: -1  // 숫자 변환 실패 시 -1 반환
-            } else {
-                -1  // 잘못된 형식일 경우
+                onResultClick(userJson)
             }
         }
     }

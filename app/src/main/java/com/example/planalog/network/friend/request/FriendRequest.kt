@@ -1,8 +1,6 @@
-package com.example.planalog.network.friend
+package com.example.planalog.network.friend.request
 
-import retrofit2.Call
-import retrofit2.http.Body
-import retrofit2.http.POST
+import com.example.planalog.network.friend.response.ErrorResponse
 
 data class FriendRequest(
     val toUserId: String
@@ -16,7 +14,7 @@ data class FriendRequestResponse(
 
 data class FriendRequestSuccess(
     val message: String,
-    val result: FriendRequestResult
+    val data: FriendRequestResult
 )
 
 data class FriendRequestResult(
@@ -26,10 +24,3 @@ data class FriendRequestResult(
     val createdAt: String,
     val isAccepted: Boolean
 )
-
-
-
-interface AddFriendService {
-    @POST("/friends")
-    fun sendFriendRequest(@Body request: FriendRequest): Call<FriendRequestResponse>
-}

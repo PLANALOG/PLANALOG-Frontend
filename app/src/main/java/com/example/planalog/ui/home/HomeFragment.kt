@@ -18,8 +18,8 @@ import com.example.planalog.ui.comment.CommentFragment
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarAdapter
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarDay
 import com.example.planalog.ui.comment.com.example.planalog.utils.generateCalendarDays
-import com.example.planalog.ui.home.api.PlannerApiHelper
-import com.example.planalog.ui.home.api.TaskApiHelper
+import com.example.planalog.network.api.PlannerApiHelper
+import com.example.planalog.network.api.TaskApiHelper
 import com.example.planalog.ui.home.calender.SharedViewModel
 import com.example.planalog.ui.home.ctgy.Category
 import com.example.planalog.ui.home.ctgy.CategoryAdapter
