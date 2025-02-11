@@ -136,6 +136,7 @@ class FriendpageActivity : AppCompatActivity() {
 //        toggleFollowButton(followStatus)
 //    }
 
+
     private fun setupFollowButton() {
         binding.followBtn.setOnClickListener {
             if (!binding.followBtn.isSelected) {
