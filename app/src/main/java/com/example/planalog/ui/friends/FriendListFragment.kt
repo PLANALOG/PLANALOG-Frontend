@@ -10,10 +10,9 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.databinding.FragmentFriendlistBinding
 import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.friend.Friend
-import com.example.planalog.network.friend.FriendApiService
-import com.example.planalog.network.friend.FriendResponse
-import com.example.planalog.network.friend.ErrorResponse
+import com.example.planalog.network.friend.response.Friend
+import com.example.planalog.network.friend.FriendService
+import com.example.planalog.network.friend.response.FriendResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -50,7 +49,7 @@ class FriendListFragment : Fragment() {
     }
 
     private fun fetchFriends() {
-        val apiService = RetrofitClient.create(FriendApiService::class.java, requireContext())
+        val apiService = RetrofitClient.create(FriendService::class.java, requireContext())
         val call = if (tabType == "내가 응원하는") {
             apiService.getFollowing()
         } else {

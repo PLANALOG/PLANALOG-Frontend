@@ -1,4 +1,4 @@
-package com.example.planalog.ui.home.api
+package com.example.planalog.network.api
 
 import SearchPostResponse
 import android.content.Context

@@ -14,6 +14,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.R
@@ -24,7 +25,7 @@ import com.example.planalog.network.search.User
 import com.example.planalog.network.user.UserService
 import com.example.planalog.network.user.response.FriendProfileResponse
 import com.example.planalog.ui.friends.FriendpageActivity
-import com.example.planalog.ui.home.api.SearchApiHelper
+import com.example.planalog.network.api.SearchApiHelper
 import com.example.planalog.utils.VerticalSpaceItemDecoration
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -63,42 +64,38 @@ class SearchFragment : Fragment() {
         userService = RetrofitClient.create(UserService::class.java, requireContext())
 
         userService.getFriendProfile(userId).enqueue(object : Callback<FriendProfileResponse> {
-            override fun onResponse(
-                call: Call<FriendProfileResponse>,
-                response: Response<FriendProfileResponse>
-            ) {
-                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-
-                        val users = response.body()?.success  // 필요한 데이터만 추출
-                        Toast.makeText(context, "조회 성공", Toast.LENGTH_SHORT).show()
-                        Log.d("다른 유저 정보 조회", "조회 성공: $users")
-                } else {
-                    Log.e("다른 유저 정보 조회", "서버 오류: ${response.code()}, ${response.message()}")
-                    Toast.makeText(context, "조회 실패", Toast.LENGTH_SHORT).show()
+            override fun onResponse(call: Call<FriendProfileResponse>, response: Response<FriendProfileResponse>) {
+                if (response.isSuccessful) {
+                    activity?.let {
+                        Toast.makeText(it, "조회 성공", Toast.LENGTH_SHORT).show()
+                    } ?: Log.e("SearchFragment", "Activity가 null 상태입니다.")
                 }
             }
-
             override fun onFailure(call: Call<FriendProfileResponse>, t: Throwable) {
-                Log.e("다른 유저 정보 조회", "네트워크 오류: ${t.message}", t)
-                Toast.makeText(context, "네트워크 오류 발생", Toast.LENGTH_SHORT).show()
+                activity?.let {
+                    Toast.makeText(it, "네트워크 오류 발생", Toast.LENGTH_SHORT).show()
+                } ?: Log.e("SearchFragment", "Activity가 null 상태입니다.")
             }
         })
+
 
         return binding.root
     }
 
     private fun setupRecyclerView() {
-        searchAdapter = SearchAdapter(mutableListOf()) { item ->
-            when (item) {
-                is String -> {
-                    // JSON 데이터를 FriendpageActivity로 전달
-                    val intent = Intent(requireContext(), FriendpageActivity::class.java)
-                    intent.putExtra("friendData", item)
-                    startActivity(intent)
-                }
-                else -> Toast.makeText(requireContext(), "알 수 없는 데이터 유형입니다.", Toast.LENGTH_SHORT).show()
+        searchAdapter = SearchAdapter(
+            mutableListOf(),
+            onHistoryClick = { historyText ->
+                // 검색 기록 클릭 시 EditText에 설정
+                binding.searchEt.setText(historyText)
+            },
+            onResultClick = { userJson ->
+                // JSON 데이터를 FriendpageActivity로 전달
+                val intent = Intent(requireContext(), FriendpageActivity::class.java)
+                intent.putExtra("friendData", userJson)
+                startActivity(intent)
             }
-        }
+        )
 
         binding.searchRv.apply {
             layoutManager = LinearLayoutManager(requireContext())
@@ -106,6 +103,8 @@ class SearchFragment : Fragment() {
             addItemDecoration(VerticalSpaceItemDecoration(16.dpToPx()))  // 아이템 간격 추가
         }
     }
+
+
 
     private fun getFriendIdFromSearchResult(result: String): Int {
         return try {
@@ -207,16 +206,20 @@ class SearchFragment : Fragment() {
     private fun loadSearchHistory() {
         searchApiHelper.fetchSearchHistory(
             onSuccess = { historyItems ->
-                val sortedHistory = historyItems.sortedByDescending { it.createdAt }  // 최신순으로 정렬
-                sortedHistory.forEach { item ->
-                    searchAdapter.addSearchHistory(item.content, binding.searchRv)  // 리사이클러뷰 전달
+                if (isAdded && _binding != null) {
+                    val sortedHistory = historyItems.sortedByDescending { it.createdAt }
+                    sortedHistory.forEach { item ->
+                        searchAdapter.addSearchHistory(item.content, binding.searchRv)
+                    }
+                } else {
+                    Log.e("SearchFragment", "프래그먼트가 파괴된 상태이므로 UI를 업데이트하지 않습니다.")
                 }
-                Log.d("검색 기록 조회: ", "검색 목록: $sortedHistory")
             },
             onFailure = {
-                println("검색 기록 조회 실패")
+                Log.e("SearchFragment", "검색 기록 조회 실패")
             }
         )
+
     }
 
 

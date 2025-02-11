@@ -1,6 +1,6 @@
 package com.example.planalog.network.user.response
 
-import com.example.planalog.network.friend.ErrorResponse
+import com.example.planalog.network.friend.response.ErrorResponse
 
 data class FriendProfileResponse(
     val resultType: String,

@@ -1,7 +1,4 @@
-package com.example.planalog.network.friend
-
-import retrofit2.Call
-import retrofit2.http.GET
+package com.example.planalog.network.friend.response
 
 data class FriendResponse(
     val resultType: String,
@@ -23,13 +20,3 @@ data class ErrorResponse(
     val errorCode: String,
     val reason: String
 )
-
-
-interface FriendApiService {
-    @GET("/friends/following")
-    fun getFollowing(): Call<FriendResponse>
-
-    @GET("/friends/followers")
-    fun getFollowers(): Call<FriendResponse>
-}
-
