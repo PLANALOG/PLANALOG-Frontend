@@ -9,11 +9,10 @@ data class FriendProfileResponse(
 )
 
 data class FriendProfile(
-    val userId: String,
+    val userId: Int,
     val nickname: String,
     val type: String,
     val introduction: String,
     val link: String,
-    val createdAt: String,
-    val updatedAt: String
+    val profileImage: String?
 )

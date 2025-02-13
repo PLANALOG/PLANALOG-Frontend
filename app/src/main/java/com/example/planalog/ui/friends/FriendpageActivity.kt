@@ -7,11 +7,17 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityFriendpageBinding
+import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.api.FriendApiHelper
+import com.example.planalog.network.api.FriendCountHelper
 import com.example.planalog.network.api.NoticeApiHelper
 import com.example.planalog.network.friend.FriendRequestCallback
+import com.example.planalog.network.friend.FriendService
+import com.example.planalog.network.user.FriendCountResponse
+import com.example.planalog.network.user.response.FriendProfile
 import com.example.planalog.ui.home.notify.NotificationItem
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -26,6 +32,7 @@ class FriendpageActivity : AppCompatActivity() {
     private lateinit var spf : SharedPreferences
     private lateinit var friendApiHelper : FriendApiHelper
     private lateinit var noticeApiHelper: NoticeApiHelper
+    private lateinit var friendCountHelper: FriendCountHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +42,7 @@ class FriendpageActivity : AppCompatActivity() {
 
         friendApiHelper = FriendApiHelper(this)
         noticeApiHelper = NoticeApiHelper(this)
+        friendCountHelper = FriendCountHelper(this)
 
         spf = getSharedPreferences("follow_status", Context.MODE_PRIVATE)
 
@@ -65,7 +73,10 @@ class FriendpageActivity : AppCompatActivity() {
         }
 
         setupRecyclerView()
-//        userId.toString()?.let { fetchFollowingList(it) }
+        if (friendUserId != null) {
+            fetchFriendCount(friendUserId!!)
+            friendApiHelper.getFriendProfile(friendUserId!!)
+        }
         setupFollowButton()
     }
 
@@ -149,6 +160,7 @@ class FriendpageActivity : AppCompatActivity() {
         }
     }
 
+
     private fun toggleFollowButton(isFollowing: Boolean) {
         binding.followBtn.isSelected = isFollowing  // 셀렉터가 UI 자동 업데이트
         binding.followBtn.text = if (isFollowing) "응원 중" else "응원하기"
@@ -214,4 +226,22 @@ class FriendpageActivity : AppCompatActivity() {
         Log.d("FriendpageActivity", "📌 팔로우 정보 초기화 완료")
     }
 
+    private fun fetchFriendCount(userId: Int) {
+        friendCountHelper.getUserFriendCount(userId)
+    }
+
+    fun updateFriendCountUI(friendCount: Int) {
+        binding.friendCountNumber.text = friendCount.toString()
+    }
+
+    fun updateFriendProfileUI(friendProfile: FriendProfile) {
+        binding.userName.text = friendProfile.nickname
+        binding.introText.text = friendProfile.introduction
+
+        // Glide를 사용하여 프로필 이미지 로드
+        Glide.with(this)
+            .load(friendProfile.profileImage ?: R.drawable.ic_myprofile)
+            .error(R.drawable.ic_myprofile)
+            .into(binding.profileImage)
+    }
 }

@@ -1,6 +1,8 @@
 package com.example.planalog.network.user
 
 import com.example.planalog.network.user.response.FriendProfileResponse
+
+import com.example.planalog.network.friend.response.FriendResponse
 import com.example.planalog.network.user.request.UserUpdateRequest
 import com.example.planalog.network.user.response.UserProfileImgResponse
 import com.example.planalog.network.user.response.UserResponse
@@ -38,5 +40,5 @@ interface UserService {
 
     // 다른 유저 정보 조회
     @GET("/users/{userId}")
-    fun getFriendProfile(@Path("userId") userId: String?): Call<FriendProfileResponse>
+    fun getFriendProfile(@Path("userId") userId: String?): Call<(FriendProfileResponse)>
 }

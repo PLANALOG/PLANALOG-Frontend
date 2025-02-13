@@ -32,6 +32,7 @@
     <string name="link">링크</string>
     <string name="addlink">링크 추가하기</string>
     <string name="termsofuse">이용약관</string>
+    <string name="privacy_policy">개인정보 처리방침</string>
     <string name="logout">로그아웃</string>
     <string name="account_quit"> 회원탈퇴</string>
     <string name="ok"> 확인</string>
