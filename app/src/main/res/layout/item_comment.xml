@@ -48,7 +48,7 @@
             android:id="@+id/commentContent"
             android:fontFamily="@font/pretendard_medium"
             android:layout_width="344dp"
-            android:layout_height="wrap_content"
+            android:layout_height="28dp"
             android:layout_marginTop="8dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

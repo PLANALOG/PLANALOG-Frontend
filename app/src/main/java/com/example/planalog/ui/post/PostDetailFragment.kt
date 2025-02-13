@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentPostDetailBinding
+import com.example.planalog.ui.comment.CommentFragment
 
 class PostDetailFragment : Fragment() {
     private var _binding: FragmentPostDetailBinding? = null
@@ -57,6 +58,7 @@ class PostDetailFragment : Fragment() {
         }
 
         setupLikeButton()
+        setupReplyButton() // 댓글 버튼 설정
 
         return binding.root
     }
@@ -73,6 +75,15 @@ class PostDetailFragment : Fragment() {
             }
         )
         binding.viewPager.adapter = slidePagerAdapter
+    }
+
+    private fun setupReplyButton() {
+        binding.buttonReply.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.main_frm, CommentFragment()) // CommentFragment로 변경
+                .addToBackStack(null) // 뒤로 가기 기능 추가
+                .commit()
+        }
     }
 
     private fun setupLikeButton() {
