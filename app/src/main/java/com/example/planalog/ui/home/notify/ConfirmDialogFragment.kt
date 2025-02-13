@@ -7,10 +7,13 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import com.example.planalog.databinding.FragmentConfirmDialogBinding
+import com.example.planalog.network.api.FriendApiHelper
 
 class ConfirmDialogFragment : DialogFragment() {
     private var _binding: FragmentConfirmDialogBinding? = null
     private val binding get() = _binding!!
+
+    private lateinit var friendApiHelper : FriendApiHelper
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -19,6 +22,8 @@ class ConfirmDialogFragment : DialogFragment() {
     ): View? {
         _binding = FragmentConfirmDialogBinding.inflate(inflater, container, false)
 
+        friendApiHelper = FriendApiHelper(requireContext())
+
         // 취소 버튼
         binding.cancelBtn.setOnClickListener {
             dismiss() // 팝업 닫기
@@ -26,7 +31,7 @@ class ConfirmDialogFragment : DialogFragment() {
 
         // 수락 버튼
         binding.acceptBtn.setOnClickListener {
-            // 처리 로직 추가
+//            friendApiHelper.acceptFriend("friendId")
             dismiss() // 팝업 닫기
         }
 

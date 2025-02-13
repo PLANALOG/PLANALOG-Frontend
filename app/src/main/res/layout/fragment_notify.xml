@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="20dp"
+    android:layout_marginTop="90dp"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/main_2">
 
@@ -17,6 +18,14 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
 
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/notify_rv"
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/notify_today_tv" />
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/notify_view_wrapper_1"
         android:layout_width="match_parent"
@@ -24,7 +33,7 @@
         android:layout_marginTop="20dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/notify_today_tv">
+        app:layout_constraintTop_toBottomOf="@id/notify_rv">
 
         <androidx.cardview.widget.CardView
             android:id="@+id/profile_cv"

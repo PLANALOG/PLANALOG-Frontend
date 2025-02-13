@@ -14,18 +14,15 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentSearchBinding
 import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.planner.PlannerResponse
-import com.example.planalog.network.search.User
 import com.example.planalog.network.user.UserService
 import com.example.planalog.network.user.response.FriendProfileResponse
 import com.example.planalog.ui.friends.FriendpageActivity
 import com.example.planalog.network.api.SearchApiHelper
+import com.example.planalog.utils.DisplayUtil.dpToPx
 import com.example.planalog.utils.VerticalSpaceItemDecoration
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -78,6 +75,25 @@ class SearchFragment : Fragment() {
             }
         })
 
+        searchApiHelper.fetchSearchHistory(
+            onSuccess = { historyItems ->
+//                if (isAdded && _binding != null) {
+//                    val sortedHistory = historyItems.sortedByDescending { it.createdAt }
+//
+//
+//                    sortedHistory.forEach { item ->
+//                        searchAdapter.addSearchHistory(item.content, binding.searchRv)
+//                    }
+//                } else {
+//                    Log.e("SearchFragment", "프래그먼트가 파괴된 상태이므로 UI를 업데이트하지 않습니다.")
+//                }
+                Log.d("SearchFragment", "검색 기록 조회 성공")
+            },
+            onFailure = {
+                Log.e("SearchFragment", "검색 기록 조회 실패")
+            }
+        )
+
 
         return binding.root
     }
@@ -100,26 +116,9 @@ class SearchFragment : Fragment() {
         binding.searchRv.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = searchAdapter
-            addItemDecoration(VerticalSpaceItemDecoration(16.dpToPx()))  // 아이템 간격 추가
+            val pxValue = requireContext().dpToPx(16)
+            addItemDecoration(VerticalSpaceItemDecoration(pxValue))  // 아이템 간격 추가
         }
-    }
-
-
-
-    private fun getFriendIdFromSearchResult(result: String): Int {
-        return try {
-            val parts = result.split(":")
-            if (parts.size == 2) parts[1].toInt() else -1  // 올바른 형식이 아니면 -1 반환
-        } catch (e: Exception) {
-            e.printStackTrace()
-            -1  // 오류 발생 시 기본값 반환
-        }
-    }
-
-
-
-    private fun Int.dpToPx(): Int {
-        return (this * resources.displayMetrics.density).toInt()
     }
 
     private fun setupSearchInput() {
@@ -141,16 +140,15 @@ class SearchFragment : Fragment() {
                 val drawableStartWidth = binding.searchEt.compoundDrawables[0]?.bounds?.width() ?: 0
                 val drawableEndWidth = binding.searchEt.compoundDrawables[2]?.bounds?.width() ?: 0
 
-                // Start Drawable 클릭 시 검색 처리 및 기록 저장
+                // Start Drawable 클릭 시 검색 기록 추가
                 if (event.rawX <= (binding.searchEt.left + drawableStartWidth + binding.searchEt.paddingStart)) {
                     val query = binding.searchEt.text.toString().trim()
                     if (query.isNotBlank()) {
-                        saveSearchHistory(query)  // 검색어를 SharedPreferences에 저장
-                        searchAdapter.addSearchHistory(query, binding.searchRv)  // 검색 기록에 추가 및 스크롤 이동
-                        // 검색 기록 생성 API 호출
+                        saveSearchHistory(query)  // 기존 데이터를 유지하면서 최신 검색어만 저장
+                        searchAdapter.addSearchHistory(query, binding.searchRv)  // 검색 기록 추가
                         searchApiHelper.createSearchRecord(query,
                             onSuccess = {
-                                Toast.makeText(requireContext(), "검색 기록이 서버에 저장되었습니다.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(requireContext(), "검색 기록이 저장되었습니다.", Toast.LENGTH_SHORT).show()
                             },
                             onFailure = {
                                 Toast.makeText(requireContext(), "검색 기록 저장 실패", Toast.LENGTH_SHORT).show()
@@ -165,12 +163,16 @@ class SearchFragment : Fragment() {
                 if (event.rawX >= (binding.searchEt.right - drawableEndWidth - binding.searchEt.paddingEnd)) {
                     binding.searchEt.text.clear()
                     binding.searchEt.hint = getString(R.string.hint)
+
+                    loadSearchHistory()
+
                     return@setOnTouchListener true
                 }
             }
             false
         }
     }
+
 
 
     private fun performSearch(query: String) {
@@ -184,11 +186,19 @@ class SearchFragment : Fragment() {
 
     /** 검색 기록 저장 */
     private fun saveSearchHistory(query: String) {
-        if (!searchHistory.contains(query)) {
-            searchHistory.add(0, query)  // 최신 검색어를 맨 위에 추가
-            sharedPreferences.edit().putStringSet("history", searchHistory.toSet()).apply()
-        }
+        val savedHistory = sharedPreferences.getStringSet("history", mutableSetOf())?.toMutableList() ?: mutableListOf()
+
+        // ✅ 중복 제거 후 최신 검색어를 맨 위에 추가
+        savedHistory.remove(query)
+        savedHistory.add(0, query)
+
+        sharedPreferences.edit().putStringSet("history", savedHistory.toSet()).apply()
+
+        Log.d("SearchFragment", "✅ 저장된 검색 기록 (최신순): $savedHistory")
     }
+
+
+
 
     /** 검색 결과 저장 */
     private fun saveSearchResults(query: String, results: List<Map<String, Any>>) {
@@ -204,23 +214,18 @@ class SearchFragment : Fragment() {
     }
 
     private fun loadSearchHistory() {
-        searchApiHelper.fetchSearchHistory(
-            onSuccess = { historyItems ->
-                if (isAdded && _binding != null) {
-                    val sortedHistory = historyItems.sortedByDescending { it.createdAt }
-                    sortedHistory.forEach { item ->
-                        searchAdapter.addSearchHistory(item.content, binding.searchRv)
-                    }
-                } else {
-                    Log.e("SearchFragment", "프래그먼트가 파괴된 상태이므로 UI를 업데이트하지 않습니다.")
-                }
-            },
-            onFailure = {
-                Log.e("SearchFragment", "검색 기록 조회 실패")
-            }
-        )
+        val savedHistory = sharedPreferences.getStringSet("history", mutableSetOf())?.toMutableList() ?: mutableListOf()
 
+        // ✅ 최신순 정렬 (최근에 추가된 항목이 맨 위로 오도록 유지)
+        val sortedHistory = savedHistory.sortedByDescending { savedHistory.indexOf(it) }
+
+        sortedHistory.forEach { item ->
+            searchAdapter.addSearchHistory(item, binding.searchRv) // 검색 기록 UI에 추가
+        }
+
+        Log.d("SearchFragment", "✅ 저장된 검색 기록 불러오기: $sortedHistory")
     }
+
 
 
     private fun loadSavedSearchResults() {
@@ -242,12 +247,6 @@ class SearchFragment : Fragment() {
 
         // 리사이클러뷰를 맨 위로 스크롤
         binding.searchRv.scrollToPosition(0)
-    }
-
-    private fun navigateToFriendPage(friendId: Int) {
-        val intent = Intent(requireContext(), FriendpageActivity::class.java)
-        intent.putExtra("friendId", friendId)
-        startActivity(intent)
     }
 
 

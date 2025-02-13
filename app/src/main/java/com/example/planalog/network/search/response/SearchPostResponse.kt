@@ -1,3 +1,5 @@
+package com.example.planalog.network.search.response
+
 data class SearchPostResponse(
     val resultType: String,
     val error: ErrorDetail?,  // 객체로 처리

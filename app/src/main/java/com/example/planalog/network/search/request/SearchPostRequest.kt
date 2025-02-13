@@ -1,4 +1,4 @@
-package com.example.planalog.network.search
+package com.example.planalog.network.search.request
 
 data class SearchPostRequest(
     val content: String,

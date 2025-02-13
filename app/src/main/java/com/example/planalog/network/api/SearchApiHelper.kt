@@ -1,16 +1,16 @@
 package com.example.planalog.network.api
 
-import SearchPostResponse
+import com.example.planalog.network.search.response.SearchPostResponse
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.search.Records
-import com.example.planalog.network.search.SearchDeleteResponse
-import com.example.planalog.network.search.SearchPostRequest
-import com.example.planalog.network.search.SearchRecordsResponse
+import com.example.planalog.network.search.response.Records
+import com.example.planalog.network.search.response.SearchDeleteResponse
+import com.example.planalog.network.search.request.SearchPostRequest
+import com.example.planalog.network.search.response.SearchRecordsResponse
 import com.example.planalog.network.search.SearchService
-import com.example.planalog.network.search.SearchUsersResponse
+import com.example.planalog.network.search.response.SearchUsersResponse
 import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
