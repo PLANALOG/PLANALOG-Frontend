@@ -103,6 +103,22 @@ class EditprofileActivity : AppCompatActivity() {
             Log.d(TAG, "Logout button clicked")
             logout()
         }
+
+        binding.terms.setOnClickListener {
+            val url = "https://well-sheet-c6d.notion.site/19407a632e98800493d0d4e7d936e3da?pvs=4"
+            Log.d("EditprofileActivity", "이용약관 클릭됨 - 전달할 URL: $url")
+            val intent = Intent(this, WebviewActivity::class.java)
+            intent.putExtra("URL", url)
+            startActivity(intent)
+        }
+
+        binding.privacyPolicy.setOnClickListener {
+            val url = "http://well-sheet-c6d.notion.site"
+            Log.d("EditprofileActivity", "개인정보 처리방침 클릭됨 - 전달할 URL: $url")
+            val intent = Intent(this, WebviewActivity::class.java)
+            intent.putExtra("URL", url)
+            startActivity(intent)
+        }
     }
 
     private fun loadUserProfile() {

@@ -28,11 +28,22 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <ImageView
-            android:id="@+id/profile_image"
+
+        <!-- 원형 프로필 이미지 CardView -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/profile_card"
             android:layout_width="85dp"
             android:layout_height="85dp"
-            android:src="@drawable/ic_myprofile" />
+            app:cardCornerRadius="42.5dp"
+            android:backgroundTint="@color/white">
+
+            <ImageView
+                android:id="@+id/profile_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_myprofile"
+                android:scaleType="centerCrop" />
+        </androidx.cardview.widget.CardView>
 
     </FrameLayout>
 
@@ -41,7 +52,7 @@
         android:id="@+id/user_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="이름"
+        android:text="@string/my_name"
         android:textSize="18sp"
         android:fontFamily="@font/pretendard_bold"
         android:layout_marginTop="17dp"

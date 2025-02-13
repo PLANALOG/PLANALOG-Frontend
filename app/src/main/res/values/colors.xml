@@ -12,4 +12,6 @@
     <color name="state_2">#C84141</color>
     <color name="state_3">#FFFFFF</color>
     <color name="delete_page">#801E1E1E</color>
+    <color name="gray_text">#B3414141</color>
+
 </resources>

@@ -11,14 +11,17 @@ import com.example.planalog.network.friend.request.FriendAddRequest
 import com.example.planalog.network.friend.response.FriendAcceptResponse
 import com.example.planalog.network.friend.response.FriendAddResponse
 import com.example.planalog.network.friend.response.FriendDeleteResponse
-import com.example.planalog.network.user.response.FriendProfile
+import com.example.planalog.network.user.UserService
+import com.example.planalog.network.user.response.FriendProfileResponse
 import com.example.planalog.ui.friends.FriendpageActivity
+
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class FriendApiHelper(private val context: Context) {
     private val friendService = RetrofitClient.create(FriendService::class.java, context)
+    private val userService = RetrofitClient.create(UserService::class.java, context)
 
     fun sendFriendRequest(toUserId: String, callback: FriendRequestCallback) {
         if (toUserId.isNullOrEmpty()) {
@@ -103,4 +106,29 @@ class FriendApiHelper(private val context: Context) {
             }
         })
     }
+
+    fun getFriendProfile(userId: Int) {
+        userService.getFriendProfile(userId.toString()).enqueue(object : Callback<FriendProfileResponse> {
+            override fun onResponse(call: Call<FriendProfileResponse>, response: Response<FriendProfileResponse>) {
+                if (response.isSuccessful) {
+                    val friendProfile = response.body()?.success
+                    if (friendProfile != null) {
+                        Log.d("FriendApiHelper", "프로필 조회 성공: ${friendProfile.nickname}")
+
+                        // FriendpageActivity의 UI 업데이트
+                        (context as? FriendpageActivity)?.runOnUiThread {
+                            context.updateFriendProfileUI(friendProfile)
+                        }
+                    }
+                } else {
+                    Log.e("FriendApiHelper", "프로필 조회 실패: ${response.message()}")
+                }
+            }
+
+            override fun onFailure(call: Call<FriendProfileResponse>, t: Throwable) {
+                Log.e("FriendApiHelper", "네트워크 오류: ${t.localizedMessage}", t)
+            }
+        })
+    }
+
 }

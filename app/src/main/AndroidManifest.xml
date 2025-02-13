@@ -93,6 +93,10 @@
         <activity android:name=".ui.friends.FriendpageActivity"
             android:exported="true"
             android:theme="@style/FullStatusTheme"/>
+
+        <activity android:name=".ui.profile.WebviewActivity"
+            android:exported="true"
+            android:theme="@style/FullStatusTheme"/>
     </application>
 
 </manifest>
