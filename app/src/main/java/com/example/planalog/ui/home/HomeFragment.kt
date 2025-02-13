@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentHomeBinding
@@ -46,10 +47,6 @@ class HomeFragment : Fragment() {
     private val currentYear = Calendar.getInstance().get(Calendar.YEAR)
     private val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
 
-    private val taskIdsToDelete = mutableListOf<Int>()
-
-    private lateinit var plannerService: PlannerService
-    private lateinit var taskService: TaskService
     private lateinit var taskApiHelper: TaskApiHelper
     private lateinit var plannerApiHelper: PlannerApiHelper
 
@@ -79,9 +76,18 @@ class HomeFragment : Fragment() {
 
         val date = getCurrentDate()
         val month = getCurrentMonth()
+        Log.d("HomeFragment", "date: ${date}, month: ${month}")
 
         plannerApiHelper = PlannerApiHelper(requireContext())
-        plannerApiHelper.getPlanner(userId, date, month)
+        plannerApiHelper.getPlanner(userId, date, month) { hasPlanner ->
+            if (hasPlanner) {
+                Log.d("HomeFragment", "플래너 데이터가 존재합니다.")
+                // ✅ 플래너가 있을 때 실행할 코드 추가
+            } else {
+                Log.e("HomeFragment", "플래너가 없습니다.")
+                Toast.makeText(requireContext(), "플래너가 없습니다. 먼저 생성해주세요.", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         // 초기 상태 버튼 설정
         setInitialBtnState()
