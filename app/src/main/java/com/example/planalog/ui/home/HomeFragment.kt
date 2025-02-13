@@ -20,6 +20,7 @@ import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.Cal
 import com.example.planalog.ui.comment.com.example.planalog.utils.generateCalendarDays
 import com.example.planalog.network.api.PlannerApiHelper
 import com.example.planalog.network.api.TaskApiHelper
+import com.example.planalog.network.task.response.TodoItem
 import com.example.planalog.ui.home.calender.SharedViewModel
 import com.example.planalog.ui.home.ctgy.Category
 import com.example.planalog.ui.home.ctgy.CategoryAdapter
@@ -53,6 +54,7 @@ class HomeFragment : Fragment() {
     private lateinit var plannerApiHelper: PlannerApiHelper
 
     private val calendarDays = mutableListOf<CalendarDay>()
+    private var lastSavedTasks: Set<String> = emptySet()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -164,6 +166,7 @@ class HomeFragment : Fragment() {
             binding.homePlannerMemoSaveBtn.isEnabled = true
         }
 
+        loadChecklistFromPreferences()
 
         // 플래너 기능 세팅
         setPlanner()
@@ -253,6 +256,8 @@ class HomeFragment : Fragment() {
 
         // 메모형 플래너 저장 버튼 클릭 리스너
         binding.homePlannerMemoSaveBtn.setOnClickListener {
+            val currentTasks = checklist.map { it.task }.toSet()
+
             // 모든 항목 수정 불가능으로 변경
             checklist.forEach { it.isEditable = false }
             memoAdapter.notifyDataSetChanged()
@@ -268,7 +273,17 @@ class HomeFragment : Fragment() {
 
             // 삭제 모드 비활성화
             memoAdapter.toggleDeleteMode(false) // 삭제 모드 비활성화
-            sendTaskToApi()
+
+            // 삭제 후 저장 버튼을 눌렀을 때 `sendTaskToApi()` 실행 안 하도록 변경
+            if (currentTasks != lastSavedTasks) {
+                Log.d("HomeFragment", "변경 사항 감지됨, 새로운 할 일 생성 API 호출")
+                sendTaskToApi()
+            } else {
+                Log.d("HomeFragment", "변경 사항 없음, 할 일 생성 API 호출 안 함")
+            }
+
+            saveChecklistToPreferences()
+            lastSavedTasks = currentTasks
         }
 
         // 메모형 삭제 버튼 클릭 리스너
@@ -278,11 +293,22 @@ class HomeFragment : Fragment() {
                 if (memoAdapter.hasSelectedItems()) {
                     // 선택된 할 일의 ID 가져오기
                     val selectedTaskIds = memoAdapter.getSelectedTaskIds()
+                    Log.d("HomeFragment", "선택된 Task ID 목록: $selectedTaskIds")
 
                     if (selectedTaskIds.isNotEmpty()) {
                         // API 호출로 선택된 할 일 삭제
-//                        taskApiHelper = TaskApiHelper(requireContext())
-//                        taskApiHelper.deleteTasks(selectedTaskIds)
+                        taskApiHelper = TaskApiHelper(requireContext())
+                        taskApiHelper.deleteTasks(selectedTaskIds,
+                            onSuccess = {
+                                deletedTaskIds -> memoAdapter.deleteSelectedItems()
+
+                                // 삭제 후 상태를 저장하여, 저장 버튼 눌렀을 때 생성 API가 호출되지 않도록 설정
+                                lastSavedTasks = checklist.map { it.task }.toSet()
+                                Log.d("HomeFragment", "삭제 후 lastSavedTasks 업데이트: $lastSavedTasks")
+                            },
+
+                            onFailure = { Log.e("HomeFragment", "할 일 삭제 실패") }
+                        )
                         binding.homePlannerMemoDeleteBtn.isEnabled = false
                     }
 
@@ -312,6 +338,10 @@ class HomeFragment : Fragment() {
 
 
     private fun updateDeleteButtonState() {
+
+        val selectedTaskIds = memoAdapter.getSelectedTaskIds()
+        Log.d("HomeFragment", "초기 선택된 Task ID 목록: $selectedTaskIds")
+
         // 선택된 카테고리나 체크리스트가 있는지 확인
         val hasSelectedItems = categories.any { it.isSelected || it.checklists.any { checklist -> checklist.isSelected } }
 
@@ -413,26 +443,45 @@ class HomeFragment : Fragment() {
 
     // 텍스트 전송 함수
     private fun sendTaskToApi() {
-
-        val taskTitle = checklist.map { it.task }  // 체크리스트 항목들을 하나의 텍스트로 결합
+        val taskTitles = checklist.map { it.task }  // 체크리스트 항목들을 리스트로 변환
         val currentDate = getCurrentDate()  // 현재 날짜 가져오기
-        val allChecked = checklist.all { it.isChecked == false }
+        val allChecked = checklist.all { it.isChecked }
 
         savePlannerDate(requireContext(), currentDate)
-
         updateCalendarTaskStatus()
 
-        // 로그로 출력해서 API에 전달되는 데이터 확인
-        Log.d("API SendTask", "Task Title: $taskTitle")
+        // 로그로 API에 전달되는 데이터 확인
+        Log.d("API SendTask", "Task Titles: $taskTitles")
         Log.d("API SendTask", "Current Date: $currentDate")
 
         updateTaskCompletion(requireContext(), currentDate, allChecked)
 
-        Log.d("API SendTask", "Task Title: $taskTitle, Date: $currentDate")
+        // TaskApiHelper 사용하여 서버에 요청
+        taskApiHelper = TaskApiHelper(requireContext())
+        taskApiHelper.addMultipleTasks(taskTitles, currentDate) { success, responseCode, responseBody, errorMessage ->
+            if (success) {
+                Log.d("HomeFragment", "할 일이 여러 개 생성되었습니다. (응답 코드: $responseCode)")
+                Log.d("HomeFragment", "서버 응답 본문: $responseBody")
+                Toast.makeText(requireContext(), "할 일이 여러 개 생성되었습니다.", Toast.LENGTH_SHORT).show()
 
-//        taskApiHelper = TaskApiHelper(requireContext())
-//        taskApiHelper.addMultipleTasks(taskTitle, currentDate)
+                (responseBody)?.let { todoItems ->
+                    todoItems.forEachIndexed { index, item ->
+                        if (index < checklist.size) {
+                            checklist[index].taskId = item.id // ✅ taskId 업데이트
+                        }
+                    }
+                    memoAdapter.notifyDataSetChanged()
+                }
+                Toast.makeText(requireContext(), "할 일이 여러 개 생성되었습니다.", Toast.LENGTH_SHORT).show()
+
+            } else {
+                Log.e("HomeFragment", "할 일 생성 실패 (응답 코드: $responseCode, 에러 메시지: $errorMessage)")
+                Log.e("HomeFragment", "서버 응답 본문: $responseBody")
+                Toast.makeText(requireContext(), "할 일 생성 실패: $errorMessage", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
+
 
     private fun checkAllItemsChecked() {
         val allChecked = checklist.all { it.isChecked }
@@ -462,6 +511,27 @@ class HomeFragment : Fragment() {
         val type = sharedPreferences.getString("type", "memo_user") // 기본값 설정
         return Pair(userId, type)
     }
+
+    // 할 일 목록 저장
+    private fun saveChecklistToPreferences() {
+        val sharedPreferences = requireContext().getSharedPreferences("checklist_prefs", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+
+        val taskList = checklist.map { it.task } // 체크리스트에서 텍스트만 저장
+        editor.putStringSet("tasks", taskList.toSet()) // Set으로 변환하여 저장
+        editor.apply()
+    }
+
+    // 할 일 목록 불러오기
+    private fun loadChecklistFromPreferences() {
+        val sharedPreferences = requireContext().getSharedPreferences("checklist_prefs", MODE_PRIVATE)
+        val savedTasks = sharedPreferences.getStringSet("tasks", emptySet()) ?: emptySet()
+
+        checklist.clear()
+        checklist.addAll(savedTasks.map { ChecklistItem(it, isChecked = false, isEditable = false) }) // 불러오기
+        memoAdapter.notifyDataSetChanged()
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

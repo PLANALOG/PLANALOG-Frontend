@@ -1,6 +1,6 @@
 package com.example.planalog.network.task.request
 
-data class addTaskRequest(
+data class AddTaskRequest(
     var title: String,
     var planner_date: String,
 )

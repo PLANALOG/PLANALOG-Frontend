@@ -3,10 +3,11 @@ package com.example.planalog.network.task.response
 data class AddMultipleTasksResponse(
     val resultType: String,
     val error: String?,
-    val success: List<AddedTask>  // 할 일 리스트
+    val success: List<TodoItem>?
 )
 
-data class AddedTask(
+data class TodoItem(
+    val id: Int,
     val title: String,
-    val planner_date: String
+    val plannerDate: String?
 )

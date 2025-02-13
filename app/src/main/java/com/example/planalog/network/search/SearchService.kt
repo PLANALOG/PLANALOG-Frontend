@@ -1,6 +1,10 @@
 package com.example.planalog.network.search
 
-import SearchPostResponse
+import com.example.planalog.network.search.response.SearchPostResponse
+import com.example.planalog.network.search.request.SearchPostRequest
+import com.example.planalog.network.search.response.SearchDeleteResponse
+import com.example.planalog.network.search.response.SearchRecordsResponse
+import com.example.planalog.network.search.response.SearchUsersResponse
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.DELETE

@@ -3,6 +3,7 @@ package com.example.planalog.ui.home.ctgy
 import android.content.Context
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -39,6 +40,8 @@ class MemoAdapter(
     override fun onBindViewHolder(holder: MemoViewHolder, position: Int) {
         val memo = checklists[position]
 
+        Log.d("MemoAdapter", "현재 항목 - Task: ${memo.task}, Task ID: ${memo.taskId}, isSelected: ${memo.isSelected}")
+
         // 기존 TextWatcher 제거
         holder.textWatcher?.let {
             holder.binding.homePlannerMemoEt.removeTextChangedListener(it)
@@ -70,6 +73,7 @@ class MemoAdapter(
             notifyItemChanged(position) // UI 업데이트
             onMemoChanged() // SAVE 버튼 활성화 상태 갱신
             onDeleteStateChanged(checklists.any { it.isSelected })
+            Log.d("MemoAdapter", "선택 상태 변경 - Task ID: ${memo.taskId}, isSelected: ${memo.isSelected}")
         }
 
         // 새 TextWatcher 등록
@@ -89,7 +93,22 @@ class MemoAdapter(
     }
 
     fun getSelectedTaskIds(): List<Int> {
-        return checklists.filter { it.isSelected && it.taskId != null }.map { it.taskId!! }
+        val selectedTasks = checklists.filter { it.isSelected }
+        val selectedIds = checklists.filter { it.isSelected && it.taskId != null }.map { it.taskId!! }
+
+        checklists.forEach {
+            Log.d("MemoAdapter", "Task: ${it.task}, Task ID: ${it.taskId}, isSelected: ${it.isSelected}")
+        }
+
+        selectedTasks.forEach {
+            if (it.taskId == null) {
+                Log.e("MemoAdapter", "⚠️ 선택된 항목의 Task ID가 null입니다! Task: ${it.task}")
+            }
+        }
+
+        Log.d("MemoAdapter", "선택된 Task ID 목록: $selectedIds")
+
+        return selectedIds
     }
 
 

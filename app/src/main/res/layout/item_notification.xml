@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/notify_view_wrapper_1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/profile_cv"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:backgroundTint="@color/transparent"
+        app:cardCornerRadius="1000dp"
+        android:layout_marginEnd="10dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/notify_tv">
+
+        <ImageView
+            android:id="@+id/profile_iv"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_friend_2"
+            android:layout_gravity="center"/>
+
+    </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:id="@+id/notify_tv"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/msg_1"
+        android:textColor="@color/main_1"
+        android:textSize="14sp"
+        android:fontFamily="@font/pretendard_medium"
+        app:layout_constraintStart_toEndOf="@id/profile_cv"
+        app:layout_constraintEnd_toStartOf="@id/agree_btn"
+        app:layout_constraintTop_toTopOf="@id/profile_cv"
+        app:layout_constraintBottom_toBottomOf="@id/profile_cv"/>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/agree_btn"
+        android:layout_width="46dp"
+        android:layout_height="22dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="0dp"
+        android:layout_marginStart="10dp"
+        android:backgroundTint="@color/main_1"
+        app:layout_constraintStart_toEndOf="@id/notify_tv"
+        app:layout_constraintEnd_toStartOf="@id/disagree_btn"
+        app:layout_constraintTop_toTopOf="@id/profile_cv"
+        app:layout_constraintBottom_toBottomOf="@id/profile_cv">
+
+        <TextView
+            android:id="@+id/agree_btn_tv"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/agree"
+            android:textSize="12sp"
+            android:textColor="@color/main_2"
+            android:fontFamily="@font/pretendard_medium" />
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/disagree_btn"
+        android:layout_width="46dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="10dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="0dp"
+        android:backgroundTint="@color/state_1"
+        app:layout_constraintStart_toEndOf="@id/agree_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/profile_cv"
+        app:layout_constraintBottom_toBottomOf="@id/profile_cv">
+
+        <TextView
+            android:id="@+id/disagree_btn_tv"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/disagree"
+            android:textSize="12sp"
+            android:textColor="@color/main_1"
+            android:fontFamily="@font/pretendard_medium" />
+
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

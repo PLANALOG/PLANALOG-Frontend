@@ -1,7 +1,6 @@
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.planalog.databinding.ItemSearchBinding
 import com.example.planalog.databinding.ItemSearchHistoryBinding
@@ -71,27 +70,25 @@ class SearchAdapter(
     /** 최종 검색어만 검색 기록에 추가 후 스크롤 이동 */
     fun addSearchHistory(newHistory: String?, recyclerView: RecyclerView) {
         if (newHistory.isNullOrBlank()) {
-            Log.e("SearchAdapter", "빈 검색 기록은 추가할 수 없습니다.")
+            Log.e("SearchAdapter", "❌ 빈 검색 기록은 추가할 수 없습니다.")
             return
         }
 
-        // 중복 항목을 제거
         val existingIndex = items.indexOfFirst {
-            it is SearchItem.SearchHistory && (it as SearchItem.SearchHistory).historyText == newHistory
+            it is SearchItem.SearchHistory && it.historyText == newHistory
         }
+
         if (existingIndex != -1) {
-            items.removeAt(existingIndex)  // 중복된 항목 제거
+            items.removeAt(existingIndex) // 기존 중복 항목 제거
             notifyItemRemoved(existingIndex)
         }
 
-        // 새로운 항목 추가
-        items.add(0, SearchItem.SearchHistory(newHistory))
+        items.add(0, SearchItem.SearchHistory(newHistory)) // 최신 검색 기록을 최상단에 추가
         notifyItemInserted(0)
 
-        // RecyclerView의 스크롤을 맨 위로 이동
         recyclerView.scrollToPosition(0)
 
-        Log.d("SearchAdapter", "추가된 검색 기록: $newHistory")
+        Log.d("SearchAdapter", "✅ 추가된 검색 기록 (최신순): $newHistory")
     }
 
 

@@ -1,4 +1,4 @@
-package com.example.planalog.network.search
+package com.example.planalog.network.search.response
 
 data class SearchUsersResponse(
     val resultType: String,
