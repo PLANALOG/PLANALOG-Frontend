@@ -1,5 +1,6 @@
 package com.example.planalog.ui.post
 
+import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -7,9 +8,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.bumptech.glide.Glide
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentPostDetailBinding
+import com.example.planalog.network.RetrofitClient
+import com.example.planalog.network.user.UserService
+import com.example.planalog.network.user.response.FriendProfileResponse
 import com.example.planalog.ui.comment.CommentFragment
+import com.example.planalog.utils.getCurrentDate
+import com.example.planalog.utils.getCurrentPostedDate
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class PostDetailFragment : Fragment() {
     private var _binding: FragmentPostDetailBinding? = null
@@ -22,11 +32,49 @@ class PostDetailFragment : Fragment() {
     private lateinit var slidePagerAdapter: SlidePagerAdapter
     private val slideList = mutableListOf<Slide>()
 
+
+    private lateinit var userService : UserService
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentPostDetailBinding.inflate(inflater, container, false)
+
+        val spf = requireContext().getSharedPreferences("Posted_id", Context.MODE_PRIVATE)
+        val postedId = spf.getInt("POSTED_ID", -1)
+        Log.d("PostedDetailFragment", "postedID: ${postedId}")
+
+        userService = RetrofitClient.create(UserService::class.java, requireContext())
+
+        userService.getFriendProfile(postedId.toString()).enqueue(object : Callback<FriendProfileResponse> {
+            override fun onResponse(
+                p0: Call<FriendProfileResponse>,
+                response: Response<FriendProfileResponse>
+            ) {
+                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+                    val userProfileImg = response.body()?.success?.profileImage
+                    val userNickName = response.body()?.success?.nickname
+
+                    binding.profileName.text = userNickName
+
+                    binding.profileDate.text = getCurrentPostedDate()
+
+                    context?.let {
+                        Glide.with(it)
+                            .load(userProfileImg ?: R.drawable.ic_myprofile)  // 기본 프로필 이미지 설정
+                            .into(binding.postBlogFriendIv)
+                    }
+                } else {
+                    Log.e("PostApiHelper", "모먼트 프로필 업데이트 실패: ${response.body()?.error}")
+                }
+            }
+
+            override fun onFailure(p0: Call<FriendProfileResponse>, p1: Throwable) {
+                TODO("Not yet implemented")
+            }
+
+        })
 
         // 번들로부터 데이터 받기
         val title = arguments?.getString("title")

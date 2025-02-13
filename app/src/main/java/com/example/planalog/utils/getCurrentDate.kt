@@ -9,8 +9,14 @@ fun getCurrentDate(): String {
     return currentDate.format(formatter)  // "2025-01-27" 형식으로 반환
 }
 
+fun getCurrentPostedDate(): String {
+    val currentDate = LocalDate.now()
+    val formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+    return currentDate.format(formatter)  // "2025.01.27" 형식으로 반환
+}
+
 fun getCurrentMonth(): String {
     val currentDate = LocalDate.now()
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM")
+    val formatter = DateTimeFormatter.ofPattern("MM")
     return currentDate.format(formatter)
 }

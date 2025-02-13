@@ -1,7 +1,9 @@
 package com.example.planalog.ui.post
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -12,12 +14,16 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentPostBinding
 import com.example.planalog.network.RetrofitClient
+import com.example.planalog.network.api.PlannerApiHelper
+import com.example.planalog.network.api.PostApiHelper
 import com.example.planalog.network.post.MomentContent
 import com.example.planalog.network.post.MomentRequest
+import com.example.planalog.network.post.MomentRequestContent
 import com.example.planalog.network.post.PostApiService
 import kotlinx.coroutines.launch
 
@@ -26,6 +32,10 @@ class PostFragment : Fragment() {
     private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var slidePagerAdapter: SlidePagerAdapter
     private val slideList = mutableListOf<Slide>()
+
+    private var plannerId: Int? = null
+
+    private lateinit var postApiHelper : PostApiHelper
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -54,7 +64,19 @@ class PostFragment : Fragment() {
             }
         }
 
+        plannerId = getPlannerIdFromSPF()
+        Log.d("PostFragment", "저장된 플래너 ID: $plannerId")
+
         return binding.root
+    }
+
+    // **SharedPreferences에서 플래너 ID 불러오는 함수**
+    fun getPlannerIdFromSPF(): Int {
+        val sharedPreferences: SharedPreferences = requireContext().getSharedPreferences("PlannerSPF", Context.MODE_PRIVATE)
+        val plannerId = sharedPreferences.getInt("PLANNER_ID", -1) // 기본값: -1 (값이 없을 때)
+
+        Log.d("PostFragment", "SharedPreferences에서 불러온 플래너 ID: $plannerId")
+        return plannerId
     }
 
     private fun navigateToPostDetailFragment() {
@@ -145,69 +167,58 @@ class PostFragment : Fragment() {
         imagePickerLauncher.launch(intent)
     }
 
-    private suspend fun uploadPost() {
+    private fun uploadPost() {
+
+        postApiHelper = PostApiHelper(requireContext())
+
         val title = binding.postTitle.text.toString().trim()
-        val plannerId = 1
 
         if (title.isBlank() || (binding.postContent.text.isBlank() && slideList.isEmpty())) {
             showToast("제목과 내용을 입력해 주세요.")
             return
         }
 
-        val momentContents = slideList.mapIndexed { index, slide ->
-            MomentContent(
-                sortOrder = index + 1,
-                content = slide.postContent,
-                url = slide.imageResId.toString()
-            )
-        }.toMutableList()
+        val momentRequestList = mutableListOf<MomentRequestContent>()
 
-        if (slideList.isEmpty()) {
-            momentContents.add(
-                MomentContent(
-                    sortOrder = 1,
-                    content = binding.postContent.text.toString(),
-                    url = ""
+        val content = binding.postContent.text.toString().trim()
+
+        if (content.isNotEmpty()) {
+            momentRequestList.add(MomentRequestContent(sortOrder = 1, content = content, url = ""))
+        }
+
+        // Add slideList items (if available)
+        slideList.forEachIndexed { index, slide ->
+            val imageUrl = slide.imageResId?.toString() ?: "" // Convert Uri? to String safely
+            momentRequestList.add(
+                MomentRequestContent(
+                    sortOrder = index + 2, // Ensure order continues incrementally
+                    content = slide.postContent, // Slide-specific text
+                    url = imageUrl
                 )
             )
         }
 
-        val postRequest = MomentRequest(
-            title = title,
-            plannerId = plannerId,
-            momentContents = momentContents
-        )
-
-        val postApiService = RetrofitClient.create(PostApiService::class.java, requireContext())
-        try {
-            val response = postApiService.createMoment(postRequest)
-
-            // HTTP 상태 코드 확인
-            val statusCode = response.code()
-            Log.d("PostFragment", "HTTP 상태 코드: $statusCode")
-
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body?.resultType == "SUCCESS") {
-                    showToast("게시물 작성 성공")
-                    Log.d("PostFragment", "게시물 데이터: ${body.success?.data}")
-
-                    // 프래그먼트 전환 추가
-                    navigateToPostDetailFragment()
-                } else {
-                    val errorReason = body?.error?.reason ?: "알 수 없는 오류"
-                    Log.e("PostFragment", "게시물 작성 실패: $errorReason")
-                    showToast("게시물 작성 실패: $errorReason")
-                }
-            } else {
-                val errorBody = response.errorBody()?.string() ?: "Unknown error"
-                Log.e("PostFragment", "서버 오류 발생: $errorBody")
-                showToast("서버 오류 발생: $errorBody (HTTP 상태 코드: $statusCode)")
-            }
-        } catch (e: Exception) {
-            Log.e("PostFragment", "네트워크 오류 발생", e)
-            showToast("네트워크 오류 발생: ${e.localizedMessage}")
+        if (plannerId == -1) {
+            showToast("플래너 ID가 설정되지 않았습니다.")
+            return
         }
+
+        postApiHelper.uploadPost(title, plannerId, momentRequestList, object : PostApiHelper.UploadPostCallback {
+            override fun onSuccess(postedId: Int?) {
+                showToast("게시물이 성공적으로 업로드되었습니다.")
+                Log.d("PostFragment", "작성한 유저 아이디: ${postedId}")
+                navigateToPostDetailFragment()
+
+                val sharedPreferences: SharedPreferences = requireContext().getSharedPreferences("Posted_id", Context.MODE_PRIVATE)
+                val editor = sharedPreferences.edit()
+                editor.putInt("POSTED_ID", postedId ?: -1)
+                editor.apply()
+            }
+
+            override fun onFailure(errorMessage: String) {
+                showToast("게시물 업로드 실패: $errorMessage")
+            }
+        })
     }
 
     private fun showToast(message: String) {

@@ -2,32 +2,25 @@ package com.example.planalog.network.post
 
 data class MomentResponse(
     val resultType: String,
-    val error: ErrorResponse?,
-    val success: SuccessData?,
-    val message: String? = null
-)
-
-data class ErrorResponse(
-    val errorCode: String,
-    val reason: String,
-    val data: Any? = null
+    val error: Any?,
+    val success: SuccessData
 )
 
 data class SuccessData(
-    val data: MomentDetails?
+    val data: MomentData
 )
 
-data class MomentDetails(
+data class MomentData(
+    val id: Int,
     val userId: Int,
-    val momentId: Int,
-    val plannerId: Int,
     val title: String,
+    val plannerId: Long,
     val createdAt: String,
     val updatedAt: String,
-    val momentContents: List<MomentContentResponse>
+    val momentContents: List<MomentContent>
 )
 
-data class MomentContentResponse(
+data class MomentContent(
     val sortOrder: Int,
     val content: String,
     val url: String

@@ -2,11 +2,21 @@ package com.example.planalog.network.planner
 
 data class PlannerResponse(
     val resultType: String,
-    val error: String?,
-    val success: PlannerItem?
+    val error: Any?,
+    val success: PlannerSuccessResponse
 )
 
-data class PlannerItem(
-    val date: String,
-    val isCompleted: Boolean
+data class PlannerSuccessResponse(
+    val plannerId: Int,
+    val userId: Int,
+    val isCompleted: Boolean,
+    val tasks: List<Task>
+)
+
+data class Task(
+    val taskId: Int,
+    val title: String,
+    val isCompleted: Boolean,
+    val taskCategoryId: Int,
+    val taskCategoryName: String
 )
