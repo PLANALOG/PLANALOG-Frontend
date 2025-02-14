@@ -2,7 +2,6 @@ package com.example.planalog.ui.profile
 
 import android.Manifest
 import android.app.Activity
-import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -18,14 +17,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
-import com.example.planalog.MainActivity
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityEditprofileBinding
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.SocialLogin.LoginService
 import com.example.planalog.network.SocialLogin.LogoutResponse
-import com.example.planalog.network.startset.IdcheckService
-import com.example.planalog.network.startset.NicknameCheckResponse
+import com.example.planalog.network.api.UserApiHelper
+import com.example.planalog.network.user.response.NicknameCheckResponse
 import com.example.planalog.network.user.UserService
 import com.example.planalog.network.user.request.UserUpdateRequest
 import com.example.planalog.network.user.response.UserProfileImgResponse
@@ -43,7 +41,7 @@ import java.io.File
 class EditprofileActivity : AppCompatActivity() {
     private lateinit var binding: ActivityEditprofileBinding
     private lateinit var userService: UserService
-    private lateinit var idcheckService: IdcheckService
+    private lateinit var userApiHelper : UserApiHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,7 +50,7 @@ class EditprofileActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         userService = RetrofitClient.create(UserService::class.java, this)
-        idcheckService = RetrofitClient.create(IdcheckService::class.java, this)
+        userApiHelper = UserApiHelper(this)
 
         loadUserProfile()
 
@@ -75,29 +73,25 @@ class EditprofileActivity : AppCompatActivity() {
                 requestGalleryPermission()
             }
         }
-        binding.confirmButton.isEnabled = false
+//        binding.confirmButton.isEnabled = false
 
 
         binding.confirmButton.setOnClickListener {
             val nickname = binding.nameEditText.text.toString()
             val introduction = binding.introEditText.text.toString()
             val link = binding.linkEditText.text.toString()
-            updateUserProfile(nickname, introduction, link)
-        }
 
-        binding.nameEditText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
+            val currentNickname = sharedPreferences.getString("nickname", "")
 
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val nickname = s.toString().trim()
-                if (nickname.isNotEmpty()) {
-                    checkNicknameAvailability(nickname)
-                } else {
-                    binding.confirmButton.isEnabled = false
-                }
+            // ✅ 닉네임이 기존 값과 동일하면 업데이트하지 않음
+            if (nickname == currentNickname) {
+                Toast.makeText(this, "닉네임을 변경해주세요.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-            override fun afterTextChanged(s: Editable?) {}
-        })
+
+            checkNicknameAvailability(nickname, introduction, link)
+        }
 
         binding.logout.setOnClickListener {
             Log.d(TAG, "Logout button clicked")
@@ -122,122 +116,28 @@ class EditprofileActivity : AppCompatActivity() {
     }
 
     private fun loadUserProfile() {
-        Log.d(TAG, "loadUserProfile: Loading user profile")
-        userService.getUserInfo().enqueue(object : Callback<UserResponse> {
-            override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
-                if (response.isSuccessful) {
-                    Log.d(TAG, "loadUserProfile: Success")
-                    response.body()?.success?.let { user ->
-                        binding.nameEditText.setText(user.nickname)
-                        binding.introEditText.setText(user.introduction)
-                        binding.linkEditText.setText(user.link)
-                        user.profileImage?.let { imageUrl ->
-                            Glide.with(this@EditprofileActivity)
-                                .load(imageUrl)
-                                .into(binding.profileImage)
-                        }
-                    }
-                } else {
-                    Log.e(TAG, "loadUserProfile: Failed - ${response.code()}")
-                    Toast.makeText(this@EditprofileActivity, "프로필 정보 로드 실패", Toast.LENGTH_SHORT).show()
+        userApiHelper = UserApiHelper(this)
+
+        userApiHelper.getUserInfo(
+            onSuccess = { userInfo ->
+                val nickname = userInfo.nickname
+                val type = userInfo.type
+                Log.d("EditProfileActivity", "닉네임: $nickname, 타입: $type")
+
+                binding.nameEditText.setText(userInfo.nickname)
+                binding.introEditText.setText(userInfo.introduction)
+                binding.linkEditText.setText(userInfo.link)
+                userInfo.profileImage?.let { imageUrl ->
+                    Glide.with(this@EditprofileActivity)
+                        .load(imageUrl)
+                        .into(binding.profileImage)
                 }
+            },
+            onFailure = { errorMsg ->
+                Log.e("EditProfileActivity", "loadUserProfile: Failed - ${errorMsg}")
+                Toast.makeText(this@EditprofileActivity, "프로필 정보 로드 실패", Toast.LENGTH_SHORT).show()
             }
-
-            override fun onFailure(call: Call<UserResponse>, t: Throwable) {
-                Log.e(TAG, "loadUserProfile: Network error - ${t.message}")
-                Toast.makeText(this@EditprofileActivity, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
-            }
-        })
-    }
-
-    private fun updateUserProfile(nickname: String, introduction: String, link: String) {
-
-        val userService = RetrofitClient.create(UserService::class.java, this)
-
-        val sharedPreferences = getSharedPreferences("user_prefs", MODE_PRIVATE)
-        val type = sharedPreferences.getString("type", "")
-
-        // 요청 객체 생성
-        val request = UserUpdateRequest(nickname, type?: "" , introduction, link)
-
-        Log.d(TAG, "서버에 전송할 데이터: $request")
-
-        userService.updateUser(request).enqueue(object : Callback<UserUpdateResponse> {
-            override fun onResponse(
-                call: Call<UserUpdateResponse>,
-                response: Response<UserUpdateResponse>
-            ) {
-                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                    val resultName = response.body()?.success?.nickname
-                    Log.d(TAG, "업데이트 서버 응답 성공: ${response.body()}")
-                    Toast.makeText(this@EditprofileActivity, "프로필이 업데이트되었습니다. 바뀐 닉네임: $resultName", Toast.LENGTH_SHORT).show()
-                    setResult(Activity.RESULT_OK)
-                    finish()
-
-                } else {
-                    Log.e(TAG, "업데이트 실패: ${response.body()?.error}")
-                    Toast.makeText(this@EditprofileActivity, "업데이트 실패: ${response.body()?.error}", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onFailure(call: Call<UserUpdateResponse>, t: Throwable) {
-                Log.e(TAG, "네트워크 오류: ${t.localizedMessage}")
-                Toast.makeText(this@EditprofileActivity, "네트워크 오류: ${t.localizedMessage}", Toast.LENGTH_SHORT).show()
-            }
-        })
-    }
-
-
-    private fun logout() {
-        val logoutService = RetrofitClient.create(LoginService::class.java, this)
-
-        logoutService.logout().enqueue(object : Callback<LogoutResponse> {
-            override fun onResponse(call: Call<LogoutResponse>, response: Response<LogoutResponse>) {
-                if (response.isSuccessful) {
-                    response.body()?.let { responseBody ->
-                        if (responseBody.resultType == "SUCCESS") {
-                            val responseBody = responseBody.success
-                            Toast.makeText(this@EditprofileActivity, "로그아웃 성공: ${response.body()}", Toast.LENGTH_SHORT).show()
-                            Log.d("EditProfileActivity", "로그아웃 성공: $responseBody")
-
-                            // SharedPreferences 초기화
-                            clearUserPreferences()
-
-                            // 로그인 화면으로 이동
-                            navigateToLoginScreen()
-                        } else {
-                            Log.e("EditProfileActivity", "오류 발생: ${responseBody.error}")
-                        }
-                    }
-                } else {
-                    Log.e("EditProfileActivity", "응답 실패: ${response.code()}")
-                }
-            }
-
-            override fun onFailure(call: Call<LogoutResponse>, t: Throwable) {
-                Log.e("EditProfileActivity", "네트워크 오류: ${t.localizedMessage}")
-            }
-        })
-    }
-
-    // SharedPreferences 초기화
-    private fun clearUserPreferences() {
-        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        sharedPreferences.edit().clear().apply()  // 모든 데이터 삭제
-        // 초기화 후 SharedPreferences에 데이터가 남아 있는지 확인
-        val accessToken = sharedPreferences.getString("received_access_token", "토큰 없음")
-        val refreshToken = sharedPreferences.getString("received_refresh_token", "토큰 없음")
-        Log.d("EditProfileActivity", "SharedPreferences 초기화 완료")
-        Log.d("EditProfileActivity", "초기화 후 Access Token: $accessToken")
-        Log.d("EditProfileActivity", "초기화 후 Refresh Token: $refreshToken")
-    }
-
-    // 로그인 화면으로 이동하는 함수
-    private fun navigateToLoginScreen() {
-        val intent = Intent(this@EditprofileActivity, LoginActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK  // 이전 스택 비우기
-        startActivity(intent)
-        finish()  // 현재 액티비티 종료
+        )
     }
 
     private fun hasGalleryPermission(): Boolean {
@@ -335,65 +235,103 @@ class EditprofileActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkNicknameAvailability(nickname: String, introduction: String, link: String) {
 
-    private fun checkNicknameAvailability(nickname: String) {
-        Log.d(TAG, "checkNicknameAvailability: Checking availability for nickname=$nickname")
+        Log.d(TAG, "닉네임 중복 확인 중: $nickname")
 
-        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        val receivedAccessToken = sharedPreferences.getString("received_access_token", null)
-        val idCheckService = RetrofitClient.create(IdcheckService::class.java, this)
+        userApiHelper.checkNicknameAvailability(
+            context = this,
+            nickname = nickname,
+            onSuccess = { isDuplicated ->
+                if (isDuplicated) {
+                    Toast.makeText(this, "닉네임을 변경해주세요.", Toast.LENGTH_SHORT).show()
+                } else {
+                    updateUserProfile(nickname, introduction, link)
+                }
+            },
+            onFailure = { errorMsg ->
+                Log.e("EditProfileActivity", "닉네임 확인 실패: $errorMsg")
+            }
+        )
+    }
 
-        idCheckService.idcheck(nickname).enqueue(object : Callback<NicknameCheckResponse> {
-            override fun onResponse(
-                call: Call<NicknameCheckResponse>,
-                response: Response<NicknameCheckResponse>
-            ) {
-                Log.d(TAG, "checkNicknameAvailability: Response received")
+    private fun updateUserProfile(nickname: String, introduction: String, link: String) {
+        val userApiHelper = UserApiHelper(this)
+
+        val updatedFields = mutableMapOf<String, Any>(
+            "nickname" to nickname // ✅ 닉네임 필드는 항상 포함
+        )
+
+        if (introduction.isNotEmpty()) updatedFields["introduction"] = introduction
+        if (link.isNotEmpty()) updatedFields["link"] = link
+
+        userApiHelper.updateUserInfo(
+            context = this,
+            updatedFields = updatedFields,
+            onSuccess = {
+                Log.d(TAG, "프로필 업데이트 성공")
+                Toast.makeText(this, "프로필이 업데이트되었습니다.", Toast.LENGTH_SHORT).show()
+                setResult(Activity.RESULT_OK)
+                finish()
+            },
+            onFailure = { errorMsg ->
+                Log.e(TAG, "프로필 업데이트 실패: $errorMsg")
+                Toast.makeText(this, "업데이트 실패: $errorMsg", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    private fun logout() {
+        val logoutService = RetrofitClient.create(LoginService::class.java, this)
+
+        logoutService.logout().enqueue(object : Callback<LogoutResponse> {
+            override fun onResponse(call: Call<LogoutResponse>, response: Response<LogoutResponse>) {
                 if (response.isSuccessful) {
-                    response.body()?.let { body ->
-                        Log.d(
-                            TAG,
-                            "서버 응답 성공. 닉네임: $nickname, 응답: ${body.resultType}"
-                        )
+                    response.body()?.let { responseBody ->
+                        if (responseBody.resultType == "SUCCESS") {
+                            val responseBody = responseBody.success
+                            Toast.makeText(this@EditprofileActivity, "로그아웃 성공: ${response.body()}", Toast.LENGTH_SHORT).show()
+                            Log.d("EditProfileActivity", "로그아웃 성공: $responseBody")
 
-                        when (body.resultType) {
-                            "SUCCESS" -> {
-                                Log.d(
-                                    TAG,
-                                    "닉네임 중복 여부: ${body.success?.isDuplicated}"
-                                )
-                                handleSuccessResponse(body.success?.isDuplicated ?: true)
-                            }
+                            // SharedPreferences 초기화
+                            clearUserPreferences()
 
-                            else -> {
-                                Log.e(TAG, "오류 발생: ${body.error ?: "알 수 없는 오류"}")
-                                showErrorMessage(body.error ?: "알 수 없는 오류가 발생했습니다.")
-                            }
+                            // 로그인 화면으로 이동
+                            navigateToLoginScreen()
+                        } else {
+                            Log.e("EditProfileActivity", "오류 발생: ${responseBody.error}")
                         }
                     }
+                } else {
+                    Log.e("EditProfileActivity", "응답 실패: ${response.code()}")
                 }
             }
 
-            override fun onFailure(call: Call<NicknameCheckResponse>, t: Throwable) {
-                Log.e(TAG, "checkNicknameAvailability: Network error - ${t.localizedMessage}")
-                showErrorMessage("네트워크 오류: ${t.localizedMessage}")
+            override fun onFailure(call: Call<LogoutResponse>, t: Throwable) {
+                Log.e("EditProfileActivity", "네트워크 오류: ${t.localizedMessage}")
             }
         })
     }
 
-    private fun handleSuccessResponse(isDuplicated: Boolean) {
-        binding.confirmButton.isEnabled = !isDuplicated
-        if (isDuplicated) {
-            Toast.makeText(this, "닉네임이 중복됩니다.", Toast.LENGTH_SHORT).show()
-        }
+    // SharedPreferences 초기화
+    private fun clearUserPreferences() {
+        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        sharedPreferences.edit().clear().apply()  // 모든 데이터 삭제
+        // 초기화 후 SharedPreferences에 데이터가 남아 있는지 확인
+        val accessToken = sharedPreferences.getString("received_access_token", "토큰 없음")
+        val refreshToken = sharedPreferences.getString("received_refresh_token", "토큰 없음")
+        Log.d("EditProfileActivity", "SharedPreferences 초기화 완료")
+        Log.d("EditProfileActivity", "초기화 후 Access Token: $accessToken")
+        Log.d("EditProfileActivity", "초기화 후 Refresh Token: $refreshToken")
     }
 
-    private fun showErrorMessage(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    // 로그인 화면으로 이동하는 함수
+    private fun navigateToLoginScreen() {
+        val intent = Intent(this@EditprofileActivity, LoginActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK  // 이전 스택 비우기
+        startActivity(intent)
+        finish()  // 현재 액티비티 종료
     }
-
-
-
     companion object {
         private const val galleryRequestCode = 100
         private const val TAG = "프로필편집"
