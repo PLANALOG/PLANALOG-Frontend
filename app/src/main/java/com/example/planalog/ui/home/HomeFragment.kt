@@ -21,6 +21,8 @@ import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.Cal
 import com.example.planalog.ui.comment.com.example.planalog.utils.generateCalendarDays
 import com.example.planalog.network.api.PlannerApiHelper
 import com.example.planalog.network.api.TaskApiHelper
+import com.example.planalog.network.api.TaskCtgyApiHelper
+import com.example.planalog.network.api.UserApiHelper
 import com.example.planalog.network.task.response.TodoItem
 import com.example.planalog.ui.home.calender.SharedViewModel
 import com.example.planalog.ui.home.ctgy.Category
@@ -30,6 +32,9 @@ import com.example.planalog.ui.home.memo.ChecklistItem
 import com.example.planalog.utils.generateRandomColor
 import com.example.planalog.utils.getCurrentDate
 import com.example.planalog.utils.getCurrentMonth
+import com.example.planalog.utils.loadCategoriesFromPreferences
+import com.example.planalog.utils.resetDataIfDateChanged
+import com.example.planalog.utils.saveCategoriesToPreferences
 import com.example.planalog.utils.savePlannerDate
 import com.example.planalog.utils.updateTaskCompletion
 import java.util.Calendar
@@ -48,6 +53,7 @@ class HomeFragment : Fragment() {
     private val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
 
     private lateinit var taskApiHelper: TaskApiHelper
+    private lateinit var ctgyApiHelper: TaskCtgyApiHelper
     private lateinit var plannerApiHelper: PlannerApiHelper
 
     private val calendarDays = mutableListOf<CalendarDay>()
@@ -153,12 +159,12 @@ class HomeFragment : Fragment() {
 
 
         // 초기 카테고리 추가
-        if (categories.isEmpty()) {
-            addCategory("")
-        }
+//        if (categories.isEmpty()) {
+//            addCategory("")
+//        }
 
         // 초기 카테고리 상태 설정
-        initializeInitialCtgyState()
+//        initializeInitialCtgyState()
 
 
         // 카테고리 추가 버튼 클릭 리스너
@@ -172,7 +178,27 @@ class HomeFragment : Fragment() {
             binding.homePlannerMemoSaveBtn.isEnabled = true
         }
 
+        val currentDate = getCurrentDate()
+        val lastSavedDate = getLastSavedDate()
+
+        if (currentDate != lastSavedDate) {
+            Log.d("HomeFragment", "Date changed! Resetting memo items.")
+            resetMemoItems()
+            saveLastSavedDate(currentDate) // Update saved date
+        }
+
         loadChecklistFromPreferences()
+
+        // 날짜 바뀔 때마다 초기화
+        resetDataIfDateChanged(requireContext(), categories, checklist)
+        // 기존 데이터 불러오기
+        categories.addAll(loadCategoriesFromPreferences(requireContext()))
+//        checklist.addAll(loadChecklistFromPreferences(requireContext()))
+
+        ctgyAdapter.notifyDataSetChanged()
+        memoAdapter.notifyDataSetChanged()
+
+        Log.d("HomeFragment", "📋 데이터 로드 완료 - 카테고리: ${categories.size}, 체크리스트: ${checklist.size}")
 
         // 플래너 기능 세팅
         setPlanner()
@@ -244,6 +270,25 @@ class HomeFragment : Fragment() {
             binding.homePlannerCtgyDeleteBtn.isEnabled = true
 
             ctgyAdapter.toggleDeleteMode(false) // 삭제 모드 비활성화
+
+            val ctgyTitles = categories.map { it.title }  // 카테고리 제목들을 리스트로 변환
+
+            // 로그로 API에 전달되는 데이터 확인
+            Log.d("HomeFragment", "Ctgy Titles: $ctgyTitles")
+
+            ctgyApiHelper = TaskCtgyApiHelper(requireContext())
+            ctgyApiHelper.addMultipleCtgy(ctgyTitles) { success, responseCode, responseBody, errorMessage ->
+                if (success) {
+                    Log.d("HomeFragment", "카테고리가 여러 개 생성되었습니다. (응답 코드: $responseCode)")
+                    Log.d("HomeFragment", "서버 응답 본문: $responseBody")
+                    Toast.makeText(requireContext(), "카테고리가 여러 개 생성되었습니다.", Toast.LENGTH_SHORT).show()
+                    saveCategoriesToPreferences(requireContext(), categories)
+                } else {
+                    Log.e("HomeFragment", "카테고리 생성 실패 (응답 코드: $responseCode, 에러 메시지: $errorMessage)")
+                    Log.e("HomeFragment", "서버 응답 본문: $responseBody")
+                    Toast.makeText(requireContext(), "카테고리 생성 실패: $errorMessage", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         // 카테고리형 삭제 버튼 클릭 리스너
@@ -537,6 +582,22 @@ class HomeFragment : Fragment() {
         checklist.addAll(savedTasks.map { ChecklistItem(it, isChecked = false, isEditable = false) }) // 불러오기
         memoAdapter.notifyDataSetChanged()
     }
+
+    private fun getLastSavedDate(): String {
+        val sharedPreferences = requireContext().getSharedPreferences("date_prefs", MODE_PRIVATE)
+        return sharedPreferences.getString("last_saved_date", "") ?: ""
+    }
+
+    private fun saveLastSavedDate(date: String) {
+        val sharedPreferences = requireContext().getSharedPreferences("date_prefs", MODE_PRIVATE)
+        sharedPreferences.edit().putString("last_saved_date", date).apply()
+    }
+
+    private fun resetMemoItems() {
+        checklist.clear() // Clear all existing checklist items
+        memoAdapter.notifyDataSetChanged()
+    }
+
 
 
     override fun onDestroyView() {

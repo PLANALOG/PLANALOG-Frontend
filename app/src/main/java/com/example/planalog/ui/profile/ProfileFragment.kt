@@ -15,6 +15,7 @@ import com.bumptech.glide.Glide
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentProfileBinding
 import com.example.planalog.network.RetrofitClient
+import com.example.planalog.network.api.UserApiHelper
 import com.example.planalog.network.user.response.MypageMoment
 import com.example.planalog.network.user.response.MypageResponse
 import com.example.planalog.network.user.MypageService
@@ -34,10 +35,11 @@ import retrofit2.Response
 class ProfileFragment : Fragment() {
 
     private lateinit var binding: FragmentProfileBinding
-    private lateinit var userService: UserService
     private lateinit var mypageService: MypageService
     private lateinit var friendService: FriendcountService
     private var mypageMomentAdapter: MypageMomentAdapter? = null  // 어댑터를 한 번만 초기화
+
+    private lateinit var userApiHelper : UserApiHelper
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -47,7 +49,6 @@ class ProfileFragment : Fragment() {
         binding = FragmentProfileBinding.inflate(inflater, container, false)
 
         // Retrofit을 이용해 초기화
-        userService = RetrofitClient.create(UserService::class.java, requireContext())
         mypageService = RetrofitClient.create(MypageService::class.java, requireContext())
         friendService = RetrofitClient.create(FriendcountService::class.java, requireContext())
 
@@ -55,7 +56,7 @@ class ProfileFragment : Fragment() {
         binding.recyclerViewMoments.layoutManager = LinearLayoutManager(requireContext())
 
         // 유저 정보 가져오기
-        fetchUserProfile()
+        loadUserProfile()
         fetchMypageMoments()
         fetchFriendCount()
         setupRecyclerView()
@@ -78,32 +79,19 @@ class ProfileFragment : Fragment() {
         binding.recyclerViewMoments.adapter = mypageMomentAdapter
     }
 
-    private fun fetchUserProfile() {
-        userService.getUserInfo().enqueue(object : Callback<UserResponse> {
-            override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
-                if (response.isSuccessful) {
-                    val userInfo = response.body()?.success
-                    if (userInfo != null) {
-                        updateUI(userInfo)  // UI에 유저 정보 표시
-                        Log.d("ProfileFragment", "유저 정보: $userInfo")
-                    } else {
-                        Toast.makeText(requireContext(), "유저 정보를 가져오지 못했습니다.", Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "에러: ${response.message()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
+    private fun loadUserProfile() {
+        userApiHelper = UserApiHelper(requireContext())
 
-            override fun onFailure(call: Call<UserResponse>, t: Throwable) {
-                Toast.makeText(requireContext(), "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
-                Log.e("ProfileFragment", "네트워크 오류", t)
+        userApiHelper.getUserInfo(
+            onSuccess = { userInfo ->
+                    updateUI(userInfo)  // UI에 유저 정보 표시
+                    Log.d("ProfileFragment", "유저 정보: $userInfo")
+            },
+            onFailure = { errorMsg ->
+                Toast.makeText(requireContext(), "유저 정보를 가져오지 못했습니다.", Toast.LENGTH_SHORT)
+                    .show()
             }
-        })
+        )
     }
 
     private fun fetchMypageMoments() {
@@ -190,14 +178,14 @@ class ProfileFragment : Fragment() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            fetchUserProfile()
+            loadUserProfile()
         }
     }
     private val editCharacterLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            fetchUserProfile()
+            loadUserProfile()
         }
     }
 

@@ -1,4 +1,4 @@
-package com.example.planalog.network.startset
+package com.example.planalog.network.user.response
 
 data class NicknameCheckResponse(
     val resultType: String,

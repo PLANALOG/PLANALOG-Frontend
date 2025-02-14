@@ -15,11 +15,8 @@ import androidx.core.content.res.ResourcesCompat
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityStartsetBinding
 import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.startset.IdcheckService
-import com.example.planalog.network.startset.NicknameCheckResponse
-import com.example.planalog.network.user.response.UserResponse
-import com.example.planalog.network.user.UserService
-import com.google.gson.Gson
+import com.example.planalog.network.api.UserApiHelper
+import com.example.planalog.network.user.response.NicknameCheckResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -28,6 +25,8 @@ class StartsetActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityStartsetBinding
     private var userInfoJson: String? = null
+
+    private lateinit var userApiHelper: UserApiHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +46,9 @@ class StartsetActivity : AppCompatActivity() {
 
         setupCombinedTextView()
 
+        // 헬퍼 초기화
+        userApiHelper = UserApiHelper(this)
+
         //본인 회원 조회
         getUserInfo()
 
@@ -64,7 +66,16 @@ class StartsetActivity : AppCompatActivity() {
                     binding.logincheck.visibility = View.INVISIBLE
                     binding.ok.isEnabled = false
                 } else if (nickname.isNotEmpty()) {
-                    checkNicknameAvailability(nickname)
+                    userApiHelper.checkNicknameAvailability(
+                        context = this@StartsetActivity,
+                        nickname = nickname,
+                        onSuccess = { isDuplicated ->
+                            handleSuccessResponse(isDuplicated)
+                        },
+                        onFailure = { errorMsg ->
+                            Log.e("StartsetActivity", "닉네임 중복 검사 실패: $errorMsg")
+                        }
+                    )
                 } else {
                     binding.blocknickname.visibility = View.INVISIBLE
                     binding.writeNickname.setBackgroundResource(R.drawable.btn_round)
@@ -87,49 +98,21 @@ class StartsetActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(this, "유효한 닉네임을 입력해 주세요.", Toast.LENGTH_SHORT).show()
                 }
-            }
+        }
     }
 
-    // 닉네임 확인 api 호출 함수
-    private fun checkNicknameAvailability(nickname: String) {
-        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        val receivedAccessToken = sharedPreferences.getString("received_access_token", null)
-        val idCheckService = RetrofitClient.create(IdcheckService::class.java, this)
-
-        idCheckService.idcheck(nickname).enqueue(object : Callback<NicknameCheckResponse> {
-            override fun onResponse(
-                call: Call<NicknameCheckResponse>,
-                response: Response<NicknameCheckResponse>
-            ) {
-                if (response.isSuccessful) {
-                    response.body()?.let { body ->
-                        Log.d(
-                            "StartsetActivity",
-                            "서버 응답 성공. 닉네임: $nickname, 응답: ${body.resultType}"
-                        )
-
-                        when (body.resultType) {
-                            "SUCCESS" -> {
-                                Log.d(
-                                    "StartsetActivity",
-                                    "닉네임 중복 여부: ${body.success?.isDuplicated}"
-                                )
-                                handleSuccessResponse(body.success?.isDuplicated ?: true)
-                            }
-
-                            else -> {
-                                Log.e("StartsetActivity", "오류 발생: ${body.error ?: "알 수 없는 오류"}")
-                                showErrorMessage(body.error ?: "알 수 없는 오류가 발생했습니다.")
-                            }
-                        }
-                    }
-                }
+    private fun getUserInfo() {
+        userApiHelper.getUserInfo(
+            onSuccess = { userInfo ->
+                val name = userInfo.name
+                val nickname = userInfo.nickname
+                val type = userInfo.type
+                Log.d("StartSetActivity", "이름: $name, 닉네임: $nickname, 타입: $type")
+            },
+            onFailure = { errorMsg ->
+                Log.e("StartSetActivity", "에러 발생: $errorMsg")
             }
-
-            override fun onFailure(call: Call<NicknameCheckResponse>, t: Throwable) {
-                showErrorMessage("네트워크 오류: ${t.localizedMessage}")
-            }
-        })
+        )
     }
 
     private fun handleSuccessResponse(isDuplicated: Boolean) {
@@ -145,48 +128,6 @@ class StartsetActivity : AppCompatActivity() {
             binding.logincheck.visibility = View.VISIBLE
             binding.ok.isEnabled = true
         }
-    }
-
-    private fun showErrorMessage(message: String) {
-        Toast.makeText(this@StartsetActivity, message, Toast.LENGTH_SHORT).show()
-    }
-
-
-    // 본인 회원 정보 api 호출 함수
-    private fun getUserInfo() {
-
-//        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-//        val receivedAccessToken = sharedPreferences.getString("received_access_token", null)
-//        val authorizationHeader = "Bearer $receivedAccessToken"
-        val userService = RetrofitClient.create(UserService::class.java, this)
-
-//        if (receivedAccessToken.isNullOrEmpty()) {
-//            Toast.makeText(this, "저장된 액세스 토큰이 없습니다.", Toast.LENGTH_SHORT).show()
-//            return
-//        }
-
-        userService.getUserInfo().enqueue(object : Callback<UserResponse> {
-            override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
-                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                    val userInfo = response.body()?.success
-                    if (userInfo != null) {
-                        // JSON 형식으로 UserInfo 로그 출력
-                        userInfoJson = Gson().toJson(userInfo)
-                        Toast.makeText(this@StartsetActivity, "사용자 정보 확인", Toast.LENGTH_SHORT).show()
-                        Log.d("User Info", "UserInfo JSON: $userInfoJson")
-                    }
-
-                } else {
-                    Toast.makeText(this@StartsetActivity, "사용자 정보 가져오기 실패", Toast.LENGTH_SHORT).show()
-                    Log.e("User Info", "실패 코드: ${response.code()}")
-                }
-            }
-
-            override fun onFailure(call: Call<UserResponse>, t: Throwable) {
-                Toast.makeText(this@StartsetActivity, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
-                Log.e("User Info", "네트워크 오류", t)
-            }
-        })
     }
 
     // 다음 액티비티로 이동
