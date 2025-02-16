@@ -11,6 +11,7 @@ import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -42,6 +43,7 @@ class EditprofileActivity : AppCompatActivity() {
     private lateinit var binding: ActivityEditprofileBinding
     private lateinit var userService: UserService
     private lateinit var userApiHelper : UserApiHelper
+    private var currentNickname: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,6 +76,43 @@ class EditprofileActivity : AppCompatActivity() {
             }
         }
 //        binding.confirmButton.isEnabled = false
+
+
+
+        binding.nameEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val nickname = s?.toString()?.trim() ?: ""
+
+                if (nickname.length > 15) {
+                    binding.blocknickname.visibility = View.VISIBLE
+                    binding.blocknickname.text = "닉네임은 15글자를 초과할 수 없습니다."
+                    binding.confirmButton.isEnabled = false
+                } else if (nickname.isNotEmpty()) {
+                    if (nickname == currentNickname) {
+                        handleNicknameCheckResult(false)
+                    } else {
+                        userApiHelper.checkNicknameAvailability(
+                            context = this@EditprofileActivity,
+                            nickname = nickname,
+                            onSuccess = { isDuplicated ->
+                                handleNicknameCheckResult(isDuplicated)
+                            },
+                            onFailure = { errorMsg ->
+                                Log.e("EditprofileActivity", "닉네임 중복 검사 실패: $errorMsg")
+                            }
+                        )
+                    }
+                } else {
+                    binding.blocknickname.visibility = View.INVISIBLE
+                    binding.confirmButton.isEnabled = false
+                }
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
 
 
         binding.confirmButton.setOnClickListener {
@@ -124,6 +163,7 @@ class EditprofileActivity : AppCompatActivity() {
                 val type = userInfo.type
                 Log.d("EditProfileActivity", "닉네임: $nickname, 타입: $type")
 
+                currentNickname = userInfo.nickname  // ✅ 기존 닉네임 저장
                 binding.nameEditText.setText(userInfo.nickname)
                 binding.introEditText.setText(userInfo.introduction)
                 binding.linkEditText.setText(userInfo.link)
@@ -139,6 +179,18 @@ class EditprofileActivity : AppCompatActivity() {
             }
         )
     }
+
+    private fun handleNicknameCheckResult(isDuplicated: Boolean) {
+        if (isDuplicated) {
+            binding.blocknickname.visibility = View.VISIBLE
+            binding.blocknickname.text = "이미 존재하는 닉네임입니다."
+            binding.confirmButton.isEnabled = false
+        } else {
+            binding.blocknickname.visibility = View.INVISIBLE
+            binding.confirmButton.isEnabled = true
+        }
+    }
+
 
     private fun hasGalleryPermission(): Boolean {
         val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU)
