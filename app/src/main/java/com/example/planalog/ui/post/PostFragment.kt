@@ -71,13 +71,13 @@ class PostFragment : Fragment() {
     }
 
     // **SharedPreferences에서 플래너 ID 불러오는 함수**
-    fun getPlannerIdFromSPF(): Int {
+    fun getPlannerIdFromSPF(): Int? {
         val sharedPreferences: SharedPreferences = requireContext().getSharedPreferences("PlannerSPF", Context.MODE_PRIVATE)
         val plannerId = sharedPreferences.getInt("PLANNER_ID", -1) // 기본값: -1 (값이 없을 때)
 
-        Log.d("PostFragment", "SharedPreferences에서 불러온 플래너 ID: $plannerId")
-        return plannerId
+        return if (plannerId == -1) null else plannerId
     }
+
 
     private fun navigateToPostDetailFragment() {
         val postDetailFragment = PostDetailFragment()
@@ -168,7 +168,6 @@ class PostFragment : Fragment() {
     }
 
     private fun uploadPost() {
-
         postApiHelper = PostApiHelper(requireContext())
 
         val title = binding.postTitle.text.toString().trim()
@@ -179,30 +178,29 @@ class PostFragment : Fragment() {
         }
 
         val momentRequestList = mutableListOf<MomentRequestContent>()
-
         val content = binding.postContent.text.toString().trim()
 
         if (content.isNotEmpty()) {
             momentRequestList.add(MomentRequestContent(sortOrder = 1, content = content, url = ""))
         }
 
-        // Add slideList items (if available)
         slideList.forEachIndexed { index, slide ->
-            val imageUrl = slide.imageResId?.toString() ?: "" // Convert Uri? to String safely
+            val imageUrl = slide.imageResId?.toString() ?: ""
             momentRequestList.add(
                 MomentRequestContent(
-                    sortOrder = index + 2, // Ensure order continues incrementally
-                    content = slide.postContent, // Slide-specific text
+                    sortOrder = index + 2,
+                    content = slide.postContent,
                     url = imageUrl
                 )
             )
         }
 
-        if (plannerId == -1) {
-            showToast("플래너 ID가 설정되지 않았습니다.")
-            return
-        }
+        // if (plannerId == -1) {
+        //     showToast("플래너 ID가 설정되지 않았습니다.")
+        //     return
+        // }
 
+        // plannerId가 없을 경우 null을 전달
         postApiHelper.uploadPost(title, plannerId, momentRequestList, object : PostApiHelper.UploadPostCallback {
             override fun onSuccess(postedId: Int?) {
                 showToast("게시물이 성공적으로 업로드되었습니다.")
@@ -220,6 +218,7 @@ class PostFragment : Fragment() {
             }
         })
     }
+
 
     private fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
