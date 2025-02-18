@@ -17,14 +17,13 @@ import com.example.planalog.ui.search.SearchFragment
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    lateinit var notifyViewModel: NotifyViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // ✅ ViewModel을 Application 범위에서 가져오기
+        //  ViewModel을 Application 범위에서 가져오기
         val notifyViewModel = NotifyViewModel.getInstance(application)
 
 
@@ -63,14 +62,23 @@ class MainActivity : AppCompatActivity() {
 
     // 프래그먼트 변경 메서드 (캘린더 & 알림은 백 스택에 추가하지 않음)
     private fun replaceFragment(fragment: Fragment, addToBackStack: Boolean = true) {
+
+        val currentFragment = supportFragmentManager.findFragmentById(R.id.main_frm)
+
+        //  현재 프래그먼트가 HomeFragment이고, 다시 추가하려는 프래그먼트도 HomeFragment이면 추가하지 않음
+        if (currentFragment is HomeFragment && fragment is HomeFragment) {
+            Log.d("MainActivity", "❌ 이미 HomeFragment가 로드되어 있음. 중복 추가 방지")
+            return
+        }
+
         val transaction = supportFragmentManager.beginTransaction()
             .replace(R.id.main_frm, fragment)
 
         if (addToBackStack) {
-            transaction.addToBackStack(null) // 일반 프래그먼트는 백 스택에 추가
+            transaction.addToBackStack(null)
         }
 
-        transaction.commit()
+        transaction.commitAllowingStateLoss() // 상태 손실 방지
     }
 
     // 뒤로 가기 버튼 오버라이드 (캘린더 & 알림에서 뒤로 가기 시 홈으로 이동)
@@ -78,10 +86,21 @@ class MainActivity : AppCompatActivity() {
         val currentFragment = supportFragmentManager.findFragmentById(R.id.main_frm)
 
         if (currentFragment is CalendarFragment || currentFragment is NotifyFragment) {
-            // 캘린더 또는 알림에서 뒤로 가기 시 홈 화면으로 이동
-            replaceFragment(HomeFragment(), addToBackStack = false)
+            //  백 스택에서 한 단계 뒤로 가기 (홈이 자동으로 남도록)
+            if (supportFragmentManager.backStackEntryCount > 0) {
+                supportFragmentManager.popBackStack()
+            } else {
+                //  현재 프래그먼트가 HomeFragment인지 확인하고 중복 추가 방지
+                val existingHomeFragment = supportFragmentManager.findFragmentByTag("HomeFragment")
+                if (existingHomeFragment == null) {
+                    replaceFragment(HomeFragment(), addToBackStack = false)
+                }
+            }
+
+            //  바텀 내비게이션의 선택된 아이템을 '홈'으로 변경
+            binding.mainBottomNav.selectedItemId = R.id.home_fragment
         } else {
-            // 일반적인 경우 백 스택이 남아있다면 popBackStack() 실행
+            //  일반적인 경우 백 스택이 남아있다면 popBackStack() 실행
             if (supportFragmentManager.backStackEntryCount > 0) {
                 supportFragmentManager.popBackStack()
             } else {

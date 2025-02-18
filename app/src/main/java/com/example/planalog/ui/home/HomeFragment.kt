@@ -9,12 +9,9 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentHomeBinding
-import com.example.planalog.network.planner.PlannerService
-import com.example.planalog.network.task.TaskService
 import com.example.planalog.ui.comment.CommentFragment
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarAdapter
 import com.example.planalog.ui.comment.com.example.planalog.ui.home.calender.CalendarDay
@@ -22,8 +19,6 @@ import com.example.planalog.ui.comment.com.example.planalog.utils.generateCalend
 import com.example.planalog.network.api.PlannerApiHelper
 import com.example.planalog.network.api.TaskApiHelper
 import com.example.planalog.network.api.TaskCtgyApiHelper
-import com.example.planalog.network.api.UserApiHelper
-import com.example.planalog.network.task.response.TodoItem
 import com.example.planalog.ui.home.calender.SharedViewModel
 import com.example.planalog.ui.home.ctgy.Category
 import com.example.planalog.ui.home.ctgy.CategoryAdapter
@@ -32,32 +27,42 @@ import com.example.planalog.ui.home.memo.ChecklistItem
 import com.example.planalog.utils.generateRandomColor
 import com.example.planalog.utils.getCurrentDate
 import com.example.planalog.utils.getCurrentMonth
-import com.example.planalog.utils.loadCategoriesFromPreferences
-import com.example.planalog.utils.resetDataIfDateChanged
-import com.example.planalog.utils.saveCategoriesToPreferences
+import com.example.planalog.utils.getCurrentPostedDate
 import com.example.planalog.utils.savePlannerDate
 import com.example.planalog.utils.updateTaskCompletion
+import loadLastSavedDate
+import loadPlannerState
+import saveCurrentDate
+import saveLastSavedDate
+import savePlannerState
 import java.util.Calendar
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
+    // 데이터 리스트
     private val checklist = mutableListOf<ChecklistItem>()
     private val categories = mutableListOf<Category>()
-    private lateinit var ctgyAdapter : CategoryAdapter
+
+    // 어댑터
+    private lateinit var ctgyAdapter: CategoryAdapter
     private lateinit var memoAdapter: MemoAdapter
     private lateinit var calendarAdapter: CalendarAdapter
-    private val sharedViewModel: SharedViewModel by activityViewModels()
-    private val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-    private val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
 
+    // API 헬퍼
     private lateinit var taskApiHelper: TaskApiHelper
     private lateinit var ctgyApiHelper: TaskCtgyApiHelper
     private lateinit var plannerApiHelper: PlannerApiHelper
 
+    //기타 변수
+    private val sharedViewModel: SharedViewModel by activityViewModels()
+    private val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+    private val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
     private val calendarDays = mutableListOf<CalendarDay>()
     private var lastSavedTasks: Set<String> = emptySet()
+    private var isDeleteMode = false
+    private var isCategoryDeleted = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -73,63 +78,111 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // 전달된 result 값 처리
-//        val type = arguments?.getString("type") ?: ""
-        val (userId, type) = loadUserPreferences()
-        updateLayoutBasedOnResult(type ?: "")
+        val type = arguments?.getString("type") ?: ""
+        Log.d("HomeFragment", "argument type: $type")
+        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
+        val plannerType = sharedPreferences.getString("type", "memo_user") // 기본값 설정
+        loadUserPreferences()
+        updateLayoutBasedOnResult(plannerType.toString())
 
-//        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
-//        val userId = sharedPreferences.getString("user_id", null)
+        val currentDate = getCurrentDate()
+        val lastSavedDate = loadLastSavedDate(requireContext(), plannerType.toString()) // 마지막 저장된 날짜 불러오기
 
-        val date = getCurrentDate()
-        val month = getCurrentMonth()
-        Log.d("HomeFragment", "date: ${date}, month: ${month}")
+        Log.d("HomeFragment", "현재 날짜: $currentDate, 마지막 저장된 날짜: $lastSavedDate")
 
-        plannerApiHelper = PlannerApiHelper(requireContext())
-        plannerApiHelper.getPlanner(userId, date, month) { hasPlanner ->
-            if (hasPlanner) {
-                Log.d("HomeFragment", "플래너 데이터가 존재합니다.")
-                // ✅ 플래너가 있을 때 실행할 코드 추가
+        if (currentDate != lastSavedDate) {
+            Log.d("HomeFragment", " 날짜 변경 감지 → 데이터 초기화")
+            categories.clear()
+            checklist.clear()
+
+            if (plannerType == "category_user") {
+                categories.add(Category(-1, "새로운 카테고리", mutableListOf(), generateRandomColor()))
+            }
+
+            saveLastSavedDate(requireContext(), plannerType.toString(), currentDate)
+        } else {
+            val (savedCategories, savedChecklist) = loadPlannerState(requireContext(), plannerType.toString())
+
+            if (plannerType == "memo_user") {
+                checklist.clear()
+                checklist.addAll(savedChecklist)
+                Log.d("HomeFragment", " [메모형] 데이터 불러오기 완료: ${checklist.size}개")
             } else {
-                Log.e("HomeFragment", "플래너가 없습니다.")
-                Toast.makeText(requireContext(), "플래너가 없습니다. 먼저 생성해주세요.", Toast.LENGTH_SHORT).show()
+                categories.clear()
+                categories.addAll(savedCategories)
+                Log.d("HomeFragment", "[카테고리형] 데이터 불러오기 완료: ${categories.size}개")
             }
         }
 
-        // 초기 상태 버튼 설정
-        setInitialBtnState()
+        ctgyApiHelper = TaskCtgyApiHelper(requireContext())
+        ctgyApiHelper.getCtgys()
 
-        val days = mutableListOf<CalendarDay>()
+        taskApiHelper = TaskApiHelper(requireContext())
+        taskApiHelper.getTasks(getCurrentDate())
+
+        initializeVariables()
+        initializeUI()
+        initializeAdapters()
+        setupClickListeners()
+
+        Log.d("HomeFragment", "📋 데이터 로드 완료 - 카테고리: ${categories.size}, 체크리스트: ${checklist.size}")
+
+
+        // 플래너 기능 세팅
+        setPlanner()
+
+
+        // home_reply_iv 클릭 리스너 추가
+        binding.homeReplyIv.setOnClickListener {
+            // CommentFragment 이동
+            val transaction = parentFragmentManager.beginTransaction()
+            val fragment = CommentFragment()  // CommentFragment 실제로 생성한 프래그먼트 클래스명으로 변경
+            transaction.replace(R.id.main_frm, fragment)
+            transaction.commit()
+        }
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
+        val plannerType = sharedPreferences.getString("type", "memo_user") ?: "memo_user"
+        updateLayoutBasedOnResult(plannerType)
+    }
+
+    private fun getLastSavedDate(): String {
+        val sharedPreferences = requireContext().getSharedPreferences("date_prefs", MODE_PRIVATE)
+        return sharedPreferences.getString("last_saved_date", "") ?: ""
+    }
+
+    private fun setupClickListeners() {
+        // 카테고리 추가 버튼 클릭 리스너
+        binding.homePlannerCtgyToolsIc.setOnClickListener {
+            addCategory("")
+        }
+
+        // 메모 추가 버튼 클릭 리스너
+        binding.homePlannerMemoPlusIc.setOnClickListener {
+            addCheckListItem("")
+            binding.homePlannerMemoSaveBtn.isEnabled = true
+        }
+    }
+
+    private fun initializeAdapters() {
         val onDayClicked: (CalendarDay) -> Unit = { day ->
             if (!day.isEmpty) {
                 Toast.makeText(context, "Clicked: ${day.date}", Toast.LENGTH_SHORT).show()
             }
         }
 
-        calendarAdapter = CalendarAdapter(days, onDayClicked)
-
-        // ViewModel 초기화
-        sharedViewModel.calendarDays.value = generateCalendarDays(currentYear, currentMonth)
-
-        sharedViewModel.calendarDays.observe(viewLifecycleOwner) { updatedDays ->
-            calendarDays.clear()
-            calendarDays.addAll(updatedDays)
-            calendarAdapter.notifyDataSetChanged()
-        }
-
-        // 캘린더 초기화
-        if (sharedViewModel.calendarDays.value.isNullOrEmpty()) {
-            initializeCalendar() // ViewModel에 데이터가 없는 경우에만 호출
-        }
+        calendarAdapter = CalendarAdapter(calendarDays, onDayClicked)
 
         // 카테고리형 RecyclerView 설정
-        ctgyAdapter = CategoryAdapter(categories, {
+        ctgyAdapter = CategoryAdapter(requireContext(), categories, {
             updateSaveButtonState() // SAVE 버튼 활성화 로직
         }, {
             updateDeleteButtonState() // DELETE 버튼 상태 갱신
         })
-
-        binding.homePlannerCtgyRv.adapter = ctgyAdapter
-        binding.homePlannerCtgyRv.layoutManager = LinearLayoutManager(context)
 
 
         // 메모형 RecyclerView 설정
@@ -154,65 +207,60 @@ class HomeFragment : Fragment() {
                 }
             }
         )
-        binding.homePlannerMemoRv.adapter = memoAdapter
-        binding.homePlannerMemoRv.layoutManager = LinearLayoutManager(context)
 
-
-        // 초기 카테고리 추가
-//        if (categories.isEmpty()) {
-//            addCategory("")
-//        }
-
-        // 초기 카테고리 상태 설정
-//        initializeInitialCtgyState()
-
-
-        // 카테고리 추가 버튼 클릭 리스너
-        binding.homePlannerCtgyToolsIc.setOnClickListener {
-            addCategory("")
+        binding.homePlannerCtgyRv.apply {
+            adapter = ctgyAdapter
+            layoutManager = LinearLayoutManager(context)
         }
 
-        // 메모 추가 버튼 클릭 리스너
-        binding.homePlannerMemoPlusIc.setOnClickListener {
-            addCheckListItem("")
-            binding.homePlannerMemoSaveBtn.isEnabled = true
+        binding.homePlannerMemoRv.apply {
+            adapter = memoAdapter
+            layoutManager = LinearLayoutManager(context)
+        }
+    }
+
+    private fun initializeUI() {
+        // 초기 상태 버튼 설정
+        setInitialBtnState()
+
+        binding.homePlannerDateTv.text = getCurrentPostedDate()
+        binding.homePlannerCtgyDateTv.text = getCurrentPostedDate()
+
+        // ViewModel 초기화
+        sharedViewModel.calendarDays.value = generateCalendarDays(currentYear, currentMonth)
+
+        sharedViewModel.calendarDays.observe(viewLifecycleOwner) { updatedDays ->
+            calendarDays.clear()
+            calendarDays.addAll(updatedDays)
+            calendarAdapter.notifyDataSetChanged()
         }
 
-        val currentDate = getCurrentDate()
-        val lastSavedDate = getLastSavedDate()
-
-        if (currentDate != lastSavedDate) {
-            Log.d("HomeFragment", "Date changed! Resetting memo items.")
-            resetMemoItems()
-            saveLastSavedDate(currentDate) // Update saved date
+        // 캘린더 초기화
+        if (sharedViewModel.calendarDays.value.isNullOrEmpty()) {
+            initializeCalendar() // ViewModel에 데이터가 없는 경우에만 호출
         }
+    }
 
-        loadChecklistFromPreferences()
+    private fun initializeVariables() {
+        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
+        val userId = sharedPreferences.getString("user_id", null)
 
-        // 날짜 바뀔 때마다 초기화
-        resetDataIfDateChanged(requireContext(), categories, checklist)
-        // 기존 데이터 불러오기
-        categories.addAll(loadCategoriesFromPreferences(requireContext()))
-//        checklist.addAll(loadChecklistFromPreferences(requireContext()))
+        val date = getCurrentDate()
+        val month = getCurrentMonth()
+        Log.d("HomeFragment", "date: ${date}, month: $month")
 
-        ctgyAdapter.notifyDataSetChanged()
-        memoAdapter.notifyDataSetChanged()
+        isDeleteMode = false
 
-        Log.d("HomeFragment", "📋 데이터 로드 완료 - 카테고리: ${categories.size}, 체크리스트: ${checklist.size}")
-
-        // 플래너 기능 세팅
-        setPlanner()
-
-
-        // home_reply_iv 클릭 리스너 추가
-        binding.homeReplyIv.setOnClickListener {
-            // CommentFragment 이동
-            val transaction = parentFragmentManager.beginTransaction()
-            val fragment = CommentFragment()  // CommentFragment 실제로 생성한 프래그먼트 클래스명으로 변경
-            transaction.replace(R.id.main_frm, fragment)
-            transaction.commit()
+        plannerApiHelper = PlannerApiHelper(requireContext())
+        plannerApiHelper.getPlanner(userId, date, month) { hasPlanner ->
+            if (hasPlanner) {
+                Log.d("HomeFragment", "플래너 데이터가 존재합니다.")
+                //  플래너가 있을 때 실행할 코드 추가
+            } else {
+                Log.e("HomeFragment", "플래너가 없습니다.")
+                Toast.makeText(requireContext(), "플래너가 없습니다. 먼저 생성해주세요.", Toast.LENGTH_SHORT).show()
+            }
         }
-
     }
 
     private fun initializeInitialCtgyState() {
@@ -240,10 +288,15 @@ class HomeFragment : Fragment() {
     }
 
     private fun setPlanner() {
-
-
         // 카테고리형 플래너 저장 버튼 클릭 리스너
         binding.homePlannerCtgySaveBtn.setOnClickListener {
+            if (!isDeleteMode && !isCategoryDeleted) {
+                saveCtgyWithTasks()
+//                savePlannerState(requireContext(),"category_user", categories, checklist) //  저장 버튼 클릭 시 플래너 상태 저장
+            } else {
+                Log.d("HomeFragment", "삭제 후 저장 버튼 클릭 - 카테고리 생성 API 호출하지 않음")
+            }
+
             // 모든 카테고리 제목 및 체크리스트 수정 상태 고정
             categories.forEach { category ->
                 category.isEditable = false // 제목 수정 불가능
@@ -270,39 +323,67 @@ class HomeFragment : Fragment() {
             binding.homePlannerCtgyDeleteBtn.isEnabled = true
 
             ctgyAdapter.toggleDeleteMode(false) // 삭제 모드 비활성화
-
-            val ctgyTitles = categories.map { it.title }  // 카테고리 제목들을 리스트로 변환
-
-            // 로그로 API에 전달되는 데이터 확인
-            Log.d("HomeFragment", "Ctgy Titles: $ctgyTitles")
-
-            ctgyApiHelper = TaskCtgyApiHelper(requireContext())
-            ctgyApiHelper.addMultipleCtgy(ctgyTitles) { success, responseCode, responseBody, errorMessage ->
-                if (success) {
-                    Log.d("HomeFragment", "카테고리가 여러 개 생성되었습니다. (응답 코드: $responseCode)")
-                    Log.d("HomeFragment", "서버 응답 본문: $responseBody")
-                    Toast.makeText(requireContext(), "카테고리가 여러 개 생성되었습니다.", Toast.LENGTH_SHORT).show()
-                    saveCategoriesToPreferences(requireContext(), categories)
-                } else {
-                    Log.e("HomeFragment", "카테고리 생성 실패 (응답 코드: $responseCode, 에러 메시지: $errorMessage)")
-                    Log.e("HomeFragment", "서버 응답 본문: $responseBody")
-                    Toast.makeText(requireContext(), "카테고리 생성 실패: $errorMessage", Toast.LENGTH_SHORT).show()
-                }
-            }
+            isCategoryDeleted = false
         }
 
         // 카테고리형 삭제 버튼 클릭 리스너
         binding.homePlannerCtgyDeleteBtn.setOnClickListener {
+            isDeleteMode = true
+            ctgyAdapter.toggleDeleteMode(true)
 
             if (binding.homePlannerCtgyDeleteBtn.isEnabled) {
                 if (ctgyAdapter.hasSelectedItems()) { // 선택된 항목이 있는 경우
-                    ctgyAdapter.deleteSelectedItems() // 선택된 항목 삭제
-                    binding.homePlannerCtgyDeleteBtn.isEnabled = false // 삭제 버튼 비활성화
-                } else {
-                    ctgyAdapter.toggleDeleteMode(true) // 선택 항목이 없으면 삭제 모드만 활성화
+                    val selectedCtgyIds = ctgyAdapter.getSelectedCtgyIds()
+                    val selectedTaskIds = ctgyAdapter.getSelectedTaskIds()
+                    Log.d("HomeFragment", "삭제할 카테고리 ID 목록: $selectedCtgyIds")
+                    Log.d("HomeFragment", "삭제할 카테고리 하위 ID 목록: $selectedTaskIds")
+
+                    if (selectedCtgyIds.isNotEmpty()) {
+                        ctgyApiHelper = TaskCtgyApiHelper(requireContext())
+                        ctgyApiHelper.deleteCtgys(selectedCtgyIds, categories,
+                            onSuccess = { deletedCtgyIds ->
+                                Log.d("HomeFragment", "삭제 성공한 카테고리 ID 목록: $deletedCtgyIds")
+
+                                //  UI에서 삭제
+                                ctgyAdapter.deleteSelectedItems()
+
+                                //  삭제된 상태 저장
+                                savePlannerState(requireContext(), "category_user", categories, checklist)
+
+                                isCategoryDeleted = true
+                                isDeleteMode = false
+
+                                //  UI 업데이트
+                                binding.homePlannerCtgyDeleteBtn.isEnabled = false
+                            },
+                            onFailure = { errorMessage ->
+                                Log.e("HomeFragment", "카테고리 삭제 실패: $errorMessage")
+                            }
+                        )
+                    }
+
+                    if (selectedTaskIds.isNotEmpty()) {
+                        // 선택된 할 일만 삭제하는 경우 처리
+                        taskApiHelper = TaskApiHelper(requireContext())
+                        taskApiHelper.deleteTasks(selectedTaskIds,
+                            onSuccess = { deletedTaskIds ->
+                                Log.d("HomeFragment", "삭제 성공한 하위 할 일 ID 목록: $deletedTaskIds")
+
+                                //  UI에서 삭제
+                                ctgyAdapter.deleteSelectedItems()
+
+                                // UI 업데이트
+                                binding.homePlannerCtgyDeleteBtn.isEnabled = false
+                            },
+                            onFailure = { errorMessage ->
+                                Log.e("HomeFragment", "하위 할 일 삭제 실패: $errorMessage")
+                            }
+                        )
+                    }
                 }
+                ctgyAdapter.toggleDeleteMode(true)
+                binding.homePlannerCtgySaveBtn.isEnabled = true // SAVE 버튼 활성화
             }
-            binding.homePlannerCtgySaveBtn.isEnabled = true // SAVE 버튼 활성화
         }
 
         // 메모형 플래너 저장 버튼 클릭 리스너
@@ -331,9 +412,9 @@ class HomeFragment : Fragment() {
                 sendTaskToApi()
             } else {
                 Log.d("HomeFragment", "변경 사항 없음, 할 일 생성 API 호출 안 함")
+                savePlannerState(requireContext(), "memo_user", categories, checklist)
             }
 
-            saveChecklistToPreferences()
             lastSavedTasks = currentTasks
         }
 
@@ -351,9 +432,11 @@ class HomeFragment : Fragment() {
                         taskApiHelper = TaskApiHelper(requireContext())
                         taskApiHelper.deleteTasks(selectedTaskIds,
                             onSuccess = {
-                                deletedTaskIds -> memoAdapter.deleteSelectedItems()
+                                memoAdapter.deleteSelectedItems()
+                                Log.d("HomeFragment", "선택된 할 일 삭제 성공")
 
                                 // 삭제 후 상태를 저장하여, 저장 버튼 눌렀을 때 생성 API가 호출되지 않도록 설정
+                                savePlannerState(requireContext(), "memo_user", categories, checklist)
                                 lastSavedTasks = checklist.map { it.task }.toSet()
                                 Log.d("HomeFragment", "삭제 후 lastSavedTasks 업데이트: $lastSavedTasks")
                             },
@@ -364,7 +447,6 @@ class HomeFragment : Fragment() {
                     }
 
                     memoAdapter.deleteSelectedItems()
-//                    binding.homePlannerMemoDeleteBtn.isEnabled = false
 
                 } else {
                     memoAdapter.toggleDeleteMode(true)
@@ -375,13 +457,87 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun saveCtgyWithTasks() {
+        ctgyApiHelper = TaskCtgyApiHelper(requireContext())
+        val plannerDate = getCurrentDate()
 
-    private fun updateSaveButtonState() {
-        // 카테고리나 체크리스트에 변경사항이 있는 경우 SAVE 버튼 활성화
-        val hasUnsavedChanges = categories.any { category ->
-            category.isEditable || category.isSelected || category.checklists.any { it.isEditable || it.isSelected }
+        val ctgyTitles = categories.map { it.title }
+
+        //  삭제된 상태 그대로 저장
+        savePlannerState(requireContext(), "category_user", categories, checklist)
+
+        // 카테고리 생성 API 호출
+        ctgyApiHelper.addMultipleCtgy(ctgyTitles) { success, responseCode, responseBody, errorMessage ->
+            if (success && responseBody != null) {
+                Log.d("HomeFragment", "카테고리 생성 완료: $responseBody")
+
+                responseBody.forEachIndexed { index, ctgyItem ->
+                    if (index < categories.size) {
+                        categories[index].id = ctgyItem.id  // 서버에서 받은 ID 업데이트
+                    }
+                }
+
+                //  서버에서 받은 ID를 적용한 후, UI 갱신
+                ctgyAdapter.notifyDataSetChanged()
+                saveTasksForCategories(categories, plannerDate)
+            } else {
+                Log.e("HomeFragment", " 카테고리 생성 실패: $errorMessage")
+                Toast.makeText(requireContext(), "카테고리 생성 실패", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun saveTasksForCategories(categories: List<Category>, plannerDate: String) {
+        for (category in categories) {
+            val tasks = category.checklists.map { it.task }
+
+            if (tasks.isNotEmpty() && category.id != -1) {
+                Log.d("HomeFragment", "카테고리 ID: ${category.id}, 할 일 목록: $tasks")
+
+                ctgyApiHelper.addCtgyMultipleTasks(
+                    category.id,
+                    tasks,
+                    plannerDate,
+                    onSuccess = { createdTasks ->
+                        Log.d("HomeFragment", "카테고리(${category.id}) 하위 할 일 생성 완료: $createdTasks")
+
+                        category.checklists.clear()
+                        category.checklists.addAll(
+                            createdTasks.map {
+                                ChecklistItem(
+                                    task = it.title,
+                                    taskId = it.id,
+                                    isChecked = it.isCompleted,
+                                    isEditable = false
+                                )
+                            }
+                        )
+                        Log.d("HomeFragment", "저장된 할 일 목록 (ID 포함): ${category.checklists.map { it.taskId }}")
+                    },
+                    onFailure = { errorMessage ->
+                        Log.e("HomeFragment", "카테고리(${category.id}) 하위 할 일 생성 실패: $errorMessage")
+                    }
+                )
+            }
         }
 
+        ctgyAdapter.notifyDataSetChanged()
+    }
+
+
+    private fun updateSaveButtonState() {
+        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
+        val type = sharedPreferences.getString("type", "")
+
+        // 카테고리나 체크리스트에 변경사항이 있는 경우 SAVE 버튼 활성화
+        val hasUnsavedChanges = when (type) {
+            "memo_user" -> checklist.any { it.task.isNotBlank() } //  메모형: 메모가 입력되었으면 SAVE
+            else -> categories.any { category ->
+                category.isEditable || category.isSelected || category.checklists.any { it.isEditable || it.isSelected }
+            }
+        }
+
+        Log.d("HomeFragment", " SAVE 버튼 활성화 여부: $hasUnsavedChanges")
         binding.homePlannerCtgySaveBtn.isEnabled = hasUnsavedChanges
         binding.homePlannerMemoSaveBtn.isEnabled = hasUnsavedChanges
     }
@@ -389,16 +545,38 @@ class HomeFragment : Fragment() {
 
 
     private fun updateDeleteButtonState() {
+        val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
+        val type = sharedPreferences.getString("type", "")
 
-        val selectedTaskIds = memoAdapter.getSelectedTaskIds()
-        Log.d("HomeFragment", "초기 선택된 Task ID 목록: $selectedTaskIds")
+        when (type) {
+            "memo_user" -> {
+                //  메모형 플래너일 때 (메모 어댑터에서 ID 가져오기)
+                val selectedTaskIds = memoAdapter.getSelectedTaskIds()
+                Log.d("HomeFragment", "[메모형] 선택된 Task ID 목록: $selectedTaskIds")
 
-        // 선택된 카테고리나 체크리스트가 있는지 확인
-        val hasSelectedItems = categories.any { it.isSelected || it.checklists.any { checklist -> checklist.isSelected } }
+                // 선택된 메모가 있는지 확인
+                val hasSelectedItems = selectedTaskIds.isNotEmpty()
 
-        // 삭제 버튼 활성화 여부 갱신
-        binding.homePlannerCtgyDeleteBtn.isEnabled = hasSelectedItems
-        binding.homePlannerMemoDeleteBtn.isEnabled = hasSelectedItems
+                // 삭제 버튼 활성화 여부 갱신 (메모형)
+                binding.homePlannerMemoDeleteBtn.isEnabled = hasSelectedItems
+            }
+
+            else -> {
+                //  카테고리형 플래너일 때 (카테고리 어댑터에서 ID 가져오기)
+                val selectedCtgyIds = ctgyAdapter.getSelectedCtgyIds()
+                val selectedTaskIds = ctgyAdapter.getSelectedTaskIds()
+
+                Log.d("HomeFragment", "[카테고리형] 선택된 카테고리 ID 목록: $selectedCtgyIds")
+                Log.d("HomeFragment", "[카테고리형] 선택된 할 일 ID 목록: $selectedTaskIds")
+
+                // 선택된 항목이 하나라도 있는지 확인
+                val hasSelectedCategories = selectedCtgyIds.isNotEmpty()
+                val hasSelectedTasks = selectedTaskIds.isNotEmpty()
+
+                // 삭제 버튼 활성화 여부 갱신 (카테고리형)
+                binding.homePlannerCtgyDeleteBtn.isEnabled = hasSelectedTasks || hasSelectedCategories
+            }
+        }
     }
 
 
@@ -472,7 +650,7 @@ class HomeFragment : Fragment() {
     // 카테고리 추가 함수
     private fun addCategory(title: String) {
         val color = generateRandomColor()
-        categories.add(Category(title, mutableListOf(), color))
+        categories.add(Category(-1, title, mutableListOf(), color))
         ctgyAdapter.notifyItemInserted(categories.size - 1)
     }
 
@@ -518,10 +696,12 @@ class HomeFragment : Fragment() {
                 (responseBody)?.let { todoItems ->
                     todoItems.forEachIndexed { index, item ->
                         if (index < checklist.size) {
-                            checklist[index].taskId = item.id // ✅ taskId 업데이트
+                            checklist[index].taskId = item.id // taskId 업데이트
                         }
                     }
                     memoAdapter.notifyDataSetChanged()
+
+                    savePlannerState(requireContext(),"memo_user", categories, checklist)
                 }
                 Toast.makeText(requireContext(), "할 일이 여러 개 생성되었습니다.", Toast.LENGTH_SHORT).show()
 
@@ -559,46 +739,10 @@ class HomeFragment : Fragment() {
     private fun loadUserPreferences(): Pair<String?, String?> {
         val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
         val userId = sharedPreferences.getString("user_id", null)
-        val type = sharedPreferences.getString("type", "memo_user") // 기본값 설정
+        val type = sharedPreferences.getString("type", "") // 기본값 설정
+        Log.d("HomeFragment", "user_id: $userId, type: $type")
         return Pair(userId, type)
     }
-
-    // 할 일 목록 저장
-    private fun saveChecklistToPreferences() {
-        val sharedPreferences = requireContext().getSharedPreferences("checklist_prefs", MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-
-        val taskList = checklist.map { it.task } // 체크리스트에서 텍스트만 저장
-        editor.putStringSet("tasks", taskList.toSet()) // Set으로 변환하여 저장
-        editor.apply()
-    }
-
-    // 할 일 목록 불러오기
-    private fun loadChecklistFromPreferences() {
-        val sharedPreferences = requireContext().getSharedPreferences("checklist_prefs", MODE_PRIVATE)
-        val savedTasks = sharedPreferences.getStringSet("tasks", emptySet()) ?: emptySet()
-
-        checklist.clear()
-        checklist.addAll(savedTasks.map { ChecklistItem(it, isChecked = false, isEditable = false) }) // 불러오기
-        memoAdapter.notifyDataSetChanged()
-    }
-
-    private fun getLastSavedDate(): String {
-        val sharedPreferences = requireContext().getSharedPreferences("date_prefs", MODE_PRIVATE)
-        return sharedPreferences.getString("last_saved_date", "") ?: ""
-    }
-
-    private fun saveLastSavedDate(date: String) {
-        val sharedPreferences = requireContext().getSharedPreferences("date_prefs", MODE_PRIVATE)
-        sharedPreferences.edit().putString("last_saved_date", date).apply()
-    }
-
-    private fun resetMemoItems() {
-        checklist.clear() // Clear all existing checklist items
-        memoAdapter.notifyDataSetChanged()
-    }
-
-
 
     override fun onDestroyView() {
         super.onDestroyView()

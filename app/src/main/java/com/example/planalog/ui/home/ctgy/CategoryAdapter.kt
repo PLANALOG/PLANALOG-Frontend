@@ -1,7 +1,9 @@
 package com.example.planalog.ui.home.ctgy
 
+import android.content.Context
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,9 +12,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.planalog.R
 import com.example.planalog.databinding.HomePlannerCtgyItemBinding
 import com.example.planalog.databinding.HomePlannerMemoItemBinding
+import com.example.planalog.network.api.TaskApiHelper
+import com.example.planalog.network.api.TaskCtgyApiHelper
 import com.example.planalog.ui.home.memo.ChecklistItem
 
 class CategoryAdapter(
+    private val context: Context,
     private val categories: MutableList<Category>,
     private val onPlannerChanged: () -> Unit, // 변경사항 발생 시 호출될 콜백 함수
     private val onDeleteStateChanged: (Boolean) -> Unit,
@@ -76,6 +81,10 @@ class CategoryAdapter(
         // 부분 삭제 아이콘 클릭 리스너
         holder.binding.homePlannerCtgySelectBtn.setOnClickListener {
             category.isSelected = !category.isSelected // 선택 상태 토글
+
+            //  카테고리가 선택되면 하위 할 일도 자동 선택
+            category.checklists.forEach { it.isSelected = category.isSelected }
+
             notifyItemChanged(position) // UI 업데이트
             onDeleteStateChanged(categories.any { it.isSelected || it.checklists.any { checklist -> checklist.isSelected } })
             onPlannerChanged() // SAVE 버튼 활성화 상태 갱신
@@ -125,25 +134,54 @@ class CategoryAdapter(
     // 선택된 항목 삭제
     fun deleteSelectedItems() {
         val iterator = categories.iterator()
+        val taskIdsToDelete = mutableListOf<Int?>()
+        val categoryIdsToDelete = mutableListOf<Int>()
 
         while (iterator.hasNext()) {
             val category = iterator.next()
 
-            // 선택된 체크리스트 삭제
-            val checklistIterator = category.checklists.iterator()
-            while (checklistIterator.hasNext()) {
-                val checklistItem = checklistIterator.next()
-                if (checklistItem.isSelected) {
-                    checklistIterator.remove() // 체크리스트 항목 삭제
-                }
-            }
-
-            // 선택된 카테고리 삭제
+            //  선택된 카테고리 삭제 시, 하위 할 일도 자동 삭제되도록 처리
             if (category.isSelected) {
-                iterator.remove()
+                categoryIdsToDelete.add(category.id)
+                taskIdsToDelete.addAll(category.checklists.mapNotNull { it.taskId }) // 할 일 ID 추가
+                iterator.remove() // 리스트에서 삭제
+            } else {
+                // 개별 할 일 삭제
+                val checklistIterator = category.checklists.iterator()
+                while (checklistIterator.hasNext()) {
+                    val checklistItem = checklistIterator.next()
+                    if (checklistItem.isSelected) {
+                        taskIdsToDelete.add(checklistItem.taskId)
+                        checklistIterator.remove() // 체크리스트 항목 삭제
+                    }
+                }
             }
         }
         notifyDataSetChanged()
+
+        //  선택된 할 일만 삭제 요청
+        if (taskIdsToDelete.isNotEmpty()) {
+            val taskApiHelper = TaskApiHelper(context)
+            Log.d("CategoryAdapter", "삭제할 하위 할 일 ID: $taskIdsToDelete")
+            taskApiHelper.deleteTasks(taskIdsToDelete,
+                onSuccess = { deletedTaskIds ->
+                    Log.d("CategoryAdapter", "삭제된 하위 할 일 ID: $deletedTaskIds")
+                },
+                onFailure = { Log.e("CategoryAdapter", "하위 할 일 삭제 실패") }
+            )
+        }
+
+        //  선택된 카테고리 삭제 API 호출
+        if (categoryIdsToDelete.isNotEmpty()) {
+            val ctgyApiHelper = TaskCtgyApiHelper(context)
+            Log.d("CategoryAdapter", "삭제할 카테고리 ID: $categoryIdsToDelete")
+            ctgyApiHelper.deleteCtgys(categoryIdsToDelete, categories,
+                onSuccess = { deletedCtgyIds ->
+                    Log.d("CategoryAdapter", "삭제된 카테고리 ID: $deletedCtgyIds")
+                },
+                onFailure = { Log.e("CategoryAdapter", "카테고리 삭제 실패") }
+            )
+        }
 
         // 선택 상태 초기화
         resetSelectionStates()
@@ -166,4 +204,25 @@ class CategoryAdapter(
         }
         return false
     }
+
+    // 선택된 카테고리 ID 반환
+    fun getSelectedCtgyIds(): List<Int> {
+        return categories.filter { it.isSelected && it.id != -1 }.map { it.id } //  ID가 -1이 아닌 경우만 반환
+    }
+
+    fun getSelectedTaskIds(): List<Int> {
+        val selectedTaskIds = mutableListOf<Int>()
+
+        // 각 카테고리 내 체크리스트에서 선택된 항목의 ID 가져오기
+        categories.forEach { category ->
+            category.checklists.filter { it.isSelected && it.taskId != null }.forEach { checklistItem ->
+                selectedTaskIds.add(checklistItem.taskId!!)
+            }
+        }
+
+        Log.d("CategoryAdapter", "선택된 할 일 ID 목록: $selectedTaskIds")
+
+        return selectedTaskIds
+    }
+
 }

@@ -1,4 +1,4 @@
-package com.example.planalog.network.task_category
+package com.example.planalog.network.task_category.response
 
 import com.google.gson.annotations.SerializedName
 
