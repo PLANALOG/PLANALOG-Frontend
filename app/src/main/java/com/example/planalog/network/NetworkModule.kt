@@ -19,7 +19,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://15.164.83.14:3000"
+    private const val BASE_URL = "https://planalog.site"
 
     // Authorization 헤더를 추가하는 Interceptor
     private class AuthInterceptor(private val context: Context) : Interceptor {
