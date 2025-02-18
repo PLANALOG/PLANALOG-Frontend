@@ -16,7 +16,7 @@ import com.example.planalog.utils.getCurrentDate
 import com.example.planalog.utils.updateTaskCompletion
 
 class MemoAdapter(
-    private val context: android.content.Context,  // 추가된 context
+    private val context: Context,  // 추가된 context
     private val checklists: MutableList<ChecklistItem>,
     private val onMemoChanged: () -> Unit,
     private val onDeleteStateChanged: (Boolean) -> Unit,
@@ -50,8 +50,6 @@ class MemoAdapter(
         // 메모 초기 설정
         holder.binding.homePlannerMemoEt.setText(memo.task)
         holder.binding.homePlannerMemoEt.isEnabled = memo.isEditable
-//        holder.binding.homePlannerMemoEt.isFocusable = memo.isEditable
-//        holder.binding.homePlannerMemoEt.isFocusableInTouchMode = memo.isEditable
         holder.binding.homePlannerMemoSelectBtn.isSelected = memo.isSelected
         holder.binding.homePlannerMemoCb.isChecked = memo.isChecked
 
@@ -80,6 +78,7 @@ class MemoAdapter(
         val textWatcher = object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 memo.task = s.toString()
+                Log.d("MemoAdapter", "Task 입력 감지됨: ${memo.task}")
                 onMemoChanged()
             }
 
@@ -102,7 +101,7 @@ class MemoAdapter(
 
         selectedTasks.forEach {
             if (it.taskId == null) {
-                Log.e("MemoAdapter", "⚠️ 선택된 항목의 Task ID가 null입니다! Task: ${it.task}")
+                Log.e("MemoAdapter", " 선택된 항목의 Task ID가 null입니다! Task: ${it.task}")
             }
         }
 

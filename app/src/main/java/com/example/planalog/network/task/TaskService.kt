@@ -31,9 +31,9 @@ interface TaskService {
     ) : Call<DeleteTasksResponse>
 
     // 할 일 조회
-    @GET("/tasks/{task_id}")
+    @GET("/tasks/")
     fun getTasks(
-        @Query("task_id") task_id : Int?,
+        @Query("planner_date") planner_date : String,
     ) : Call<GetTasksResponse>
 
     // 할 일 여러개 생성

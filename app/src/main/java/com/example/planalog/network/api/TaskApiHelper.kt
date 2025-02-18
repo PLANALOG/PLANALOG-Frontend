@@ -40,7 +40,7 @@ class TaskApiHelper(private val context: Context) {
                         Log.d("TaskApiHelper", "할 일 생성 성공 및 ID 저장: $taskId")
                     }
 
-                    getTasks(task?.id)
+                    getTasks(task?.createdAt.toString())
                 } else {
                     Log.e("TaskApiHelper", "할일 생성 실패: 응답 코드=${response.code()}, 메시지=${response.message()}")
                     Toast.makeText(context, "할일 생성 실패: ${response.code()}", Toast.LENGTH_SHORT).show()
@@ -91,21 +91,25 @@ class TaskApiHelper(private val context: Context) {
         })
     }
 
-    fun getTasks(task_id : Int?) {
-        taskService.getTasks(task_id).enqueue(object : Callback<GetTasksResponse> {
+    fun getTasks(plannerDate : String) {
+        taskService.getTasks(plannerDate).enqueue(object : Callback<GetTasksResponse> {
             override fun onResponse(
                 call: Call<GetTasksResponse>,
                 response: Response<GetTasksResponse>
             ) {
-                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
-                    response.body()?.let { responseBody ->
-                        val deletedTask = responseBody.success  // 필요한 데이터만 추출
-                        Toast.makeText(context, "할 일 조회 성공", Toast.LENGTH_SHORT).show()
-                        Log.d("TaskApiHelper", "조회 결과: $deletedTask")
+                if (response.isSuccessful) {
+                    val taskResponse = response.body()
+                    if (taskResponse != null && taskResponse.resultType == "SUCCESS") {
+                        val tasks = taskResponse.tasks
+                        tasks.forEach {
+                            Log.d("TaskApiHelper","할 일 목록 조회 성공 - 할 일 ID: ${it.id}, 제목: ${it.title}, 완료 여부: ${it.isCompleted}")
+                        }
+                    } else {
+                        Log.d("TaskApiHelper", "응답 성공했지만 데이터 없음")
+                        Toast.makeText(context, "오늘 생성된 카테고리가 없습니다.", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Log.e("TaskApiHelper", "할 일 조회 실패: ${response.code()}, ${response.message()}")
-                    Toast.makeText(context, "할 일 조회 실패", Toast.LENGTH_SHORT).show()
+                    Log.d("TaskApiHelper","서버 응답 오류: ${response.errorBody()?.string()}")
                 }
             }
 
@@ -117,7 +121,7 @@ class TaskApiHelper(private val context: Context) {
         })
     }
 
-    fun deleteTasks(taskIds: List<Int>, onSuccess: (List<Int>) -> Unit, onFailure: (String) -> Unit) {
+    fun deleteTasks(taskIds: List<Int?>, onSuccess: (List<Int?>) -> Unit, onFailure: (String) -> Unit) {
         val request = DeleteTasksRequest(taskIds)
 
         taskService.deleteTasks(request).enqueue(object : Callback<DeleteTasksResponse> {
@@ -151,11 +155,11 @@ class TaskApiHelper(private val context: Context) {
             override fun onResponse(call: Call<TaskStatusResponse>, response: Response<TaskStatusResponse>) {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
                     val taskStatus = response.body()?.success
-                    Toast.makeText(context, "할 일 삭제 성공", Toast.LENGTH_SHORT).show()
-                    Log.d("TaskApiHelper", "삭제 결과: $taskStatus")
+                    Toast.makeText(context, "할 일 수정 성공", Toast.LENGTH_SHORT).show()
+                    Log.d("TaskApiHelper", "수정 결과: $taskStatus")
                 } else {
                     Log.e("TaskApiHelper", "서버 오류: ${response.code()}, ${response.message()}")
-                    Toast.makeText(context, "할 일 삭제 실패", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "할 일 수정 실패", Toast.LENGTH_SHORT).show()
                 }
             }
             override fun onFailure(call: Call<TaskStatusResponse>, t: Throwable) {

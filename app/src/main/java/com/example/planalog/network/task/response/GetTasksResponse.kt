@@ -1,17 +1,19 @@
 package com.example.planalog.network.task.response
 
+import com.google.gson.annotations.SerializedName
+
 data class GetTasksResponse(
-    val resultType: String,
-    val error: String?,
-    val success: TaskInfo?
+    @SerializedName("resultType") val resultType: String,
+    @SerializedName("error") val error: Any?, // 에러가 null일 수 있음
+    @SerializedName("success") val tasks: List<TaskInfo>
 )
 
 data class TaskInfo(
-    val id: Int,
-    val plannerId: Int,
-    val taskCategoryId: Int?,
-    val title: String,
-    val isCompleted: Boolean,
-    val createdAt: String,
-    val updatedAt: String
+    @SerializedName("id") val id: Int,
+    @SerializedName("plannerId") val plannerId: Int,
+    @SerializedName("taskCategoryId") val taskCategoryId: Int,
+    @SerializedName("title") val title: String,
+    @SerializedName("isCompleted") val isCompleted: Boolean,
+    @SerializedName("createdAt") val createdAt: String,
+    @SerializedName("updatedAt") val updatedAt: String
 )
