@@ -14,17 +14,11 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentPostBinding
-import com.example.planalog.network.RetrofitClient
-import com.example.planalog.network.api.PlannerApiHelper
 import com.example.planalog.network.api.PostApiHelper
-import com.example.planalog.network.post.MomentContent
-import com.example.planalog.network.post.MomentRequest
 import com.example.planalog.network.post.MomentRequestContent
-import com.example.planalog.network.post.PostApiService
 import kotlinx.coroutines.launch
 
 class PostFragment : Fragment() {
@@ -195,30 +189,31 @@ class PostFragment : Fragment() {
             )
         }
 
-        // if (plannerId == -1) {
-        //     showToast("플래너 ID가 설정되지 않았습니다.")
-        //     return
-        // }
+        postApiHelper.uploadPost(
+            title,
+            plannerId,
+            momentRequestList,
+            object : PostApiHelper.UploadPostCallback {
+                override fun onSuccess(postedId: Int?, momentId: Int?) {
+                    showToast("게시물이 성공적으로 업로드되었습니다.")
+                    Log.d("PostFragment", "작성한 유저 아이디: $postedId")
+                    Log.d("PostFragment", "저장된 모먼트 ID: $momentId")
 
-        // plannerId가 없을 경우 null을 전달
-        postApiHelper.uploadPost(title, plannerId, momentRequestList, object : PostApiHelper.UploadPostCallback {
-            override fun onSuccess(postedId: Int?) {
-                showToast("게시물이 성공적으로 업로드되었습니다.")
-                Log.d("PostFragment", "작성한 유저 아이디: ${postedId}")
-                navigateToPostDetailFragment()
+                    // momentId 저장
+                    val sharedPreferences = requireContext().getSharedPreferences("MomentData", Context.MODE_PRIVATE)
+                    val editor = sharedPreferences.edit()
+                    editor.putInt("MOMENT_ID", momentId ?: -1)
+                    editor.apply()
 
-                val sharedPreferences: SharedPreferences = requireContext().getSharedPreferences("Posted_id", Context.MODE_PRIVATE)
-                val editor = sharedPreferences.edit()
-                editor.putInt("POSTED_ID", postedId ?: -1)
-                editor.apply()
+                    navigateToPostDetailFragment()
+                }
+
+                override fun onFailure(errorMessage: String) {
+                    showToast("게시물 업로드 실패: $errorMessage")
+                }
             }
-
-            override fun onFailure(errorMessage: String) {
-                showToast("게시물 업로드 실패: $errorMessage")
-            }
-        })
+        )
     }
-
 
     private fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
