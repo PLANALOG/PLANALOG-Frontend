@@ -3,6 +3,7 @@ package com.example.planalog.ui.post
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
@@ -17,7 +18,7 @@ class SlidePagerAdapter(
     inner class SlideViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val imageView: ImageView = itemView.findViewById(R.id.imageView)
         val postContent: EditText = itemView.findViewById(R.id.postContent)
-        val deleteButton: ImageView = itemView.findViewById(R.id.deleteButton)
+        val deleteButton: Button = itemView.findViewById(R.id.deleteButton)
 
         fun bind(slide: Slide) {
             // 이미지와 초기 텍스트 설정

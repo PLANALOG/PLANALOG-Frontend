@@ -1,14 +1,20 @@
 package com.example.planalog.ui.home
 
+import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentHomeBinding
@@ -24,6 +30,7 @@ import com.example.planalog.ui.home.ctgy.Category
 import com.example.planalog.ui.home.ctgy.CategoryAdapter
 import com.example.planalog.ui.home.ctgy.MemoAdapter
 import com.example.planalog.ui.home.memo.ChecklistItem
+import com.example.planalog.ui.post.PostFragment
 import com.example.planalog.utils.generateRandomColor
 import com.example.planalog.utils.getCurrentDate
 import com.example.planalog.utils.getCurrentMonth
@@ -34,6 +41,9 @@ import loadLastSavedDate
 import loadPlannerState
 import saveLastSavedDate
 import savePlannerState
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.util.Calendar
 
 class HomeFragment : Fragment() {
@@ -79,13 +89,40 @@ class HomeFragment : Fragment() {
         // 전달된 result 값 처리
         val type = arguments?.getString("type") ?: ""
         Log.d("HomeFragment", "argument type: $type")
+
+// SharedPreferences에서 기존 값 가져오기
         val sharedPreferences = requireContext().getSharedPreferences("user_prefs", MODE_PRIVATE)
-        val plannerType = sharedPreferences.getString("type", "memo_user") // 기본값 설정
-        loadUserPreferences()
-        updateLayoutBasedOnResult(plannerType.toString())
+        val plannerType = if (type.isNotEmpty()) {
+            // 받은 값이 있으면 SharedPreferences에 저장
+            sharedPreferences.edit().putString("type", type).apply()
+            type
+        } else {
+            // 받은 값이 없으면 기존 값 사용
+            sharedPreferences.getString("type", "memo_user").toString()
+        }
+
+        parentFragmentManager.setFragmentResultListener("update_ui", this) { _, bundle ->
+            val updatedType = bundle.getString("type") ?: "memo_user"
+            Log.d("HomeFragment", "Received updated type: $updatedType")
+            requireActivity().runOnUiThread {
+                updateLayoutBasedOnResult(updatedType)
+            }
+        }
+
+        requireActivity().runOnUiThread {
+            updateLayoutBasedOnResult(plannerType)
+        }
+
+
+        initializeVariables()
+        initializeUI()
+        initializeAdapters()
+        setupClickListeners()
+        loadCategoryIds()
+
 
         val currentDate = getCurrentDate()
-        val lastSavedDate = loadLastSavedDate(requireContext(), plannerType.toString()) // 마지막 저장된 날짜 불러오기
+        val lastSavedDate = loadLastSavedDate(requireContext(), plannerType) // 마지막 저장된 날짜 불러오기
 
         Log.d("HomeFragment", "현재 날짜: $currentDate, 마지막 저장된 날짜: $lastSavedDate")
 
@@ -94,8 +131,12 @@ class HomeFragment : Fragment() {
             categories.clear()
             checklist.clear()
 
+            ctgyAdapter.notifyDataSetChanged()
+            memoAdapter.notifyDataSetChanged()
+
             if (plannerType == "category_user") {
                 categories.add(Category(-1, "", mutableListOf(), generateRandomColor()))
+                ctgyAdapter.notifyDataSetChanged()
             }
 
             saveLastSavedDate(requireContext(), plannerType.toString(), currentDate)
@@ -105,10 +146,12 @@ class HomeFragment : Fragment() {
             if (plannerType == "memo_user") {
                 checklist.clear()
                 checklist.addAll(savedChecklist)
+                memoAdapter.notifyDataSetChanged()
                 Log.d("HomeFragment", " [메모형] 데이터 불러오기 완료: ${checklist.size}개")
             } else {
                 categories.clear()
                 categories.addAll(savedCategories)
+                ctgyAdapter.notifyDataSetChanged()
                 Log.d("HomeFragment", "[카테고리형] 데이터 불러오기 완료: ${categories.size}개")
             }
         }
@@ -118,11 +161,6 @@ class HomeFragment : Fragment() {
 
         taskApiHelper = TaskApiHelper(requireContext())
         taskApiHelper.getTasks(getCurrentDate())
-
-        initializeVariables()
-        initializeUI()
-        initializeAdapters()
-        setupClickListeners()
 
         Log.d("HomeFragment", "📋 데이터 로드 완료 - 카테고리: ${categories.size}, 체크리스트: ${checklist.size}")
 
@@ -149,11 +187,6 @@ class HomeFragment : Fragment() {
         updateLayoutBasedOnResult(plannerType)
     }
 
-    private fun getLastSavedDate(): String {
-        val sharedPreferences = requireContext().getSharedPreferences("date_prefs", MODE_PRIVATE)
-        return sharedPreferences.getString("last_saved_date", "") ?: ""
-    }
-
     private fun setupClickListeners() {
         // 카테고리 추가 버튼 클릭 리스너
         binding.homePlannerCtgyToolsIc.setOnClickListener {
@@ -165,6 +198,25 @@ class HomeFragment : Fragment() {
             addCheckListItem("")
             binding.homePlannerMemoSaveBtn.isEnabled = true
         }
+
+        binding.icPlusMemo.setOnClickListener {
+            val bitmap = convertLayoutToBitmap(binding.homePlannerMemoV)
+            val imageUri = saveBitmapToFile(requireContext(), bitmap)
+
+            imageUri?.let {
+                moveToPostFragment(imageUri)
+            }
+        }
+
+        binding.icPlusCategory.setOnClickListener {
+            val bitmap = convertLayoutToBitmap(binding.homePlannerCtgyV) // 플래너 레이아웃 캡처
+            val imageUri = saveBitmapToFile(requireContext(), bitmap)
+
+            imageUri?.let {
+                moveToPostFragment(imageUri)
+            }
+        }
+
     }
 
     private fun initializeAdapters() {
@@ -557,6 +609,7 @@ class HomeFragment : Fragment() {
                 val hasSelectedItems = selectedTaskIds.isNotEmpty()
 
                 // 삭제 버튼 활성화 여부 갱신 (메모형)
+                Log.d("HomeFragment", "DELETE 버튼 활성화 여부: $hasSelectedItems")
                 binding.homePlannerMemoDeleteBtn.isEnabled = hasSelectedItems
             }
 
@@ -573,8 +626,35 @@ class HomeFragment : Fragment() {
                 val hasSelectedTasks = selectedTaskIds.isNotEmpty()
 
                 // 삭제 버튼 활성화 여부 갱신 (카테고리형)
+                Log.d("HomeFragment", "DELETE 버튼 활성화 여부: ${hasSelectedTasks || hasSelectedCategories}")
                 binding.homePlannerCtgyDeleteBtn.isEnabled = hasSelectedTasks || hasSelectedCategories
             }
+        }
+    }
+
+    private fun loadCategoryIds() {
+        val sharedPreferences = requireContext().getSharedPreferences("planner_prefs", MODE_PRIVATE)
+        val savedCategoryIds = sharedPreferences.getString("category_ids", "") ?: ""
+
+        if (savedCategoryIds.isNotEmpty()) {
+            val categoryIdList = savedCategoryIds.split(",").mapNotNull { it.toIntOrNull() }
+
+            for (category in categories) {
+                if (category.id == -1 && categoryIdList.isNotEmpty()) {
+                    category.id = categoryIdList.first()
+                    categoryIdList.drop(1)
+                }
+
+                val taskIds = sharedPreferences.getString("tasks_${category.id}", "") ?: ""
+                val taskIdList = taskIds.split(",").mapNotNull { it.toIntOrNull() }
+
+                for (index in category.checklists.indices) {
+                    if (index < taskIdList.size) {
+                        category.checklists[index].taskId = taskIdList[index]
+                    }
+                }
+            }
+            Log.d("HomeFragment", "✅ 저장된 카테고리 ID 및 할 일 ID 불러오기 완료")
         }
     }
 
@@ -741,6 +821,45 @@ class HomeFragment : Fragment() {
         val type = sharedPreferences.getString("type", "") // 기본값 설정
         Log.d("HomeFragment", "user_id: $userId, type: $type")
         return Pair(userId, type)
+    }
+
+    fun convertLayoutToBitmap(view: View): Bitmap {
+        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        view.draw(canvas)
+        return bitmap
+    }
+
+    fun saveBitmapToFile(context: Context, bitmap: Bitmap): Uri? {
+        val filesDir = context.filesDir
+        val imageFile = File(filesDir, "converted_image.png")
+
+        return try {
+            val outputStream = FileOutputStream(imageFile)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.flush()
+            outputStream.close()
+            FileProvider.getUriForFile(context, "${context.packageName}.provider", imageFile)
+        } catch (e: IOException) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+
+
+    private fun moveToPostFragment(imageUri: Uri) {
+        val postFragment = PostFragment()  // 이동할 프래그먼트 객체 생성
+        val bundle = Bundle().apply {
+            putParcelable("image_uri", imageUri) // 이미지 URI를 번들에 추가
+        }
+        postFragment.arguments = bundle
+
+        // 현재 Fragment를 PostFragment로 변경
+        val transaction = requireActivity().supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.main_frm, postFragment) // R.id.fragment_container는 프래그먼트가 표시될 레이아웃
+        transaction.addToBackStack(null) // 뒤로 가기 버튼을 위한 백스택 추가
+        transaction.commit()
     }
 
     override fun onDestroyView() {

@@ -27,7 +27,7 @@ class PostApiHelper(private val context: Context) {
             override fun onResponse(call: Call<MomentResponse>, response: Response<MomentResponse>) {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
                     val momentData = response.body()?.success?.data
-                    val momentId = momentData?.momentId
+                    val momentId = momentData?.id
                     Log.d("PostApiHelper", "모먼트 생성 성공: $momentData")
                     Log.d("PostApiHelper", "모먼트 ID: $momentId")
 

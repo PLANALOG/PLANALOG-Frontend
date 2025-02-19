@@ -12,8 +12,9 @@ class FriendpageMomentAdapter(private var moments: List<MypageMoment>) :
     inner class MomentViewHolder(private val binding: ItemMypageMomentBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(moment: MypageMoment) {
             binding.postTitle.text = moment.title
-            binding.postDate.text = moment.date.substring(0, 10)  // 날짜 포맷 (YYYY-MM-DD)
-         //   binding.postReply.text = "공감 ${moment.cheeringCount} 댓글 ${moment.commentCount}"
+            binding.postUserName.text = moment.userName
+//            binding.postDate.text = moment.createdAt.substring(0, 10)  // 날짜 포맷 (YYYY-MM-DD)
+            binding.postReply.text = "공감 ${moment.likingCount} 댓글 ${moment.commentCount}"
         }
     }
 

@@ -41,8 +41,8 @@ class PostDetailFragment : Fragment() {
     ): View {
         _binding = FragmentPostDetailBinding.inflate(inflater, container, false)
 
-        val spf = requireContext().getSharedPreferences("Posted_id", Context.MODE_PRIVATE)
-        val postedId = spf.getInt("POSTED_ID", -1)
+        val spf = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val postedId = spf.getString("user_id", "")
         Log.d("PostedDetailFragment", "postedID: ${postedId}")
 
         userService = RetrofitClient.create(UserService::class.java, requireContext())

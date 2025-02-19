@@ -15,6 +15,7 @@ import com.example.planalog.network.task_category.response.CtgyItem
 import com.example.planalog.network.task_category.response.GetCtgyResponse
 import com.example.planalog.network.task_category.TaskCategoryService
 import com.example.planalog.ui.home.ctgy.Category
+import com.example.planalog.utils.generateRandomColor
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -35,6 +36,11 @@ class TaskCtgyApiHelper(private val context: Context) {
 
                     val ctgyIds = response.body()?.success?.data?.success?.map {it.id}
                     Log.d("TaskCtgyApiHelper", "추출된 카테고리 ID 목록: $ctgyIds")
+
+                    // ID 저장 추가
+                    val createdCategories = response.body()?.success?.data?.success ?: listOf()
+                    val categories = createdCategories.map { Category(it.id, it.name, mutableListOf(), generateRandomColor()) }
+                    saveCategoryIds(categories)
 
                     callback(true, response.code(), response.body()?.success?.data?.success, null)
                 } else {
@@ -102,6 +108,9 @@ class TaskCtgyApiHelper(private val context: Context) {
                         Toast.makeText(context, "카테고리 삭제 성공", Toast.LENGTH_SHORT).show()
                         Log.d("TaskCtgyApiHelper", " 삭제된 카테고리 ID: ${deletedCtgyIds}")
 
+                        // 삭제된 ID를 SharedPreferences에서 제거
+                        removeCategoryIds(deletedCtgyIds)
+
                         //  삭제된 카테고리의 하위 할 일 ID 가져오기
                         val taskIdsToDelete = categoryList
                             .filter { it.id in deletedCtgyIds }
@@ -154,4 +163,44 @@ class TaskCtgyApiHelper(private val context: Context) {
 
         })
     }
+
+    private fun saveCategoryIds(categories: List<Category>) {
+        val sharedPreferences = context.getSharedPreferences("planner_prefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+
+        val categoryIds = categories.joinToString(",") { it.id.toString() }
+        editor.putString("category_ids", categoryIds)
+
+        val taskMap = mutableMapOf<Int, String>()
+        for (category in categories) {
+            val taskIds = category.checklists.joinToString(",") { it.taskId.toString() }
+            taskMap[category.id] = taskIds
+        }
+
+        for ((categoryId, taskIds) in taskMap) {
+            editor.putString("tasks_$categoryId", taskIds)
+        }
+
+        editor.apply()
+        Log.d("TaskCtgyApiHelper", "📝 카테고리 및 할 일 ID 저장 완료: $categoryIds")
+    }
+
+    private fun removeCategoryIds(deletedCategoryIds: List<Int>) {
+        val sharedPreferences = context.getSharedPreferences("planner_prefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+
+        val savedCategoryIds = sharedPreferences.getString("category_ids", "") ?: ""
+        val categoryIdList = savedCategoryIds.split(",").mapNotNull { it.toIntOrNull() }.toMutableList()
+
+        categoryIdList.removeAll(deletedCategoryIds)
+        editor.putString("category_ids", categoryIdList.joinToString(","))
+
+        for (categoryId in deletedCategoryIds) {
+            editor.remove("tasks_$categoryId")
+        }
+
+        editor.apply()
+        Log.d("TaskCtgyApiHelper", "🗑 삭제된 카테고리 ID 제거 완료")
+    }
+
 }

@@ -17,11 +17,10 @@ data class SuccessResponse(
 )
 
 data class MomentData(
-    val momentId: Int, // 기존 id에서 변경됨
+    val id: Int,
     val userId: Int,
     val title: String,
-    val plannerId: Int, // Long이 아닌 Int로 변경 필요
-    val date: String?, // 새 필드 추가
+    val plannerId: Int,
     val createdAt: String,
     val updatedAt: String,
     val momentContents: List<MomentContent>

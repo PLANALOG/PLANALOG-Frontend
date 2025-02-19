@@ -25,4 +25,11 @@
         <item name="android:statusBarColor">@color/main_1</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
+
+    <style name="CustomTabTextAppearance" parent="TextAppearance.Design.Tab">
+        <item name="android:fontFamily">@font/pretendard_medium</item>
+        <item name="android:textSize">14sp</item>
+        <item name="textAllCaps">false</item>
+    </style>
+
 </resources>

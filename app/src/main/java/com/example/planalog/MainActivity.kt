@@ -25,18 +25,25 @@ class MainActivity : AppCompatActivity() {
 
         //  ViewModel을 Application 범위에서 가져오기
         val notifyViewModel = NotifyViewModel.getInstance(application)
-
+        val type = intent.getStringExtra("type") ?: ""
+        val existingFragment = supportFragmentManager.findFragmentById(R.id.main_frm)
 
         Log.d("MainActivity", "📌 MainActivity ViewModel 해시코드: ${notifyViewModel.hashCode()}")
 
-        // 초기 프래그먼트 설정 (홈 화면)
-        val type = intent.getStringExtra("type") ?: ""
-        replaceFragment(HomeFragment().apply {
-            arguments = Bundle().apply {
-                putString("type", type)
-                Log.d("MainActivity", "Received 타입: $type")
+        if (existingFragment == null) {
+            val homeFragment = HomeFragment().apply {
+                arguments = Bundle().apply {
+                    putString("type", type)
+                }
             }
-        })
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.main_frm, homeFragment, "HomeFragment")
+                .commit()
+        }
+
+        // 📌 UI 업데이트 트리거 전달
+        val result = Bundle().apply { putString("type", type) }
+        supportFragmentManager.setFragmentResult("update_ui", result)
 
         // 바텀 내비게이션 리스너 설정
         binding.mainBottomNav.setOnItemSelectedListener { item ->
@@ -62,23 +69,21 @@ class MainActivity : AppCompatActivity() {
 
     // 프래그먼트 변경 메서드 (캘린더 & 알림은 백 스택에 추가하지 않음)
     private fun replaceFragment(fragment: Fragment, addToBackStack: Boolean = true) {
-
         val currentFragment = supportFragmentManager.findFragmentById(R.id.main_frm)
 
-        //  현재 프래그먼트가 HomeFragment이고, 다시 추가하려는 프래그먼트도 HomeFragment이면 추가하지 않음
-        if (currentFragment is HomeFragment && fragment is HomeFragment) {
-            Log.d("MainActivity", "❌ 이미 HomeFragment가 로드되어 있음. 중복 추가 방지")
+        // 🛠 동일한 프래그먼트를 중복 추가 방지
+        if (currentFragment?.javaClass == fragment.javaClass) {
+            Log.d("MainActivity", "❌ 중복된 프래그먼트 추가 방지: ${fragment.javaClass.simpleName}")
             return
         }
 
-        val transaction = supportFragmentManager.beginTransaction()
-            .replace(R.id.main_frm, fragment)
+        val transaction = supportFragmentManager.beginTransaction().replace(R.id.main_frm, fragment)
 
         if (addToBackStack) {
             transaction.addToBackStack(null)
         }
 
-        transaction.commitAllowingStateLoss() // 상태 손실 방지
+        transaction.commitAllowingStateLoss()
     }
 
     // 뒤로 가기 버튼 오버라이드 (캘린더 & 알림에서 뒤로 가기 시 홈으로 이동)
