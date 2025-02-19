@@ -12,15 +12,26 @@
         android:scaleType="centerCrop"
         android:background="@color/transparent" />
 
-    <!-- X 버튼 (오른쪽 상단) -->
-    <ImageView
+    <!-- X 버튼 (사진 아래) -->
+    <Button
         android:id="@+id/deleteButton"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
-        android:src="@drawable/ic_x"
-        android:layout_alignTop="@id/imageView"
+        android:layout_width="54dp"
+        android:layout_height="31dp"
+        android:text="@string/delete"
+        android:textSize="10sp"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#2C3E50"
+        android:fontFamily="@font/pretendard_medium"
+        android:gravity="center"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:layout_below="@id/imageView"
         android:layout_alignEnd="@id/imageView"
-        android:layout_margin="8dp" />
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp" />
+
 
     <!-- 게시물 내용 -->
     <EditText
@@ -36,5 +47,5 @@
         android:gravity="top"
         android:background="@color/transparent"
         android:layout_below="@id/imageView"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="25dp" />
 </RelativeLayout>
