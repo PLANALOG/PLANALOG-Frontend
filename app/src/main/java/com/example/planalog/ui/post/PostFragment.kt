@@ -44,6 +44,12 @@ class PostFragment : Fragment() {
         // 초기 상태: 뷰페이저를 숨김 처리
         binding.viewPager.visibility = View.GONE
 
+        // **전달받은 플래너 이미지를 슬라이드에 추가**
+        val plannerImageUri = arguments?.getParcelable<Uri>("image_uri")
+        plannerImageUri?.let {
+            addPlannerImageToSlides(it)
+        }
+
         // 사진 추가 버튼 클릭 시 내용은 유지하고 뷰만 전환
         binding.photoButton.setOnClickListener {
             binding.postContent.visibility = View.GONE  // 내용은 숨기지만 초기화하지 않음
@@ -144,10 +150,7 @@ class PostFragment : Fragment() {
                         slideList.add(newSlide)
                     }
                     slidePagerAdapter.notifyDataSetChanged()
-                    binding.viewPager.visibility = View.VISIBLE
-
-                    slidePagerAdapter.notifyDataSetChanged()
-                    binding.viewPager.visibility = View.VISIBLE
+                    updateViewVisibility()
                 }
             }
         }
@@ -218,4 +221,23 @@ class PostFragment : Fragment() {
     private fun showToast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
+
+    private fun addPlannerImageToSlides(imageUri: Uri) {
+        val newSlide = Slide(imageResId = imageUri, postContent = "")
+        slideList.add(0, newSlide)  // 플래너 사진을 리스트 맨 앞에 추가
+        slidePagerAdapter.notifyDataSetChanged()
+        updateViewVisibility()
+    }
+
+    private fun updateViewVisibility() {
+        if (slideList.isNotEmpty()) {
+            binding.postContent.visibility = View.GONE  // EditText 숨기기
+            binding.viewPager.visibility = View.VISIBLE  // ViewPager 표시
+        } else {
+            binding.postContent.visibility = View.VISIBLE  // EditText 표시
+            binding.viewPager.visibility = View.GONE  // ViewPager 숨기기
+        }
+    }
+
+
 }

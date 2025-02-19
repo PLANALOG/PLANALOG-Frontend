@@ -21,15 +21,15 @@ class StartActivity : AppCompatActivity() {
         val type = spf.getString("type", null)
 
         binding.btnStart.setOnClickListener {
-            if (!userId.isNullOrEmpty()) {
-                val intent = Intent(this, MainActivity::class.java)
-                startActivity(intent)
-                finish()  // 현재 액티비티 종료
-            } else {
+//            if (!userId.isNullOrEmpty()) {
+//                val intent = Intent(this, MainActivity::class.java)
+//                startActivity(intent)
+//                finish()  // 현재 액티비티 종료
+//            } else {
                 val intent = Intent(this, StartsetActivity::class.java)
                 startActivity(intent)
                 finish()  // 현재 액티비티 종료
-            }
+//            }
 
         }
     }

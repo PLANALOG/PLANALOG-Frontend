@@ -26,6 +26,7 @@ import com.example.planalog.network.user.FriendCountResponse
 import com.example.planalog.network.user.FriendcountService
 import com.example.planalog.network.user.response.UserInfo
 import com.example.planalog.ui.friends.FriendListActivity
+import com.google.android.material.tabs.TabLayoutMediator
 
 
 import retrofit2.Call
@@ -41,6 +42,8 @@ class ProfileFragment : Fragment() {
 
     private lateinit var userApiHelper : UserApiHelper
 
+    private var information = arrayListOf("Moment")
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -52,12 +55,8 @@ class ProfileFragment : Fragment() {
         mypageService = RetrofitClient.create(MypageService::class.java, requireContext())
         friendService = RetrofitClient.create(FriendcountService::class.java, requireContext())
 
-        // RecyclerView 설정
-        binding.recyclerViewMoments.layoutManager = LinearLayoutManager(requireContext())
-
         // 유저 정보 가져오기
         loadUserProfile()
-        fetchMypageMoments()
         fetchFriendCount()
         setupRecyclerView()
 
@@ -74,9 +73,15 @@ class ProfileFragment : Fragment() {
         return binding.root
     }
     private fun setupRecyclerView() {
-        binding.recyclerViewMoments.layoutManager = LinearLayoutManager(requireContext())
-        mypageMomentAdapter = MypageMomentAdapter(emptyList())  // 초기 데이터는 빈 리스트로 설정
-        binding.recyclerViewMoments.adapter = mypageMomentAdapter
+        //뷰 페이저 연결
+        val myPageMomentVpAdapter = MyPageMomentVpAdapter(this)
+        binding.mypageMomentContentVp.adapter = myPageMomentVpAdapter
+
+        //탭 레이아웃 연결
+        TabLayoutMediator(binding.tabLayout, binding.mypageMomentContentVp){
+                tab, position ->
+            tab.text = information[position]
+        }.attach()
     }
 
     private fun loadUserProfile() {
@@ -92,53 +97,6 @@ class ProfileFragment : Fragment() {
                     .show()
             }
         )
-    }
-
-    private fun fetchMypageMoments() {
-        mypageService.getMypageMoments().enqueue(object : Callback<MypageResponse> {
-            override fun onResponse(call: Call<MypageResponse>, response: Response<MypageResponse>) {
-                if (!isAdded) {
-                    // Fragment가 Activity에 붙어 있지 않으면 종료
-                    return
-                }
-
-                context?.let { ctx ->
-                    if (response.isSuccessful) {
-                        val moments = response.body()?.success?.data ?: emptyList()
-
-                        Log.d("MypageService", "성공적으로 가져온 Moments 개수: ${moments.size}")
-                        moments.forEach { moment ->
-                            Log.d("MypageService", "Moment ID: ${moment.momentId}, Title: ${moment.title}")
-                        }
-
-                        if (moments.isNotEmpty()) {
-                            updateMoments(moments)
-                        } else {
-                            Toast.makeText(ctx, "Moment 게시글이 없습니다.", Toast.LENGTH_SHORT).show()
-                        }
-                    } else {
-                        Log.e("MypageService", "서버 응답 오류: ${response.errorBody()?.string()}")
-                        Toast.makeText(ctx, "서버 응답 오류: ${response.message()}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-
-            override fun onFailure(call: Call<MypageResponse>, t: Throwable) {
-                if (!isAdded) {
-                    // Fragment가 Activity에 붙어 있지 않으면 종료
-                    return
-                }
-                context?.let { ctx ->
-                    Log.e("MypageService", "네트워크 오류: ${t.message}", t)
-                    Toast.makeText(ctx, "네트워크 오류: ${t.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-        })
-    }
-
-    private fun updateMoments(moments: List<MypageMoment>) {
-        // 어댑터의 데이터를 새로고침하여 표시
-        mypageMomentAdapter?.updateData(moments)
     }
 
     private fun updateUI(userInfo: UserInfo) {
