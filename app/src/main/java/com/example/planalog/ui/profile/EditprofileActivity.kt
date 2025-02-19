@@ -31,6 +31,7 @@ import com.example.planalog.network.user.response.UserProfileImgResponse
 import com.example.planalog.network.user.response.UserResponse
 import com.example.planalog.network.user.response.UserUpdateResponse
 import com.example.planalog.ui.start.LoginActivity
+import com.navercorp.nid.NaverIdLoginSDK
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -344,6 +345,16 @@ class EditprofileActivity : AppCompatActivity() {
                             val responseBody = responseBody.success
                             Toast.makeText(this@EditprofileActivity, "로그아웃 성공: ${response.body()}", Toast.LENGTH_SHORT).show()
                             Log.d("EditProfileActivity", "로그아웃 성공: $responseBody")
+
+                            // ✅ 네이버 로그아웃 추가
+                            NaverIdLoginSDK.logout()
+                            Log.d("EditProfileActivity", "네이버 로그아웃 완료")
+
+                            val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                            sharedPreferences.edit().remove("naver_access_token").apply()  // 네이버 토큰 삭제
+                            sharedPreferences.edit().remove("naver_refresh_token").apply()  // 네이버 리프레시 토큰 삭제
+
+                            Log.d("EditProfileActivity", "네이버 토큰 삭제 완료")
 
                             // SharedPreferences 초기화
                             clearUserPreferences()

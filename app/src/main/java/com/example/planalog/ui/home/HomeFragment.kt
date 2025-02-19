@@ -32,7 +32,6 @@ import com.example.planalog.utils.savePlannerDate
 import com.example.planalog.utils.updateTaskCompletion
 import loadLastSavedDate
 import loadPlannerState
-import saveCurrentDate
 import saveLastSavedDate
 import savePlannerState
 import java.util.Calendar
@@ -96,7 +95,7 @@ class HomeFragment : Fragment() {
             checklist.clear()
 
             if (plannerType == "category_user") {
-                categories.add(Category(-1, "새로운 카테고리", mutableListOf(), generateRandomColor()))
+                categories.add(Category(-1, "", mutableListOf(), generateRandomColor()))
             }
 
             saveLastSavedDate(requireContext(), plannerType.toString(), currentDate)

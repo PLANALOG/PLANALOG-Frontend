@@ -5,6 +5,6 @@ import retrofit2.Call
 import retrofit2.http.GET
 
 interface MypageService {
-    @GET("/moments/mine")
+    @GET("/mypage/moments")
     fun getMypageMoments(): Call<MypageResponse>
 }
