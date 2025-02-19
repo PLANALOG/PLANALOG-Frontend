@@ -26,6 +26,9 @@ object RetrofitClient {
         override fun intercept(chain: Interceptor.Chain): Response {
             val sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
             val accessToken = sharedPreferences.getString("received_access_token", null)
+            val refreshToken = sharedPreferences.getString("received_refresh_token", null)
+            Log.d("NetworkModule", "받아온 액세스 토큰: $accessToken")
+            Log.d("NetworkModule", "받아온 리프레시 토큰: $refreshToken")
 
             val requestBuilder = chain.request().newBuilder()
             accessToken?.let {

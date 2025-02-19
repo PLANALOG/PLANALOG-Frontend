@@ -20,6 +20,10 @@ android {
         def localProperties = new Properties()
         localProperties.load(new FileInputStream(rootProject.file("local.properties")))
 
+        manifestPlaceholders = [
+                KAKAO_SCHEME: "kakao" + localProperties.getProperty("NATIVE_APP_KEY", "")
+        ]
+
         def NAVER_CLIENT_ID = localProperties.getProperty("NAVER_CLIENT_ID")?:""
         def NAVER_CLIENT_SECRET = localProperties.getProperty("NAVER_CLIENT_SECRET")?:""
         def nativeAppKey = localProperties.getProperty("NATIVE_APP_KEY")?:""
@@ -89,6 +93,8 @@ dependencies {
 
     implementation 'com.navercorp.nid:oauth:5.10.0' // jdk 11
     //implementation 'com.navercorp.nid:oauth-jdk8:5.10.0' // jdk 8
+
+    implementation("com.kakao.sdk:v2-user:2.20.6")
 
     implementation 'com.github.bumptech.glide:glide:4.16.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
