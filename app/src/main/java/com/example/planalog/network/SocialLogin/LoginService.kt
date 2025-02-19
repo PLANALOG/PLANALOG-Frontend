@@ -11,7 +11,12 @@ data class RefreshTokenRequest(val refreshToken: String?)
 
 interface LoginService {
     @POST("/oauth2/naver/token")
-    fun sendAccessToken(
+    fun sendNaverAccessToken(
+        @Body body: TokenRequestBody,
+    ): Call<TokenResponse>
+
+    @POST("/oauth2/kakao/token")
+    fun sendKakaoAccessToken(
         @Body body: TokenRequestBody,
     ): Call<TokenResponse>
 

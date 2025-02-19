@@ -16,6 +16,11 @@ import com.example.planalog.network.SocialLogin.RefreshTokenRequest
 import com.example.planalog.network.SocialLogin.TokenRefreshResponse
 import com.example.planalog.network.SocialLogin.TokenRequestBody
 import com.example.planalog.network.SocialLogin.TokenResponse
+import com.example.planalog.network.api.LoginApiHelper
+import com.kakao.sdk.auth.model.OAuthToken
+import com.kakao.sdk.common.KakaoSdk
+import com.kakao.sdk.common.util.Utility
+import com.kakao.sdk.user.UserApiClient
 import com.navercorp.nid.NaverIdLoginSDK
 import retrofit2.Call
 import retrofit2.Callback
@@ -24,6 +29,7 @@ import retrofit2.Response
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
+    private lateinit var loginApiHelper: LoginApiHelper
 
 //    private val temporaryRefreshToken = BuildConfig.TEST_REFRESHTOKEN
 
@@ -35,6 +41,10 @@ class LoginActivity : AppCompatActivity() {
         // 네이버 SDK 초기화
         NaverIdLoginSDK.initialize(this, BuildConfig.NAVER_CLIENT_ID, BuildConfig.NAVER_CLIENT_SECRET, "PLANALOG")
 
+        val keyHash = Utility.getKeyHash(this)
+        Log.e("해시키", keyHash)
+
+        loginApiHelper = LoginApiHelper(this)
 
         // ActivityResultLauncher 사용
         val launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -49,26 +59,18 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.btnNaverLogin.setOnClickListener {
-            val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-            val accessToken = sharedPreferences.getString("received_access_token", null)
-
-
-
-//            if (!accessToken.isNullOrEmpty()) {
-//                Toast.makeText(this, "이미 로그인되어 메인 화면으로 이동합니다.", Toast.LENGTH_SHORT).show()
-//                val intent = Intent(this, MainActivity::class.java)
-//                startActivity(intent)
-//                finish()
-//            } else {
                 NaverIdLoginSDK.authenticate(this, launcher)
-//            }
         }
 
         binding.btnKakaoLogin.setOnClickListener {
-            Toast.makeText(this, "Kakao Login Clicked", Toast.LENGTH_SHORT).show()
-            // Add your Kakao login logic here
-            val intent = Intent(this, KakaologinActivity::class.java)
-            startActivity(intent)
+            UserApiClient.instance.loginWithKakaoTalk(this) { token, error ->
+                if (error != null) {
+                    Log.e("KakaoLogin", "카카오톡 로그인 실패", error)
+                } else if (token != null) {
+                    Log.d("KakaoLogin", "카카오톡 로그인 성공 - AccessToken: ${token.accessToken}")
+                    handleKakaoLoginSuccess(token)
+                }
+            }
         }
 
         binding.btnGoogleLogin.setOnClickListener {
@@ -84,12 +86,17 @@ class LoginActivity : AppCompatActivity() {
         val accessToken = NaverIdLoginSDK.getAccessToken()
         val refreshToken = NaverIdLoginSDK.getRefreshToken()
 
-        Log.d("Access 토큰", "Access 네이버 토큰: $accessToken")
-        Log.d("Refresh 토큰", "Refresh 네이버 토큰: $refreshToken")
+        Log.d("NaverLogin", "Access 네이버 토큰: $accessToken")
+        Log.d("NaverLogin", "Refresh 네이버 토큰: $refreshToken")
 
-        Toast.makeText(this, "로그인 성공", Toast.LENGTH_SHORT).show()
-        saveAccessToken(accessToken)
-        postAccessTokenToServer(accessToken, refreshToken)
+        Toast.makeText(this, "네이버 로그인 성공", Toast.LENGTH_SHORT).show()
+
+        saveNaverAccessToken(accessToken, refreshToken)
+
+        loginApiHelper = LoginApiHelper(this)
+        loginApiHelper.sendNaverToken(accessToken.toString(), refreshToken.toString())
+
+        moveToNextActivity(accessToken)
     }
 
     // 네이버 로그인 실패 처리
@@ -99,106 +106,13 @@ class LoginActivity : AppCompatActivity() {
         Toast.makeText(this, "로그인 실패: $errorCode, $errorDesc", Toast.LENGTH_SHORT).show()
     }
 
-    // 토큰 저장 함수
-    private fun saveAccessToken(token: String?) {
+    // 네이버 토큰 저장 함수
+    private fun saveNaverAccessToken(accessToken: String?, refreshToken: String?) {
         val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        sharedPreferences.edit().putString("naver_access_token", token).apply()
-        Log.d("저장한 네이버 토큰", "저장된 토큰: $token")
-    }
-
-    private fun postAccessTokenToServer(accessToken: String?, refreshToken: String?) {
-        if (accessToken.isNullOrEmpty()) {
-            Toast.makeText(this, "네이버 Access Token이 없습니다.", Toast.LENGTH_SHORT).show()
-            Log.d("네이버 Access 토큰 없음", "$accessToken")
-            return
-        }
-
-        val tokenService = RetrofitClient.create(LoginService::class.java, this)
-        val requestBody = TokenRequestBody(accessToken, refreshToken)
-        Log.d("서버에 보낼 토큰", "서버에 보낼 토큰: $accessToken")
-
-        tokenService.sendAccessToken(requestBody).enqueue(object : Callback<TokenResponse> {
-            override fun onResponse(call: Call<TokenResponse>, response: Response<TokenResponse>) {
-                if (response.isSuccessful) {
-
-                    val responseBody = response.body()
-
-                    if (responseBody != null && responseBody.resultType == "SUCCESS") {
-    //                        Toast.makeText(this@LoginActivity, "토큰 전송 성공", Toast.LENGTH_SHORT).show(
-
-                        val newAccessToken = response.body()?.success?.accessToken
-                        val newRefreshToken = response.body()?.success?.refreshToken
-
-                        //토큰 저장
-//                        newAccessToken?.let { saveAccessToken(it) }
-//                        newRefreshToken?.let { saveRefreshToken(it) }
-
-
-                        saveReceivedAccessToken(newAccessToken, newRefreshToken)
-
-                        Log.d("전송 토큰", "전송 네이버 토큰: $accessToken")
-                        Log.d("new Aceess 토큰", "응답 Access 토큰: $newAccessToken")
-                        Log.d("new Refresh  토큰", "응답 Refresh 토큰: $newRefreshToken")
-
-                        val sharedPreferences = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                        val existingUserId = sharedPreferences.getString("user_id", null)
-                        val existingType = sharedPreferences.getString("type", null)
-
-//                        if (!existingUserId.isNullOrEmpty()) {
-//                            Log.d("LoginActivity", "기존 유저 ID 발견: $existingUserId. 메인 액티비티로 바로 이동.")
-//                            moveToMainActivity(existingUserId, existingType)
-//                        } else {
-//                            moveToNextActivity(newAccessToken)
-//                        }
-                        moveToNextActivity(newAccessToken)
-
-                    } else {
-                        val errorMessage = responseBody?.error ?: "Unknown error"
-                        Log.e("토큰 응답 오류", "오류 메시지: $errorMessage")
-                    }
-                } else {
-                    Toast.makeText(this@LoginActivity, "전송 실패: ${response.code()}", Toast.LENGTH_SHORT).show()
-                    Log.e("토큰 전송 실패", "오류 메시지: ${response}")
-                }
-            }
-
-            override fun onFailure(call: Call<TokenResponse>, t: Throwable) {
-                Toast.makeText(this@LoginActivity, "전송 실패: ${t.message}", Toast.LENGTH_SHORT).show()
-                Log.e("네이버 Retrofit", "전송 실패", t)
-            }
-        })
-    }
-
-    private fun moveToMainActivity(userId: String, type: String?) {
-        val intent = Intent(this, MainActivity::class.java)
-        intent.putExtra("user_id", userId)
-        intent.putExtra("type", type)
-        startActivity(intent)
-        finish()
-    }
-
-
-    // 서버에서 자체적으로 받아온 토큰 저장 함수
-    private fun saveReceivedAccessToken(receivedAccessToken: String?, receivedRefreshToken: String?) {
-        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        editor.putString("received_access_token", receivedAccessToken)
-        editor.putString("received_refresh_token", receivedRefreshToken)
-        editor.apply()
-
-        Log.d("응답 토큰 저장됨", "access: $receivedAccessToken")
-        Log.d("응답 토큰 저장됨", "refresh: $receivedRefreshToken")
-    }
-
-
-
-    private fun saveRefreshToken(token: String) {
-        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        editor.putString("naver_refresh_token", token)
-        editor.apply()
-        Log.d("TokenRefresh", "저장된 리프레시 토큰: $token")
-
+        sharedPreferences.edit().putString("naver_access_token", accessToken).apply()
+        sharedPreferences.edit().putString("naver_refresh_token", refreshToken).apply()
+        Log.d("NaverLogin", "저장된 Access 토큰: $accessToken")
+        Log.d("NaverLogin", "저장된 Refresh 토큰: $refreshToken")
     }
 
     // 새 액세스 토큰을 저장하고 다음 액티비티로 이동
@@ -209,6 +123,70 @@ class LoginActivity : AppCompatActivity() {
         }
         startActivity(intent)
         finish()  // 현재 액티비티 종료
+    }
+
+    // 로그인 성공 시 토큰 저장 및 사용자 정보 요청
+    private fun handleKakaoLoginSuccess(token: OAuthToken) {
+        val accessToken = token.accessToken
+        val refreshToken = token.refreshToken
+
+        Log.d("KakaoLogin", "Access Token: $accessToken")
+        Log.d("KakaoLogin",  "Refresh Token: $refreshToken")
+
+        // 카카오 토큰 저장
+        saveKakaoTokens(accessToken, refreshToken)
+        sendKakaoTokenToServer()
+
+        // 사용자 정보 요청
+        getKakaoUserInfo()
+    }
+
+    private fun getKakaoUserInfo() {
+        UserApiClient.instance.me { user, error ->
+            if (error != null) {
+                Log.e("KakaoLogin", "사용자 정보 요청 실패", error)
+            } else if (user != null) {
+                Log.d("KakaoLogin", "사용자 정보 -  nickname: ${user.kakaoAccount?.profile?.nickname}, email: ${user.kakaoAccount?.email}")
+            }
+        }
+    }
+
+    private fun saveKakaoTokens(accessToken: String, refreshToken: String?) {
+        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putString("kakao_access_token", accessToken)
+            putString("kakao_refresh_token", refreshToken)
+            apply()
+        }
+
+        // 저장된 값 확인
+        val savedAccessToken = sharedPreferences.getString("kakao_access_token", null)
+        val savedRefreshToken = sharedPreferences.getString("kakao_refresh_token", null)
+
+        Log.d("KakaoLogin", "토큰 저장 완료 - AccessToken: $savedAccessToken, RefreshToken: $savedRefreshToken")
+    }
+
+
+    private fun getSavedKakaoTokens(): Pair<String, String> {
+        val sharedPreferences = getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+        val accessToken = sharedPreferences.getString("kakao_access_token", null)
+        val refreshToken = sharedPreferences.getString("kakao_refresh_token", null)
+
+        Log.d("KakaoLogin", "저장된 토큰 확인 - AccessToken: $accessToken, RefreshToken: $refreshToken")
+
+        return Pair(accessToken.orEmpty(), refreshToken.orEmpty())
+    }
+
+
+    private fun sendKakaoTokenToServer() {
+        val (accessToken, refreshToken) = getSavedKakaoTokens()
+
+        Log.d("KakaoLogin", "서버로 보낼 토큰 - AccessToken: $accessToken, RefreshToken: $refreshToken")
+
+        loginApiHelper = LoginApiHelper(this)
+        loginApiHelper.sendKakaoToken(accessToken, refreshToken)
+
+        moveToNextActivity(accessToken)
     }
 
 }
