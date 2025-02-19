@@ -13,8 +13,9 @@ data class MypageData(
 data class MypageMoment(
     val momentId: Int,
     val title: String,
-    val status: String,
-    val createdAt: String,
-    val updatedAt: String,
+    val userName: String,
+    val date: String,
+    val likingCount: Int,
+    val commentCount: Int,
     val thumbnailUrl: String
 )

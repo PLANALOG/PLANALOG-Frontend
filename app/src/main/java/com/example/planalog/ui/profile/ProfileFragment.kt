@@ -118,7 +118,7 @@ class ProfileFragment : Fragment() {
                         }
                     } else {
                         Log.e("MypageService", "서버 응답 오류: ${response.errorBody()?.string()}")
-                        Toast.makeText(ctx, "에러 발생: ${response.message()}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(ctx, "서버 응답 오류: ${response.message()}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
