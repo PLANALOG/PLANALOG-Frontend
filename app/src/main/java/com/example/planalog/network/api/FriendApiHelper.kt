@@ -137,6 +137,12 @@ class FriendApiHelper(private val context: Context) {
             override fun onResponse(call: Call<FriendpageResponse>, response: Response<FriendpageResponse>) {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
                     val moments = response.body()?.success?.data ?: emptyList()
+
+                    Log.d("FriendApiHelper", "친구 모먼트 개수: ${moments.size}")
+
+                    // ✅ FriendpageActivity의 UI 업데이트 (binding 사용)
+                    (context as? FriendpageActivity)?.updatePostCount(moments.size)
+
                     onSuccess(moments)
                 } else {
                     val errorMessage = response.errorBody()?.string() ?: "서버 응답 오류"
@@ -151,5 +157,6 @@ class FriendApiHelper(private val context: Context) {
             }
         })
     }
+
 
 }

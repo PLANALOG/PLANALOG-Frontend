@@ -262,4 +262,10 @@ class FriendpageActivity : AppCompatActivity() {
             .error(R.drawable.ic_myprofile)
             .into(binding.profileImage)
     }
+
+    fun updatePostCount(count: Int) {
+        runOnUiThread {
+            binding.postCountNumber.text = count.toString()
+        }
+    }
 }

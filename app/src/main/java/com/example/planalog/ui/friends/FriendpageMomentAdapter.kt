@@ -2,6 +2,7 @@ package com.example.planalog.ui.friends
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,7 +22,11 @@ class FriendpageMomentAdapter(
     inner class MomentViewHolder(private val binding: ItemUserpageMomentBinding) :
         RecyclerView.ViewHolder(binding.root), View.OnClickListener {
 
+        private var momentId: Int = -1  // ✅ 각 ViewHolder에 momentId 저장
+
         fun bind(moment: FriendpageMoment) {
+            this.momentId = moment.momentId  // ✅ 각 아이템의 momentId 저장
+
             binding.postTitle.text = moment.title
             binding.postUserName.text = "친구"
             binding.postDate.text = moment.createdAt.substring(0, 10)  // "YYYY-MM-DD"
@@ -43,7 +48,7 @@ class FriendpageMomentAdapter(
         }
 
         override fun onClick(view: View?) {
-            val momentId = moments[adapterPosition].momentId
+            Log.d("FriendpageMomentAdapter", "Clicked momentId: $momentId") // ✅ 올바른 momentId 확인
             openPostDetailFragment(momentId)
         }
 
