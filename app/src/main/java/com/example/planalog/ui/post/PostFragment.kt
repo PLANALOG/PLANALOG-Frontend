@@ -108,15 +108,13 @@ class PostFragment : Fragment() {
     private fun setupViewPager() {
         slidePagerAdapter = SlidePagerAdapter(
             slideList,
+            isDetailView = false,  // ✅ PostFragment에서는 삭제 버튼 보이기
             onImageClick = { position ->
-                // 필요 시 이미지 클릭 처리 로직
+                // 이미지 클릭 이벤트
             },
             onDeleteClick = { position ->
-                // 슬라이드 삭제 로직
-                slideList.removeAt(position)  // 데이터 직접 관리
-                slidePagerAdapter.notifyItemRemoved(position)  // RecyclerView 갱신
-
-                // 슬라이드가 비었으면 UI 변경
+                slideList.removeAt(position)
+                slidePagerAdapter.notifyItemRemoved(position)
                 if (slideList.isEmpty()) {
                     binding.viewPager.visibility = View.GONE
                     binding.postContent.visibility = View.VISIBLE
@@ -125,6 +123,7 @@ class PostFragment : Fragment() {
         )
         binding.viewPager.adapter = slidePagerAdapter
     }
+
 
     private fun setupImagePicker() {
         imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->

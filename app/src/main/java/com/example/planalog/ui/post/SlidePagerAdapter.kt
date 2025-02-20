@@ -1,5 +1,6 @@
 package com.example.planalog.ui.post
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +12,7 @@ import com.example.planalog.R
 
 class SlidePagerAdapter(
     private val slideList: MutableList<Slide>,
+    private val isDetailView: Boolean,
     private val onImageClick: (position: Int) -> Unit,
     private val onDeleteClick: (Int) -> Unit  // 삭제 콜백 추가
 ) : RecyclerView.Adapter<SlidePagerAdapter.SlideViewHolder>() {
@@ -21,9 +23,18 @@ class SlidePagerAdapter(
         val deleteButton: Button = itemView.findViewById(R.id.deleteButton)
 
         fun bind(slide: Slide) {
+            Log.d("SlidePagerAdapter", "isDetailView: $isDetailView")
             // 이미지와 초기 텍스트 설정
             slide.imageResId?.let { uri -> imageView.setImageURI(uri) }
             postContent.setText(slide.postContent)
+
+            if (isDetailView) {
+                deleteButton.visibility = View.GONE
+                Log.d("SlidePagerAdapter", "deleteButton 숨김")
+            } else {
+                deleteButton.visibility = View.VISIBLE
+                Log.d("SlidePagerAdapter", "deleteButton 표시")
+            }
 
             // 이미지 클릭 리스너 설정
             imageView.setOnClickListener {
@@ -51,6 +62,7 @@ class SlidePagerAdapter(
 
     override fun onBindViewHolder(holder: SlideViewHolder, position: Int) {
         val slide = slideList[position]
+        holder.bind(slide)
 
         // 이미지 설정
         holder.imageView.setImageURI(slide.imageResId)
