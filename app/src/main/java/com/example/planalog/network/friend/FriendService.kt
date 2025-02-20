@@ -28,8 +28,8 @@ interface FriendService {
     @DELETE("/friends/{friendId}")
     fun deleteFollowers(@Path("friendId") friendId: String): Call<FriendDeleteResponse>
 
-    @GET("/friends/{friendId}/moments")
-    fun getFriendpageMoments(@Path("friendId") friendId: Int): Call<FriendpageResponse>
+    @GET("/users/{userId}/moments")
+    fun getFriendpageMoments(@Path("userId") userId: Int): Call<FriendpageResponse>
 
     @PATCH("/friends/{friendId}")
     fun acceptFriend(

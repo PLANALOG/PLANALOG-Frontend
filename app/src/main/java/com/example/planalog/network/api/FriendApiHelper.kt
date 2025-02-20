@@ -132,8 +132,8 @@ class FriendApiHelper(private val context: Context) {
         })
     }
 
-    fun fetchFriendMoments(friendUserId: Int, onSuccess: (List<FriendpageMoment>) -> Unit, onFailure: (String) -> Unit) {
-        friendService.getFriendpageMoments(friendUserId).enqueue(object : Callback<FriendpageResponse> {
+    fun fetchFriendMoments(userId: Int, onSuccess: (List<FriendpageMoment>) -> Unit, onFailure: (String) -> Unit) {
+        friendService.getFriendpageMoments(userId).enqueue(object : Callback<FriendpageResponse> {
             override fun onResponse(call: Call<FriendpageResponse>, response: Response<FriendpageResponse>) {
                 if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
                     val moments = response.body()?.success?.data ?: emptyList()
@@ -157,6 +157,5 @@ class FriendApiHelper(private val context: Context) {
             }
         })
     }
-
 
 }
