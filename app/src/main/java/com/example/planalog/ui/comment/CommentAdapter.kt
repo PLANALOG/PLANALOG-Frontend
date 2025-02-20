@@ -30,6 +30,8 @@ class CommentAdapter(private val comments: MutableList<Comment>) :
     // 댓글 추가 메서드
     fun addComment(comment: Comment) {
         comments.add(comment)
-        notifyItemInserted(comments.size - 1) // 새 댓글이 추가된 위치만 갱신
+        notifyItemInserted(comments.size - 1) // ✅ 새 댓글 추가된 위치만 갱신
     }
+
+
 }
