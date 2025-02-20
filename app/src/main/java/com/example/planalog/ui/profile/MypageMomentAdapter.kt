@@ -44,6 +44,7 @@ class MypageMomentAdapter(
                 .into(binding.postImg)
 
             // 클릭 이벤트 설정 (PostDetailFragment 이동)
+            binding.postImg.setOnClickListener(this)
             binding.postTitle.setOnClickListener(this)
             binding.postUserName.setOnClickListener(this)
             binding.postDate.setOnClickListener(this)

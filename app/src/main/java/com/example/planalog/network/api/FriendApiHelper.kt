@@ -3,7 +3,6 @@ package com.example.planalog.network.api
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import com.example.planalog.R
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.friend.FriendRequestCallback
 import com.example.planalog.network.friend.FriendService
@@ -11,6 +10,8 @@ import com.example.planalog.network.friend.request.FriendAddRequest
 import com.example.planalog.network.friend.response.FriendAcceptResponse
 import com.example.planalog.network.friend.response.FriendAddResponse
 import com.example.planalog.network.friend.response.FriendDeleteResponse
+import com.example.planalog.network.friend.response.FriendpageMoment
+import com.example.planalog.network.friend.response.FriendpageResponse
 import com.example.planalog.network.user.UserService
 import com.example.planalog.network.user.response.FriendProfileResponse
 import com.example.planalog.ui.friends.FriendpageActivity
@@ -127,6 +128,26 @@ class FriendApiHelper(private val context: Context) {
 
             override fun onFailure(call: Call<FriendProfileResponse>, t: Throwable) {
                 Log.e("FriendApiHelper", "네트워크 오류: ${t.localizedMessage}", t)
+            }
+        })
+    }
+
+    fun fetchFriendMoments(friendUserId: Int, onSuccess: (List<FriendpageMoment>) -> Unit, onFailure: (String) -> Unit) {
+        friendService.getFriendpageMoments(friendUserId).enqueue(object : Callback<FriendpageResponse> {
+            override fun onResponse(call: Call<FriendpageResponse>, response: Response<FriendpageResponse>) {
+                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+                    val moments = response.body()?.success?.data ?: emptyList()
+                    onSuccess(moments)
+                } else {
+                    val errorMessage = response.errorBody()?.string() ?: "서버 응답 오류"
+                    Log.e("FriendApiHelper", "친구 모먼트 불러오기 실패: $errorMessage")
+                    onFailure("친구의 모먼트를 불러올 수 없습니다.")
+                }
+            }
+
+            override fun onFailure(call: Call<FriendpageResponse>, t: Throwable) {
+                Log.e("FriendApiHelper", "네트워크 오류 발생: ${t.message}", t)
+                onFailure("네트워크 오류 발생")
             }
         })
     }
