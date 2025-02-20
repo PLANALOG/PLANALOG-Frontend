@@ -7,6 +7,8 @@ import com.example.planalog.network.post.MomentRequest
 import com.example.planalog.network.post.MomentRequestContent
 import com.example.planalog.network.post.MomentResponse
 import com.example.planalog.network.post.PostApiService
+import com.example.planalog.network.post.UserPageMomentResponse
+import com.example.planalog.network.user.MypageService
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -14,9 +16,14 @@ import retrofit2.Response
 class PostApiHelper(private val context: Context) {
 
     private val postService = RetrofitClient.create(PostApiService::class.java, context)
+    private val mypageService = RetrofitClient.create(MypageService::class.java, context)
 
     interface UploadPostCallback {
         fun onSuccess(postedId: Int?, momentId: Int?)
+        fun onFailure(errorMessage: String)
+    }
+    interface UserPageMomentCallback {
+        fun onSuccess(response: UserPageMomentResponse)
         fun onFailure(errorMessage: String)
     }
 
@@ -58,4 +65,46 @@ class PostApiHelper(private val context: Context) {
         editor.apply()
         Log.d("PostApiHelper", "momentId 저장 완료: $momentId")
     }
+
+    // ✅ 추가: momentId를 사용해 moment 상세 데이터 가져오기
+    fun fetchUserPageMomentDetail(momentId: Int, callback: UserPageMomentCallback) {
+        mypageService.getUserPageMomentDetail(momentId).enqueue(object : Callback<UserPageMomentResponse> {
+            override fun onResponse(call: Call<UserPageMomentResponse>, response: Response<UserPageMomentResponse>) {
+                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+                    response.body()?.let {
+                        callback.onSuccess(it)
+                    }
+                } else {
+                    val errorMessage = response.errorBody()?.string() ?: "알 수 없는 오류 발생"
+                    Log.e("PostApiHelper", "Moment 불러오기 실패: $errorMessage")
+                    callback.onFailure("Moment 불러오기 실패: ${response.code()} - ${errorMessage}")
+                }
+            }
+
+            override fun onFailure(call: Call<UserPageMomentResponse>, t: Throwable) {
+                callback.onFailure("네트워크 오류 발생: ${t.localizedMessage}")
+            }
+        })
+    }
+
+    fun deleteMoment(momentId: Int, callback: (Boolean, String?) -> Unit) {
+        postService.deleteMoment(momentId).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if (response.isSuccessful) {
+                    Log.d("PostApiHelper", "모먼트 삭제 성공: $momentId")
+                    callback(true, null) // 성공 처리
+                } else {
+                    val errorMessage = response.errorBody()?.string() ?: "삭제 실패"
+                    Log.e("PostApiHelper", "모먼트 삭제 실패: ${response.code()} - $errorMessage")
+                    callback(false, errorMessage)
+                }
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                Log.e("PostApiHelper", "네트워크 오류 발생: ${t.message}", t)
+                callback(false, "네트워크 오류 발생")
+            }
+        })
+    }
+
 }

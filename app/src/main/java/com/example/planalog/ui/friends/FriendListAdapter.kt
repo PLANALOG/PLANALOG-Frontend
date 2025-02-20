@@ -1,5 +1,6 @@
 package com.example.planalog.ui.friends
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -21,11 +22,10 @@ class FriendListAdapter(private var friendList: List<Friend>) :
         fun bind(friend: Friend) {
             binding.friendName.text = friend.nickname
             val clickListener = View.OnClickListener {
-                val bundle = Bundle().apply {
-                    putInt("id", friend.id)
+                val intent = Intent(binding.root.context, FriendpageActivity::class.java).apply {
+                    putExtra("friendId", friend.id)
                 }
-                it.findNavController().navigate(R.id.action_friendListFragment_to_friendpageFragment, bundle)
-
+                binding.root.context.startActivity(intent)
             }
 
             binding.profileImage.setOnClickListener(clickListener)

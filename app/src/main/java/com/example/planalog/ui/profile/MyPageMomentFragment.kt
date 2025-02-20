@@ -56,6 +56,8 @@ class MyPageMomentFragment : Fragment() {
                             Log.d("MypageService", "Moment Id: ${moment.momentId}, Title: ${moment.title}")
                         }
 
+                        (parentFragment as? ProfileFragment)?.updatePostCount(moments.size)
+
                         if (moments.isNotEmpty()) {
                             updateMoments(moments)
                         } else {
