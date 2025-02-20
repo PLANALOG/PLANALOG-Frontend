@@ -27,12 +27,12 @@ class FriendpageActivity : AppCompatActivity() {
     private lateinit var binding: ActivityFriendpageBinding
     private var friendUserId: Int? = null
     private var friendFollowId : String? = null
-    private val momentAdapter by lazy { FriendpageMomentAdapter(emptyList()) }
     private var followStatus = false  // 팔로우 상태
     private lateinit var spf : SharedPreferences
     private lateinit var friendApiHelper : FriendApiHelper
     private lateinit var noticeApiHelper: NoticeApiHelper
     private lateinit var friendCountHelper: FriendCountHelper
+    private lateinit var momentAdapter: FriendpageMomentAdapter  // 어댑터 선언
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,15 +77,32 @@ class FriendpageActivity : AppCompatActivity() {
         if (friendUserId != null) {
             fetchFriendCount(friendUserId!!)
             friendApiHelper.getFriendProfile(friendUserId!!)
+            fetchFriendMoments()  // 🔥 친구의 모먼트 불러오기 추가
         }
         setupFollowButton()
+
     }
 
     private fun setupRecyclerView() {
+        momentAdapter = FriendpageMomentAdapter(this, emptyList())  // 초기 데이터는 빈 리스트
         binding.recyclerViewMoments.apply {
             layoutManager = LinearLayoutManager(this@FriendpageActivity)
             adapter = momentAdapter
         }
+    }
+
+
+    private fun fetchFriendMoments() {
+        if (friendUserId == null) return
+
+        friendApiHelper.fetchFriendMoments(friendUserId!!,
+            onSuccess = { moments ->
+                momentAdapter.updateData(moments)
+            },
+            onFailure = { errorMessage ->
+                Toast.makeText(this@FriendpageActivity, errorMessage, Toast.LENGTH_SHORT).show()
+            }
+        )
     }
 
 
