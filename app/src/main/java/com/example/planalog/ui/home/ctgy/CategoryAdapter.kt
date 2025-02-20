@@ -68,7 +68,7 @@ class CategoryAdapter(
 
         // 체크리스트 추가 버튼 클릭 리스너
         holder.binding.homePlannerCtgyPlusIc.setOnClickListener {
-            category.checklists.add(ChecklistItem(""))
+            category.checklists.add(ChecklistItem("", isChecked = false))
             notifyItemChanged(holder.adapterPosition) // 변경된 항목만 갱신
             onPlannerChanged()
         }
@@ -100,9 +100,30 @@ class CategoryAdapter(
             )
 
             checklistBinding.homePlannerMemoEt.setText(checklistItem.task)
-//            checklistBinding.homePlannerMemoCb.isChecked = checklistItem.isChecked
+
+            //  SharedPreferences에서 저장된 체크 상태 불러오기
+            checklistItem.isChecked = getTaskCompletionState(context, checklistItem.taskId)
+            checklistBinding.homePlannerMemoCb.isChecked = checklistItem.isChecked
+
             checklistBinding.homePlannerMemoEt.isEnabled = checklistItem.isEditable
 
+            // 체크박스 상태 변경 리스너 추가
+            checklistBinding.homePlannerMemoCb.setOnCheckedChangeListener { _, isChecked ->
+                checklistItem.isChecked = isChecked
+
+                //  API 호출을 통해 서버에 완료 상태 업데이트
+                val taskApiHelper = TaskApiHelper(context)
+                taskApiHelper.toggleTaskComplete(listOf(checklistItem.taskId),
+                    onSuccess = { updatedTaskIds ->
+                        Log.d("CategoryAdapter", "할 일 완료 상태 업데이트 성공: $updatedTaskIds")
+                        saveTaskCompletionState(context, checklistItem.taskId, isChecked)
+                        onPlannerChanged() //  상태 변경 시 캘린더 업데이트 반영
+                    },
+                    onFailure = { errorMessage ->
+                        Log.e("CategoryAdapter", "할 일 완료 상태 업데이트 실패: $errorMessage")
+                    }
+                )
+            }
             // 선택 아이콘 상태 관리
             checklistBinding.homePlannerMemoSelectBtn.visibility = if (isDeleteMode) View.VISIBLE else View.GONE
             val checklistIconRes = if (checklistItem.isSelected) R.drawable.ic_ctgy_delete_selected else R.drawable.ic_ctgy_delete_unselected
@@ -137,55 +158,75 @@ class CategoryAdapter(
         val taskIdsToDelete = mutableListOf<Int?>()
         val categoryIdsToDelete = mutableListOf<Int>()
 
+        Log.d("CategoryAdapter", "🔥 삭제 시작: 현재 카테고리 목록 (${categories.size}개)")
+
         while (iterator.hasNext()) {
             val category = iterator.next()
 
-            //  선택된 카테고리 삭제 시, 하위 할 일도 자동 삭제되도록 처리
+            Log.d("CategoryAdapter", "카테고리 확인: ID=${category.id}, isSelected=${category.isSelected}")
+
+            // ✅ 선택된 카테고리라면 삭제 목록에 추가
             if (category.isSelected) {
                 categoryIdsToDelete.add(category.id)
                 taskIdsToDelete.addAll(category.checklists.mapNotNull { it.taskId }) // 할 일 ID 추가
                 iterator.remove() // 리스트에서 삭제
+                Log.d("CategoryAdapter", "🗑️ 카테고리 삭제 대상 추가 -> ID=${category.id}")
             } else {
-                // 개별 할 일 삭제
+                // ✅ 선택되지 않은 카테고리라면, 개별 체크리스트 확인
                 val checklistIterator = category.checklists.iterator()
                 while (checklistIterator.hasNext()) {
                     val checklistItem = checklistIterator.next()
                     if (checklistItem.isSelected) {
                         taskIdsToDelete.add(checklistItem.taskId)
-                        checklistIterator.remove() // 체크리스트 항목 삭제
+                        checklistIterator.remove()
+                        Log.d("CategoryAdapter", "🗑️ 체크리스트 삭제 대상 추가 -> TaskID=${checklistItem.taskId}")
                     }
                 }
             }
         }
+
+        Log.d("CategoryAdapter", "🔥 최종 삭제 목록 -> 카테고리 ID: $categoryIdsToDelete, 할 일 ID: $taskIdsToDelete")
+
         notifyDataSetChanged()
 
-        //  선택된 할 일만 삭제 요청
-        if (taskIdsToDelete.isNotEmpty()) {
-            val taskApiHelper = TaskApiHelper(context)
-            Log.d("CategoryAdapter", "삭제할 하위 할 일 ID: $taskIdsToDelete")
-            taskApiHelper.deleteTasks(taskIdsToDelete,
-                onSuccess = { deletedTaskIds ->
-                    Log.d("CategoryAdapter", "삭제된 하위 할 일 ID: $deletedTaskIds")
-                },
-                onFailure = { Log.e("CategoryAdapter", "하위 할 일 삭제 실패") }
-            )
-        }
 
-        //  선택된 카테고리 삭제 API 호출
+
+        // 선택된 카테고리 삭제 API 호출
         if (categoryIdsToDelete.isNotEmpty()) {
             val ctgyApiHelper = TaskCtgyApiHelper(context)
-            Log.d("CategoryAdapter", "삭제할 카테고리 ID: $categoryIdsToDelete")
+            Log.d("CategoryAdapter", "🔄 삭제 요청할 카테고리 ID: $categoryIdsToDelete")
+
             ctgyApiHelper.deleteCtgys(categoryIdsToDelete, categories,
                 onSuccess = { deletedCtgyIds ->
-                    Log.d("CategoryAdapter", "삭제된 카테고리 ID: $deletedCtgyIds")
+                    Log.d("CategoryAdapter", "✅ 삭제된 카테고리 ID: $deletedCtgyIds")
                 },
-                onFailure = { Log.e("CategoryAdapter", "카테고리 삭제 실패") }
+                onFailure = { errorMessage ->
+                    Log.e("CategoryAdapter", "❌ 카테고리 삭제 실패: $errorMessage")
+                    Log.e("CategoryAdapter", "🚨 API 오류 응답 - Category ID: $categoryIdsToDelete, Error: $errorMessage")
+                }
             )
+
+        // 선택된 할 일 삭제 요청
+        if (taskIdsToDelete.isNotEmpty()) {
+            val taskApiHelper = TaskApiHelper(context)
+            Log.d("CategoryAdapter", "🔄 삭제 요청할 할 일 ID: $taskIdsToDelete")
+
+            taskApiHelper.deleteTasks(taskIdsToDelete,
+                onSuccess = { deletedTaskIds ->
+                    Log.d("CategoryAdapter", "✅ 삭제된 할 일 ID: $deletedTaskIds")
+                },
+                onFailure = { errorMessage ->
+                    Log.e("CategoryAdapter", "❌ 할 일 삭제 실패: $errorMessage")
+                    Log.e("CategoryAdapter", "🚨 API 오류 응답 - Task ID: $taskIdsToDelete, Error: $errorMessage")
+                }
+            )
+        }
         }
 
         // 선택 상태 초기화
         resetSelectionStates()
     }
+
 
     private fun resetSelectionStates() {
         categories.forEach { category ->
@@ -223,6 +264,26 @@ class CategoryAdapter(
         Log.d("CategoryAdapter", "선택된 할 일 ID 목록: $selectedTaskIds")
 
         return selectedTaskIds
+    }
+
+    //  체크 상태 저장 함수
+    fun saveTaskCompletionState(context: Context, taskId: Int?, isChecked: Boolean) {
+        if (taskId == null) return
+        val sharedPreferences = context.getSharedPreferences("task_prefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        val key = "task_completed_$taskId"
+
+        editor.putBoolean(key, isChecked)
+        editor.apply()
+    }
+
+    //  체크 상태 불러오기 함수
+    fun getTaskCompletionState(context: Context, taskId: Int?): Boolean {
+        if (taskId == null) return false
+        val sharedPreferences = context.getSharedPreferences("task_prefs", Context.MODE_PRIVATE)
+        val key = "task_completed_$taskId"
+
+        return sharedPreferences.getBoolean(key, false) // 기본값: false
     }
 
 }

@@ -13,4 +13,10 @@ interface PlannerService {
         @Query("date") date: String? = null,  // 조회할 날짜 (옵션)
         @Query("month") month: String? = null  // 조회할 월 (옵션)
     ) : Call<PlannerResponse>
+
+    @GET("planners")
+    fun getPlannerCalendars(
+        @Query("user") userId: Int,
+        @Query("month") month: String
+    ): Call<PlannerCalendarResponse>
 }

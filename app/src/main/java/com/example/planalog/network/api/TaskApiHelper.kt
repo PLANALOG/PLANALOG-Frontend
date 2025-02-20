@@ -9,10 +9,12 @@ import com.example.planalog.network.task.TaskService
 import com.example.planalog.network.task.request.AddMultipleTasksRequest
 import com.example.planalog.network.task.request.AddTaskRequest
 import com.example.planalog.network.task.request.DeleteTasksRequest
+import com.example.planalog.network.task.request.TaskCompleteRequest
 import com.example.planalog.network.task.response.AddMultipleTasksResponse
 import com.example.planalog.network.task.response.AddTaskResponse
 import com.example.planalog.network.task.response.DeleteTasksResponse
 import com.example.planalog.network.task.response.GetTasksResponse
+import com.example.planalog.network.task.response.TaskCompleteResponse
 import com.example.planalog.network.task.response.TaskStatusResponse
 import com.example.planalog.network.task.response.TodoItem
 import retrofit2.Call
@@ -106,7 +108,7 @@ class TaskApiHelper(private val context: Context) {
                         }
                     } else {
                         Log.d("TaskApiHelper", "응답 성공했지만 데이터 없음")
-                        Toast.makeText(context, "오늘 생성된 카테고리가 없습니다.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "오늘 조회된 할 일이 없습니다.", Toast.LENGTH_SHORT).show()
                     }
                 } else {
                     Log.d("TaskApiHelper","서버 응답 오류: ${response.errorBody()?.string()}")
@@ -165,6 +167,29 @@ class TaskApiHelper(private val context: Context) {
             override fun onFailure(call: Call<TaskStatusResponse>, t: Throwable) {
                 Log.e("TaskApiHelper", "네트워크 오류: ${t.message}", t)
                 Toast.makeText(context, "네트워크 오류 발생", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    fun toggleTaskComplete(taskIds: List<Int?>, onSuccess: (List<Int?>) -> Unit, onFailure: (String) -> Unit) {
+        val request = TaskCompleteRequest(taskIds)
+        taskService.toggleTaskComplete(request).enqueue(object : Callback<TaskCompleteResponse> {
+            override fun onResponse(call: Call<TaskCompleteResponse>, response: Response<TaskCompleteResponse>) {
+                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+                    val taskStatus = response.body()?.success
+                    Toast.makeText(context, "할 일 완료 여부 수정 성공", Toast.LENGTH_SHORT).show()
+                    Log.d("TaskApiHelper", "수정 결과: $taskStatus")
+                    onSuccess(taskIds)
+                } else {
+                    Log.e("TaskApiHelper", "서버 오류: ${response.code()}, ${response.message()}")
+                    Toast.makeText(context, "할 일 완료 여부 수정 실패", Toast.LENGTH_SHORT).show()
+                    onFailure("할 일 완료 여부 수정 실패")
+                }
+            }
+            override fun onFailure(call: Call<TaskCompleteResponse>, t: Throwable) {
+                Log.e("TaskApiHelper", "네트워크 오류: ${t.message}", t)
+                Toast.makeText(context, "네트워크 오류 발생", Toast.LENGTH_SHORT).show()
+                onFailure("네트워크 오류")
             }
         })
     }

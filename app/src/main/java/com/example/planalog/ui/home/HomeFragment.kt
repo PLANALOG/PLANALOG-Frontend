@@ -11,11 +11,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.planalog.R
 import com.example.planalog.databinding.FragmentHomeBinding
 import com.example.planalog.ui.comment.CommentFragment
@@ -31,6 +33,7 @@ import com.example.planalog.ui.home.ctgy.CategoryAdapter
 import com.example.planalog.ui.home.ctgy.MemoAdapter
 import com.example.planalog.ui.home.memo.ChecklistItem
 import com.example.planalog.ui.post.PostFragment
+import com.example.planalog.utils.BlogDataUtil
 import com.example.planalog.utils.generateRandomColor
 import com.example.planalog.utils.getCurrentDate
 import com.example.planalog.utils.getCurrentMonth
@@ -168,16 +171,6 @@ class HomeFragment : Fragment() {
         // 플래너 기능 세팅
         setPlanner()
 
-
-        // home_reply_iv 클릭 리스너 추가
-        binding.homeReplyIv.setOnClickListener {
-            // CommentFragment 이동
-            val transaction = parentFragmentManager.beginTransaction()
-            val fragment = CommentFragment()  // CommentFragment 실제로 생성한 프래그먼트 클래스명으로 변경
-            transaction.replace(R.id.main_frm, fragment)
-            transaction.commit()
-        }
-
     }
 
     override fun onResume() {
@@ -226,7 +219,7 @@ class HomeFragment : Fragment() {
             }
         }
 
-        calendarAdapter = CalendarAdapter(calendarDays, onDayClicked)
+        calendarAdapter = CalendarAdapter(calendarDays, requireContext(), onDayClicked)
 
         // 카테고리형 RecyclerView 설정
         ctgyAdapter = CategoryAdapter(requireContext(), categories, {
@@ -268,6 +261,37 @@ class HomeFragment : Fragment() {
             adapter = memoAdapter
             layoutManager = LinearLayoutManager(context)
         }
+
+        val blogAadapter = HomeBlogAdapter(requireContext(), BlogDataUtil.blogItems, parentFragmentManager)
+        binding.homeBlogRv.apply {
+            layoutManager = object : LinearLayoutManager(requireContext()) {
+                override fun canScrollVertically(): Boolean {
+                    return false  //  내부 스크롤 비활성화
+                }
+            }
+            adapter = blogAadapter
+            isNestedScrollingEnabled = false
+            post {
+                val totalHeight = calculateRecyclerViewHeight(this)
+                layoutParams.height = totalHeight + 40*10
+                requestLayout()
+            }
+        }
+    }
+
+    private fun calculateRecyclerViewHeight(recyclerView: RecyclerView): Int {
+        val adapter = recyclerView.adapter ?: return 0
+        var totalHeight = 0
+        for (i in 0 until adapter.itemCount) {
+            val viewHolder = adapter.createViewHolder(recyclerView, adapter.getItemViewType(i))
+            adapter.onBindViewHolder(viewHolder, i)
+            viewHolder.itemView.measure(
+                View.MeasureSpec.makeMeasureSpec(recyclerView.width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.UNSPECIFIED
+            )
+            totalHeight += viewHolder.itemView.measuredHeight
+        }
+        return totalHeight
     }
 
     private fun initializeUI() {
@@ -538,19 +562,25 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun saveTasksForCategories(categories: List<Category>, plannerDate: String) {
+    fun saveTasksForCategories(categories: List<Category>, plannerDate: String) {
         for (category in categories) {
             val tasks = category.checklists.map { it.task }
 
-            if (tasks.isNotEmpty() && category.id != -1) {
-                Log.d("HomeFragment", "카테고리 ID: ${category.id}, 할 일 목록: $tasks")
+            // 🔽 추가된 디버깅 로그
+            Log.d("HomeFragment", "📌 [DEBUG] 카테고리 저장 요청: ID=${category.id}, Tasks=$tasks")
+
+            if (tasks.isNotEmpty()) {
+                if (category.id == -1) {
+                    Log.e("HomeFragment", "🚨 [ERROR] 잘못된 taskCategoryId (-1). 요청을 보낼 수 없습니다.")
+                    continue
+                }
 
                 ctgyApiHelper.addCtgyMultipleTasks(
                     category.id,
                     tasks,
                     plannerDate,
                     onSuccess = { createdTasks ->
-                        Log.d("HomeFragment", "카테고리(${category.id}) 하위 할 일 생성 완료: $createdTasks")
+                        Log.d("HomeFragment", "✅ [SUCCESS] 카테고리(${category.id}) 할 일 생성 완료: $createdTasks")
 
                         category.checklists.clear()
                         category.checklists.addAll(
@@ -563,10 +593,11 @@ class HomeFragment : Fragment() {
                                 )
                             }
                         )
-                        Log.d("HomeFragment", "저장된 할 일 목록 (ID 포함): ${category.checklists.map { it.taskId }}")
+                        Log.d("HomeFragment", "📝 [UPDATED] 저장된 할 일 목록 (ID 포함): ${category.checklists.map { it.taskId }}")
                     },
                     onFailure = { errorMessage ->
-                        Log.e("HomeFragment", "카테고리(${category.id}) 하위 할 일 생성 실패: $errorMessage")
+                        Log.e("HomeFragment", "🚨 [ERROR] 카테고리(${category.id}) 할 일 생성 실패: $errorMessage")
+                        Log.e("HomeFragment", "📌 [DEBUG] 요청 데이터: categoryId=${category.id}, tasks=$tasks, plannerDate=$plannerDate")
                     }
                 )
             }
@@ -740,10 +771,20 @@ class HomeFragment : Fragment() {
             "memo_user" -> {
                 binding.homePlannerMemoV.visibility = View.VISIBLE
                 binding.homePlannerCtgyV.visibility = View.GONE
+
+                // RecyclerView 위치를 메모형 뷰 밑으로 변경
+                val params = binding.homeBlogRv.layoutParams as ConstraintLayout.LayoutParams
+                params.topToBottom = binding.homePlannerMemoV.id
+                binding.homeBlogRv.layoutParams = params
             }
             else -> {
                 binding.homePlannerMemoV.visibility = View.GONE
                 binding.homePlannerCtgyV.visibility = View.VISIBLE
+
+                // RecyclerView 위치를 카테고리형 뷰 밑으로 변경
+                val params = binding.homeBlogRv.layoutParams as ConstraintLayout.LayoutParams
+                params.topToBottom = binding.homePlannerCtgyV.id
+                binding.homeBlogRv.layoutParams = params
             }
         }
     }
@@ -860,6 +901,57 @@ class HomeFragment : Fragment() {
         transaction.replace(R.id.main_frm, postFragment) // R.id.fragment_container는 프래그먼트가 표시될 레이아웃
         transaction.addToBackStack(null) // 뒤로 가기 버튼을 위한 백스택 추가
         transaction.commit()
+    }
+
+
+
+    fun loadCategoryIdsFromSPF(context: Context, categories: MutableList<Category>) {
+        val sharedPreferences = context.getSharedPreferences("planner_prefs", Context.MODE_PRIVATE)
+        val savedCategoryIds = sharedPreferences.getString("category_ids", "") ?: ""
+
+        if (savedCategoryIds.isNotEmpty()) {
+            val categoryIdList = savedCategoryIds.split(",").mapNotNull { it.toIntOrNull() }.toMutableList()
+
+            // ✅ 삭제된 카테고리 필터링
+            categoryIdList.removeAll { it == -1 }
+
+            val iterator = categoryIdList.iterator()
+            categories.forEach { category ->
+                if (category.id == -1 && iterator.hasNext()) {
+                    category.id = iterator.next()
+                }
+
+                // ✅ 할 일 ID 불러오기
+                val taskIds = sharedPreferences.getString("tasks_${category.id}", "") ?: ""
+                val taskIdList = taskIds.split(",").mapNotNull { it.toIntOrNull() }
+
+                category.checklists.forEachIndexed { index, checklistItem ->
+                    if (index < taskIdList.size) {
+                        checklistItem.taskId = taskIdList[index]
+                    }
+                }
+            }
+
+            Log.d("TaskCtgyApiHelper", "📌 불러온 카테고리 ID: $categoryIdList")
+        }
+    }
+
+
+    fun syncCategoryIdsWithSPF(context: Context, categories: MutableList<Category>) {
+        val sharedPreferences = context.getSharedPreferences("planner_prefs", Context.MODE_PRIVATE)
+
+        categories.forEach { category ->
+            val taskIds = sharedPreferences.getString("tasks_${category.id}", "") ?: ""
+            val taskIdList = taskIds.split(",").mapNotNull { it.toIntOrNull() }
+
+            category.checklists.forEachIndexed { index, checklistItem ->
+                if (index < taskIdList.size) {
+                    checklistItem.taskId = taskIdList[index]
+                }
+            }
+        }
+
+        Log.d("TaskCtgyApiHelper", "✅ 할 일 ID와 카테고리 동기화 완료")
     }
 
     override fun onDestroyView() {
