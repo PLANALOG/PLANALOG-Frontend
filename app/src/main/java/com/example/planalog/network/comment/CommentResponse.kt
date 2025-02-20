@@ -3,8 +3,9 @@ package com.example.planalog.network.comment
 data class CommentResponse(
     val resultType: String,
     val error: ErrorResponse?,
-    val success: SuccessResponse?
+    val success: Int?
 )
+
 
 data class ErrorResponse(
     val errorCode: String,
