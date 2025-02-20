@@ -7,8 +7,10 @@ import android.provider.Settings.Global.putInt
 import android.util.Log
 import android.widget.Toast
 import com.example.planalog.network.RetrofitClient
+import com.example.planalog.network.planner.PlannerCalendarResponse
 import com.example.planalog.network.planner.PlannerResponse
 import com.example.planalog.network.planner.PlannerService
+import com.example.planalog.network.planner.PlannerSuccess
 import com.example.planalog.ui.home.calender.SharedViewModel
 import com.example.planalog.ui.post.PostFragment
 import retrofit2.Call
@@ -66,15 +68,6 @@ class PlannerApiHelper(private val context: Context) {
                         Toast.makeText(context, "플래너가 없습니다.", Toast.LENGTH_SHORT).show()
                         onPlannerRetrieved(false) // ❌ 플래너 없음
                     }
-
-//                    response.body()?.let { responseBody ->
-//                        val planners = responseBody.success  // 필요한 데이터만 추출
-//                        val plannerId = responseBody.success.plannerId.toInt()
-//                        Toast.makeText(context, "플래너 데이터 조회 성공", Toast.LENGTH_SHORT).show()
-//                        Log.d("PlannerApiHelper", "플래너 데이터: $planners")
-//
-//                        savePlannerIdToSPF(plannerId)
-//                    }
                 } else {
                     Log.e("PlannerApiHelper", "서버 오류: ${response.code()}, ${response.message()}")
                     Toast.makeText(context, "플래너 데이터 조회 실패", Toast.LENGTH_SHORT).show()
@@ -84,6 +77,30 @@ class PlannerApiHelper(private val context: Context) {
             override fun onFailure(call: Call<PlannerResponse>, t: Throwable) {
                 Log.e("PlannerApiHelper", "네트워크 오류: ${t.message}", t)
                 Toast.makeText(context, "네트워크 오류 발생", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    fun getCalendarPlanners(userId: Int, month: String, callback: (PlannerSuccess?) -> Unit) {
+        plannerService.getPlannerCalendars(userId, month).enqueue(object : Callback<PlannerCalendarResponse> {
+            override fun onResponse(call: Call<PlannerCalendarResponse>, response: Response<PlannerCalendarResponse>) {
+                if (response.isSuccessful && response.body()?.resultType == "SUCCESS") {
+                    val planners = response.body()?.success
+                    val plannerdates = response.body()?.success?.planners?.map { it.plannerDate }
+                    Log.d("PlannerApiHelper", "플래너 조회 성공: ${planners?.planners?.size}개")
+                    Log.d("PlannerApiHelper", "플래너 개수: ${plannerdates}")
+                    callback(planners)
+                } else {
+                    Log.e("PlannerApiHelper", "플래너 조회 실패: ${response.code()} - ${response.message()}")
+                    Toast.makeText(context, "플래너 조회 실패: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    callback(null)
+                }
+            }
+
+            override fun onFailure(call: Call<PlannerCalendarResponse>, t: Throwable) {
+                Log.e("PlannerApiHelper", "네트워크 오류 발생: ${t.message}", t)
+                Toast.makeText(context, "네트워크 오류 발생", Toast.LENGTH_SHORT).show()
+                callback(null)
             }
         })
     }

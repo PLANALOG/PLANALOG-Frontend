@@ -3,10 +3,12 @@ package com.example.planalog.network.task
 import com.example.planalog.network.task.request.AddMultipleTasksRequest
 import com.example.planalog.network.task.request.AddTaskRequest
 import com.example.planalog.network.task.request.DeleteTasksRequest
+import com.example.planalog.network.task.request.TaskCompleteRequest
 import com.example.planalog.network.task.response.AddMultipleTasksResponse
 import com.example.planalog.network.task.response.AddTaskResponse
 import com.example.planalog.network.task.response.DeleteTasksResponse
 import com.example.planalog.network.task.response.GetTasksResponse
+import com.example.planalog.network.task.response.TaskCompleteResponse
 import com.example.planalog.network.task.response.TaskStatusResponse
 import retrofit2.Call
 import retrofit2.http.Body
@@ -46,4 +48,9 @@ interface TaskService {
     fun patchTaskStatus(
         @Query("task_id") task_id : Int,
     ) : Call<TaskStatusResponse>
+
+    @PATCH("/tasks/status")
+    fun toggleTaskComplete(
+        @Body request: TaskCompleteRequest
+    ) : Call<TaskCompleteResponse>
 }

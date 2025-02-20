@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.planalog.R
 import com.example.planalog.databinding.HomePlannerMemoItemBinding
+import com.example.planalog.network.api.TaskApiHelper
 import com.example.planalog.ui.home.HomeFragment
 import com.example.planalog.ui.home.memo.ChecklistItem
 import com.example.planalog.utils.getCurrentDate
@@ -24,6 +25,7 @@ class MemoAdapter(
 ): RecyclerView.Adapter<MemoAdapter.MemoViewHolder>(){
 
     private var isDeleteMode = false // DELETE 모드 상태
+    private val taskApiHelper = TaskApiHelper(context)
 
     inner class MemoViewHolder(val binding: HomePlannerMemoItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -40,7 +42,10 @@ class MemoAdapter(
     override fun onBindViewHolder(holder: MemoViewHolder, position: Int) {
         val memo = checklists[position]
 
-        Log.d("MemoAdapter", "현재 항목 - Task: ${memo.task}, Task ID: ${memo.taskId}, isSelected: ${memo.isSelected}")
+        Log.d("MemoAdapter", "현재 항목 - Task: ${memo.task}, Task ID: ${memo.taskId}, isSelected: ${memo.isSelected}, isChecked: ${memo.isChecked}")
+
+        // 기존 체크박스 리스너를 제거
+        holder.binding.homePlannerMemoCb.setOnCheckedChangeListener(null)
 
         // 기존 TextWatcher 제거
         holder.textWatcher?.let {
@@ -51,6 +56,9 @@ class MemoAdapter(
         holder.binding.homePlannerMemoEt.setText(memo.task)
         holder.binding.homePlannerMemoEt.isEnabled = memo.isEditable
         holder.binding.homePlannerMemoSelectBtn.isSelected = memo.isSelected
+
+        // 저장된 체크 상태 불러오기
+        memo.isChecked = memo.taskId?.let { getTaskCheckedState(it) } ?: false
         holder.binding.homePlannerMemoCb.isChecked = memo.isChecked
 
         // 부분 삭제 아이콘 설정
@@ -58,11 +66,32 @@ class MemoAdapter(
         holder.binding.homePlannerMemoSelectBtn.setImageResource(iconRes)
         holder.binding.homePlannerMemoSelectBtn.visibility = if (isDeleteMode) View.VISIBLE else View.GONE
 
-        // 체크박스 상태 변화 감지
+        // 체크박스 클릭 시 API 호출
         holder.binding.homePlannerMemoCb.setOnCheckedChangeListener { _, isChecked ->
             memo.isChecked = isChecked
-            checkCompletionState() // 모든 항목 체크 상태 확인
-            (context as? HomeFragment)?.updateCalendarTaskStatus()  // 캘린더 상태 즉시 반영
+            checkCompletionState()
+
+            // 체크 상태 저장
+            memo.taskId?.let { saveTaskCheckedState(it, isChecked) }
+
+            // 모든 항목이 완료되었는지 확인 후 날짜 저장
+            val allCompleted = checklists.all { it.isChecked }
+            saveTaskCompletionState(getCurrentDate(), allCompleted)
+
+            // API 호출 - 서버에도 완료 상태 동기화
+            memo.taskId?.let { taskId ->
+                taskApiHelper.toggleTaskComplete(
+                    listOf(taskId),
+                    onSuccess = {
+                        Log.d("MemoAdapter", "할 일 완료 여부 수정 성공: $taskId")
+                    },
+                    onFailure = { errorMessage ->
+                        Log.e("MemoAdapter", "할 일 완료 여부 수정 실패: $errorMessage")
+                        memo.isChecked = !isChecked  // API 실패 시 원래 상태로 복구
+                        holder.binding.homePlannerMemoCb.isChecked = !isChecked
+                    }
+                )
+            }
         }
 
         // 부분 삭제 아이콘 클릭 리스너
@@ -169,6 +198,31 @@ class MemoAdapter(
 
         // onAllChecked 콜백 호출 (프래그먼트로 알림)
         onAllChecked(allChecked)
+    }
+
+    private fun saveTaskCheckedState(taskId: Int, isChecked: Boolean) {
+        val sharedPreferences = context.getSharedPreferences("task_prefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("task_checked_$taskId", isChecked)
+        editor.apply()
+    }
+
+    private fun getTaskCheckedState(taskId: Int): Boolean {
+        val sharedPreferences = context.getSharedPreferences("task_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getBoolean("task_checked_$taskId", false) // 기본값 false
+    }
+
+    private fun saveTaskCompletionState(date: String, isCompleted: Boolean) {
+        val sharedPreferences = context.getSharedPreferences("task_prefs", Context.MODE_PRIVATE)
+        val savedDates = sharedPreferences.getStringSet("completed_dates", mutableSetOf()) ?: mutableSetOf()
+
+        if (isCompleted) {
+            savedDates.add(date) // 모든 할 일이 완료되면 날짜 저장
+        } else {
+            savedDates.remove(date) // 하나라도 미완료면 제거
+        }
+
+        sharedPreferences.edit().putStringSet("completed_dates", savedDates).apply()
     }
 
 }

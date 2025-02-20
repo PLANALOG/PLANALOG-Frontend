@@ -1,5 +1,6 @@
 package com.example.planalog.ui.comment.com.example.planalog.ui.home.calender
 
+import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -11,6 +12,7 @@ import com.example.planalog.databinding.ItemCalendarHeaderBinding
 
 class CalendarAdapter(
     private val days: MutableList<CalendarDay>,
+    private val context : Context,
     private val onDayClicked: (CalendarDay) -> Unit
 ) : RecyclerView.Adapter<CalendarAdapter.CalendarViewHolder>() {
 
@@ -40,7 +42,10 @@ class CalendarAdapter(
                     Log.d("Calendar", "day.isEmpty: ${day.isEmpty}")
                 } else {
                     binding.calenderDayTv.text = day.getDayOfMonth() // 날짜를 설정
-                    binding.calenderCircleView.visibility = if (day.hasTask) View.VISIBLE else View.INVISIBLE
+
+                    //  모든 날짜에서 아이콘을 표시하도록 설정
+                    binding.calenderCircleView.visibility = View.VISIBLE
+
                     binding.calenderCircleView.setBackgroundResource(
                         if (day.isTaskCompleted) R.drawable.circle_checked else R.drawable.circle_unchecked
                     ) // 완료된 작업 여부에 따른 원 모양의 표시
@@ -71,18 +76,30 @@ class CalendarAdapter(
             }
             is CalendarViewHolder.DayViewHolder -> {
                 val calendarDay = days[position - 7] // 7을 빼는 이유는 첫 7개 항목은 헤더이기 때문
+
+                // 저장된 완료 상태 불러오기
+                calendarDay.isTaskCompleted = getTaskCompletionState(calendarDay.date)
+
+                holder.binding.calenderCircleView.visibility = View.VISIBLE
+
                 holder.bind(calendarDay) // 날짜를 bind
 
-                // 상태에 따라 이미지 업데이트
-                holder.binding.calenderCircleView.setBackgroundResource(
-                    if (calendarDay.isTaskCompleted) R.drawable.circle_checked else R.drawable.circle_unchecked
-                )
-
+                // ✅ 플래너가 있는 날짜만 동그라미 표시
+                if (calendarDay.hasTask) {
+                    holder.binding.calenderCircleView.visibility = View.VISIBLE
+                    holder.binding.calenderCircleView.setBackgroundResource(
+                        if (calendarDay.isTaskCompleted) R.drawable.circle_checked
+                        else R.drawable.circle_unchecked
+                    )
+                } else {
+                    holder.binding.calenderCircleView.visibility = View.INVISIBLE
+                }
                 holder.itemView.setOnClickListener { onDayClicked(calendarDay) } // 클릭 시 처리
 
-                Log.d("CalendarAdapter", "최종 날짜: ${calendarDay.date}, hasTask: ${calendarDay.hasTask}, isTaskComplete: ${calendarDay.isTaskCompleted}")
-                // 메모가 있으면 CircleView 보이기
-//                holder.binding.calenderCircleView.visibility = if (calendarDay.hasTask) View.VISIBLE else View.INVISIBLE
+                Log.d(
+                    "CalendarAdapter",
+                    "날짜: ${calendarDay.date}, hasTask: ${calendarDay.hasTask}, isTaskCompleted: ${calendarDay.isTaskCompleted}"
+                )
             }
         }
     }
@@ -91,4 +108,12 @@ class CalendarAdapter(
         // 요일 7개 + 날짜 수
         return 7 + days.size
     }
+
+    private fun getTaskCompletionState(date: String): Boolean {
+        val sharedPreferences = context.getSharedPreferences("task_prefs", Context.MODE_PRIVATE)
+        val savedCompletedDates = sharedPreferences.getStringSet("completed_dates", emptySet()) ?: emptySet()
+
+        return savedCompletedDates.contains(date.trim()) // 해당 날짜가 저장된 완료 목록에 있는지 확인
+    }
+
 }
