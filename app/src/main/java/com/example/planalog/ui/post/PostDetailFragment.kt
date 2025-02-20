@@ -113,15 +113,18 @@ class PostDetailFragment : Fragment() {
 
 
     private fun setupViewPager() {
+        Log.d("PostDetailFragment", "isDetailView = true 설정")
         slidePagerAdapter = SlidePagerAdapter(
             slideList,
+            isDetailView = true,  // PostDetailFragment에서는 삭제 버튼 숨김
             onImageClick = { position ->
-                // 슬라이드 클릭 시 추가 동작 (예: 전체 화면 보기)
+                // 이미지 클릭 이벤트
             },
             onDeleteClick = { position ->
-                // 삭제 동작이 필요한 경우 (지금은 PostFragment에서 처리 중이라면 생략 가능)
+                // 삭제 이벤트 (PostDetailFragment에서는 필요 없을 수도 있음)
             }
         )
+
         binding.viewPager.adapter = slidePagerAdapter
     }
 
