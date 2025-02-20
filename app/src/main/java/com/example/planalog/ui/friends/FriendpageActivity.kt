@@ -4,21 +4,20 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.planalog.R
 import com.example.planalog.databinding.ActivityFriendpageBinding
-import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.api.FriendApiHelper
 import com.example.planalog.network.api.FriendCountHelper
 import com.example.planalog.network.api.NoticeApiHelper
 import com.example.planalog.network.friend.FriendRequestCallback
-import com.example.planalog.network.friend.FriendService
-import com.example.planalog.network.user.FriendCountResponse
 import com.example.planalog.network.user.response.FriendProfile
-import com.example.planalog.ui.home.notify.NotificationItem
+import com.example.planalog.ui.post.PostDetailFragment
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
@@ -26,13 +25,13 @@ class FriendpageActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityFriendpageBinding
     private var friendUserId: Int? = null
-    private var friendFollowId : String? = null
-    private var followStatus = false  // 팔로우 상태
-    private lateinit var spf : SharedPreferences
-    private lateinit var friendApiHelper : FriendApiHelper
+    private var friendFollowId: String? = null
+    private var followStatus = false
+    private lateinit var spf: SharedPreferences
+    private lateinit var friendApiHelper: FriendApiHelper
     private lateinit var noticeApiHelper: NoticeApiHelper
     private lateinit var friendCountHelper: FriendCountHelper
-    private lateinit var momentAdapter: FriendpageMomentAdapter  // 어댑터 선언
+    private lateinit var momentAdapter: FriendpageMomentAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,54 +42,52 @@ class FriendpageActivity : AppCompatActivity() {
         friendApiHelper = FriendApiHelper(this)
         noticeApiHelper = NoticeApiHelper(this)
         friendCountHelper = FriendCountHelper(this)
-
         spf = getSharedPreferences("follow_status", Context.MODE_PRIVATE)
 
         // 전달된 JSON 데이터 가져오기
         val userJson = intent.getStringExtra("friendData")
-
-        // JSON 문자열을 Map<String, Any>로 변환
         val userData: Map<String, Any> = Gson().fromJson(userJson, object : TypeToken<Map<String, Any>>() {}.type)
 
-        // 필요한 정보 추출 예제
-        friendUserId = intent.getIntExtra("friendId", -1)
-        friendUserId = (userData["id"] as? Double)?.toInt()  // id가 Double일 경우 Int로 변환
-        val name = userData["name"] as? String ?: "이름 없음"
-        val email = userData["email"] as? String ?: "이메일 없음"
+        // ✅ `userId`와 `friendUserId`를 동일하게 설정 (한 번만)
+        friendUserId = intent.getIntExtra("userId", -1).takeIf { it != -1 }
+            ?: (userData["id"] as? Double)?.toInt()
+
         val nickname = userData["nickname"] as? String ?: "닉네임 없음"
-
-        // UI에 표시하거나 로그로 확인
-        Log.d("받아온 친구 정보", "friendUserId: ${friendUserId}, Name: $name, Email: $email, Nickname: $nickname")
-
         binding.userName.text = nickname
 
         if (friendUserId != null) {
-            // 저장된 팔로우 상태 및 친구 ID 불러오기
             followStatus = getSavedFollowStatus(friendUserId.toString())
             friendFollowId = getSavedFollowId(friendUserId.toString())
             toggleFollowButton(followStatus)
+
+            fetchFriendCount(friendUserId!!)
+            friendApiHelper.getFriendProfile(friendUserId!!)
+            fetchFriendMoments()  // ✅ 친구 모먼트 가져오기
         } else {
             Log.e("FriendpageActivity", "전달된 사용자 데이터가 없습니다.")
         }
 
         setupRecyclerView()
-        if (friendUserId != null) {
-            fetchFriendCount(friendUserId!!)
-            friendApiHelper.getFriendProfile(friendUserId!!)
-            fetchFriendMoments()  // 🔥 친구의 모먼트 불러오기 추가
-        }
         setupFollowButton()
-
     }
 
+    override fun onBackPressed() {
+        if (binding.mainFrm.visibility == View.VISIBLE) {
+            binding.mainFrm.visibility = View.GONE
+            supportFragmentManager.popBackStack() // ✅ 뒤로 가기 기능 추가
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+
     private fun setupRecyclerView() {
-        momentAdapter = FriendpageMomentAdapter(this, emptyList())  // 초기 데이터는 빈 리스트
+        momentAdapter = FriendpageMomentAdapter(this, emptyList())
         binding.recyclerViewMoments.apply {
             layoutManager = LinearLayoutManager(this@FriendpageActivity)
             adapter = momentAdapter
         }
     }
-
 
     private fun fetchFriendMoments() {
         if (friendUserId == null) return
@@ -98,6 +95,8 @@ class FriendpageActivity : AppCompatActivity() {
         friendApiHelper.fetchFriendMoments(friendUserId!!,
             onSuccess = { moments ->
                 momentAdapter.updateData(moments)
+                updatePostCount(moments.size)  // ✅ 친구 모먼트 개수 업데이트
+                Log.d("FriendpageActivity", "Fetched moments count: ${moments.size}") // ✅ 모먼트 개수 로그 출력
             },
             onFailure = { errorMessage ->
                 Toast.makeText(this@FriendpageActivity, errorMessage, Toast.LENGTH_SHORT).show()
@@ -105,48 +104,36 @@ class FriendpageActivity : AppCompatActivity() {
         )
     }
 
+    fun openPostDetailFragment(momentId: Int) {
+        Log.d("FriendpageActivity", "Opening PostDetailFragment for momentId: $momentId")
+
+        val fragment = PostDetailFragment().apply {
+            arguments = Bundle().apply {
+                putInt("momentId", momentId)
+            }
+        }
+
+        val transaction = supportFragmentManager.beginTransaction()
+        val frameLayout = findViewById<FrameLayout>(R.id.main_frm)
+
+        frameLayout.visibility = View.VISIBLE // ✅ 프래그먼트가 보이도록 변경
+        transaction.replace(R.id.main_frm, fragment)
+        transaction.addToBackStack(null) // ✅ 뒤로 가기 가능
+        transaction.commit()
+    }
+
 
     private fun setupFollowButton() {
         binding.followBtn.setOnClickListener {
             if (!binding.followBtn.isSelected) {
-                // 팔로우 상태로 변경
                 friendApiHelper.sendFriendRequest(friendUserId.toString(), object : FriendRequestCallback {
                     override fun onRequestSuccess(newFriendFollowId: String?) {
                         Log.d("FriendpageActivity", "친구 요청 성공")
-
                         if (newFriendFollowId != null) {
                             saveFollowId(friendUserId.toString(), newFriendFollowId)
                             saveFollowStatus(friendUserId.toString(), true)
                             toggleFollowButton(true)
                             Toast.makeText(this@FriendpageActivity, "응원하기 성공", Toast.LENGTH_SHORT).show()
-
-
-//                            val message = "${binding.userName.text}님이 나를 응원하고 싶어 합니다."
-//                            val friend = "friend"
-//                            val entityId = getNextEntityId()
-//
-//                            noticeApiHelper.addNotification(message, friend, entityId, onSuccess = { noticeId ->
-//
-//                                // ✅ 서버 알림 추가가 성공하면 ViewModel에도 추가
-//                                val notifyViewModel = NotifyViewModel.getInstance(application)
-//                                Log.d("FriendpageActivity", "FriendpageActivity ViewModel 해시코드: ${notifyViewModel.hashCode()}")
-//
-//                                val notification = NotificationItem(
-//                                    userId = friendUserId.toString(),
-//                                    noticeId = noticeId,
-//                                    profileImageRes = R.drawable.ic_friend_2,
-//                                    message = "${binding.userName.text}님이 나를 응원하고 싶어 합니다.",
-//                                    onAccept = { userId -> acceptFollowRequest(userId) },
-//                                    onReject = { userId, noticeId -> rejectFollowRequest(userId, noticeId) }
-//                                )
-//
-//                                notifyViewModel.addNotification(notification)
-//
-//                                Log.d("FriendpageActivity", "📌 알림 ViewModel에 전달됨: ${notification.userId}, 메시지: ${notification.message}")
-//                            },
-//                                onFailure = { errorMessage ->
-//                                    Log.e("FriendpageActivity", "📌 서버 알림 추가 실패: $errorMessage")
-//                                })
                         }
                     }
 
@@ -156,9 +143,8 @@ class FriendpageActivity : AppCompatActivity() {
                     }
                 })
             } else {
-                // 언팔로우 상태로 변경
                 friendFollowId = getSavedFollowId(friendUserId.toString())
-                Log.d("friendFollowId", "friendFollowId: ${friendFollowId}")
+                Log.d("friendFollowId", "friendFollowId: $friendFollowId")
 
                 friendApiHelper.deleteFollowers(friendFollowId.toString(), object : FriendRequestCallback {
                     override fun onRequestSuccess(friendId: String?) {
@@ -171,16 +157,13 @@ class FriendpageActivity : AppCompatActivity() {
                         Log.e("FriendpageActivity", "친구 삭제 실패: $message")
                         Toast.makeText(this@FriendpageActivity, message, Toast.LENGTH_SHORT).show()
                     }
-
                 })
-
             }
         }
     }
 
-
     private fun toggleFollowButton(isFollowing: Boolean) {
-        binding.followBtn.isSelected = isFollowing  // 셀렉터가 UI 자동 업데이트
+        binding.followBtn.isSelected = isFollowing
         binding.followBtn.text = if (isFollowing) "응원 중" else "응원하기"
     }
 
@@ -212,38 +195,6 @@ class FriendpageActivity : AppCompatActivity() {
         }
     }
 
-    private fun acceptFollowRequest(userId: String) {
-        Toast.makeText(this, "$userId 응원 수락", Toast.LENGTH_SHORT).show()
-        // TODO: API 호출하여 팔로우 수락 처리
-    }
-
-    private fun rejectFollowRequest(userId: String, noticeId : String) {
-        Toast.makeText(this, "$userId 응원 거절", Toast.LENGTH_SHORT).show()
-        // TODO: API 호출하여 팔로우 거절 처리
-    }
-
-    private fun getNextEntityId(): Int {
-        val sharedPreferences = getSharedPreferences("entity_prefs", Context.MODE_PRIVATE)
-        val currentId = sharedPreferences.getInt("entityId", 2) // 기본값 0
-        val newId = currentId + 1
-
-        // 증가한 entityId 저장
-        sharedPreferences.edit().putInt("entityId", newId).apply()
-        return newId
-    }
-
-    private fun resetFollowInfo() {
-        with(spf.edit()) {
-            remove("follow_status_$friendUserId") // 팔로우 상태 삭제
-            remove("follow_id_$friendUserId")    // 팔로우 ID 삭제
-            apply()
-        }
-        followStatus = false
-        friendFollowId = null
-        toggleFollowButton(false) // UI 업데이트
-        Log.d("FriendpageActivity", "📌 팔로우 정보 초기화 완료")
-    }
-
     private fun fetchFriendCount(userId: Int) {
         friendCountHelper.getUserFriendCount(userId)
     }
@@ -256,7 +207,6 @@ class FriendpageActivity : AppCompatActivity() {
         binding.userName.text = friendProfile.nickname
         binding.introText.text = friendProfile.introduction
 
-        // Glide를 사용하여 프로필 이미지 로드
         Glide.with(this)
             .load(friendProfile.profileImage ?: R.drawable.ic_myprofile)
             .error(R.drawable.ic_myprofile)
@@ -268,4 +218,6 @@ class FriendpageActivity : AppCompatActivity() {
             binding.postCountNumber.text = count.toString()
         }
     }
+
+
 }

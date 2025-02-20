@@ -23,7 +23,7 @@ class FriendListAdapter(private var friendList: List<Friend>) :
             binding.friendName.text = friend.nickname
             val clickListener = View.OnClickListener {
                 val intent = Intent(binding.root.context, FriendpageActivity::class.java).apply {
-                    putExtra("friendId", friend.id)
+                    putExtra("userId", friend.id)
                 }
                 binding.root.context.startActivity(intent)
             }

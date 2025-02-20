@@ -1,18 +1,15 @@
 package com.example.planalog.ui.friends
 
 import android.content.Context
-import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.planalog.R
 import com.example.planalog.databinding.ItemUserpageMomentBinding
 import com.example.planalog.network.friend.response.FriendpageMoment
-import com.example.planalog.ui.post.PostDetailFragment
 
 class FriendpageMomentAdapter(
     private val context: Context,
@@ -22,19 +19,21 @@ class FriendpageMomentAdapter(
     inner class MomentViewHolder(private val binding: ItemUserpageMomentBinding) :
         RecyclerView.ViewHolder(binding.root), View.OnClickListener {
 
-        private var momentId: Int = -1  // ✅ 각 ViewHolder에 momentId 저장
+        private var momentId: Int = -1
 
         fun bind(moment: FriendpageMoment) {
-            this.momentId = moment.momentId  // ✅ 각 아이템의 momentId 저장
+            this.momentId = moment.momentId
 
             binding.postTitle.text = moment.title
-            binding.postUserName.text = "친구"
-            binding.postDate.text = moment.createdAt.substring(0, 10)  // "YYYY-MM-DD"
-            binding.postReply.text = "공감 0 댓글 0"
+            binding.postUserName.text = moment.userName
 
-            // 썸네일 이미지 로드
+            val formattedDate = moment.date ?: "0000-00-00"
+            binding.postDate.text = formattedDate.substring(0, 10)
+
+            binding.postReply.text = "공감 ${moment.likingCount} 댓글 ${moment.commentCount}"
+
             Glide.with(binding.postImg.context)
-                .load(moment.thumbnailUrl)  // ✅ API 응답에 맞게 thumbnailUrl 사용
+                .load(moment.thumbnailURL)
                 .placeholder(R.drawable.ic_logo_dark)
                 .error(R.drawable.ic_logo_dark)
                 .into(binding.postImg)
@@ -48,21 +47,8 @@ class FriendpageMomentAdapter(
         }
 
         override fun onClick(view: View?) {
-            Log.d("FriendpageMomentAdapter", "Clicked momentId: $momentId") // ✅ 올바른 momentId 확인
-            openPostDetailFragment(momentId)
-        }
-
-        private fun openPostDetailFragment(momentId: Int) {
-            val fragment = PostDetailFragment().apply {
-                arguments = Bundle().apply {
-                    putInt("momentId", momentId)
-                }
-            }
-
-            val transaction = (context as FragmentActivity).supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.main_frm, fragment)
-            transaction.addToBackStack(null)
-            transaction.commit()
+            Log.d("FriendpageMomentAdapter", "Clicked momentId: $momentId")
+            (context as? FriendpageActivity)?.openPostDetailFragment(momentId)  // ✅ `FriendpageActivity`의 메서드 호출
         }
     }
 
@@ -77,8 +63,9 @@ class FriendpageMomentAdapter(
 
     override fun getItemCount(): Int = moments.size
 
-    fun updateData(newMoments: List<FriendpageMoment>) {  // ✅ `FriendpageMoment` 사용
+    fun updateData(newMoments: List<FriendpageMoment>) {
         moments = newMoments
         notifyDataSetChanged()
+        Log.d("FriendpageMomentAdapter", "Updated moment list size: ${moments.size}") // ✅ 모먼트 개수 로그 출력
     }
 }
