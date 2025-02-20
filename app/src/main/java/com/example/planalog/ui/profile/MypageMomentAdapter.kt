@@ -2,6 +2,7 @@ package com.example.planalog.ui.profile
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,11 +21,12 @@ import com.example.planalog.ui.post.PostDetailFragment
 class MypageMomentAdapter(
     private val context: Context,
     private var moments: List<MypageMoment>,
-    private var momentId: Int = -1
 ) : RecyclerView.Adapter<MypageMomentAdapter.MomentViewHolder>() {
 
     inner class MomentViewHolder(private val binding: ItemMypageMomentBinding) :
         RecyclerView.ViewHolder(binding.root), View.OnClickListener {
+
+        private var momentId: Int = -1
 
 
         fun bind(moment: MypageMoment) {
@@ -51,13 +53,15 @@ class MypageMomentAdapter(
             binding.postReply.setOnClickListener(this)
 
             binding.moreIv.setOnClickListener {
-                showPopupMenu(it)
+                showPopupMenu(it, momentId)
             }
         }
 
         override fun onClick(view: View?) {
+            Log.d("MypageMomentAdapter", "Clicked momentId: $momentId") // 로그 추가
             openPostDetailFragment(momentId)
         }
+
 
         private fun openPostDetailFragment(momentId: Int) {
             val fragment = PostDetailFragment().apply {
@@ -65,7 +69,6 @@ class MypageMomentAdapter(
                     putInt("momentId", momentId)
                 }
             }
-
             val transaction = (context as FragmentActivity).supportFragmentManager.beginTransaction()
             transaction.replace(R.id.main_frm, fragment)
             transaction.addToBackStack(null) // 뒤로 가기 기능 추가
@@ -74,7 +77,7 @@ class MypageMomentAdapter(
     }
 
 
-    private fun showPopupMenu(anchor: View) {
+    private fun showPopupMenu(anchor: View, momentId: Int) {
         val popupView = LayoutInflater.from(context).inflate(R.layout.comment_popup_menu, null)
 
         val popupWindow = PopupWindow(
