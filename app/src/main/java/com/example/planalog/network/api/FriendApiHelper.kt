@@ -108,29 +108,29 @@ class FriendApiHelper(private val context: Context) {
         })
     }
 
-    fun getFriendProfile(userId: Int) {
-        userService.getFriendProfile(userId.toString()).enqueue(object : Callback<FriendProfileResponse> {
-            override fun onResponse(call: Call<FriendProfileResponse>, response: Response<FriendProfileResponse>) {
-                if (response.isSuccessful) {
-                    val friendProfile = response.body()?.success
-                    if (friendProfile != null) {
-                        Log.d("FriendApiHelper", "프로필 조회 성공: ${friendProfile.nickname}")
-
-                        // FriendpageActivity의 UI 업데이트
-                        (context as? FriendpageActivity)?.runOnUiThread {
-                            context.updateFriendProfileUI(friendProfile)
-                        }
-                    }
-                } else {
-                    Log.e("FriendApiHelper", "프로필 조회 실패: ${response.message()}")
-                }
-            }
-
-            override fun onFailure(call: Call<FriendProfileResponse>, t: Throwable) {
-                Log.e("FriendApiHelper", "네트워크 오류: ${t.localizedMessage}", t)
-            }
-        })
-    }
+//    fun getFriendProfile(userId: Int) {
+//        userService.getFriendProfile(userId.toString()).enqueue(object : Callback<FriendProfileResponse> {
+//            override fun onResponse(call: Call<FriendProfileResponse>, response: Response<FriendProfileResponse>) {
+//                if (response.isSuccessful) {
+//                    val friendProfile = response.body()?.success
+//                    if (friendProfile != null) {
+//                        Log.d("FriendApiHelper", "프로필 조회 성공: ${friendProfile.nickname}")
+//
+//                        // FriendpageActivity의 UI 업데이트
+//                        (context as? FriendpageActivity)?.runOnUiThread {
+//                            context.updateFriendProfileUI(friendProfile)
+//                        }
+//                    }
+//                } else {
+//                    Log.e("FriendApiHelper", "프로필 조회 실패: ${response.message()}")
+//                }
+//            }
+//
+//            override fun onFailure(call: Call<FriendProfileResponse>, t: Throwable) {
+//                Log.e("FriendApiHelper", "네트워크 오류: ${t.localizedMessage}", t)
+//            }
+//        })
+//    }
 
     fun fetchFriendMoments(userId: Int, onSuccess: (List<FriendpageMoment>) -> Unit, onFailure: (String) -> Unit) {
         friendService.getFriendpageMoments(userId).enqueue(object : Callback<FriendpageResponse> {

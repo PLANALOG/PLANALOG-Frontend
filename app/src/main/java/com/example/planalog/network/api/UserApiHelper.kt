@@ -7,10 +7,12 @@ import androidx.appcompat.app.AppCompatActivity.MODE_PRIVATE
 import com.example.planalog.network.RetrofitClient
 import com.example.planalog.network.user.UserService
 import com.example.planalog.network.user.request.UserUpdateRequest
+import com.example.planalog.network.user.response.FriendProfileResponse
 import com.example.planalog.network.user.response.NicknameCheckResponse
 import com.example.planalog.network.user.response.UserInfo
 import com.example.planalog.network.user.response.UserResponse
 import com.example.planalog.network.user.response.UserUpdateResponse
+import com.example.planalog.ui.friends.FriendpageActivity
 import com.google.gson.Gson
 import retrofit2.Call
 import retrofit2.Callback
@@ -167,4 +169,29 @@ class UserApiHelper(private val context: Context) {
         })
     }
 
+    fun getFriendProfile(userId: Int, onResult: (String) -> Unit) {
+        userService.getFriendProfile(userId.toString()).enqueue(object : Callback<FriendProfileResponse> {
+            override fun onResponse(call: Call<FriendProfileResponse>, response: Response<FriendProfileResponse>) {
+                if (response.isSuccessful) {
+                    val friendProfile = response.body()?.success
+                    val nickname = friendProfile?.nickname ?: "알 수 없음"
+                    if (friendProfile != null) {
+                        Log.d("UserApiHelper", "프로필 조회 성공: ${friendProfile.nickname}")
+
+                        // FriendpageActivity의 UI 업데이트
+                        (context as? FriendpageActivity)?.runOnUiThread {
+                            context.updateFriendProfileUI(friendProfile)
+                        }
+                        onResult(nickname)
+                    }
+                } else {
+                    Log.e("UserApiHelper", "프로필 조회 실패: ${response.message()}")
+                }
+            }
+
+            override fun onFailure(call: Call<FriendProfileResponse>, t: Throwable) {
+                Log.e("UserApiHelper", "네트워크 오류: ${t.localizedMessage}", t)
+            }
+        })
+    }
 }
