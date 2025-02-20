@@ -107,7 +107,7 @@ class EditprofileActivity : AppCompatActivity() {
                     }
                 } else {
                     binding.blocknickname.visibility = View.INVISIBLE
-                    binding.confirmButton.isEnabled = false
+                    binding.confirmButton.isEnabled = true
                 }
             }
 

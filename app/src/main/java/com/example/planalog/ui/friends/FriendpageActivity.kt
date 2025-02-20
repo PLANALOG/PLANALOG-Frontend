@@ -53,6 +53,7 @@ class FriendpageActivity : AppCompatActivity() {
         val userData: Map<String, Any> = Gson().fromJson(userJson, object : TypeToken<Map<String, Any>>() {}.type)
 
         // 필요한 정보 추출 예제
+        friendUserId = intent.getIntExtra("friendId", -1)
         friendUserId = (userData["id"] as? Double)?.toInt()  // id가 Double일 경우 Int로 변환
         val name = userData["name"] as? String ?: "이름 없음"
         val email = userData["email"] as? String ?: "이메일 없음"
@@ -103,32 +104,32 @@ class FriendpageActivity : AppCompatActivity() {
                             Toast.makeText(this@FriendpageActivity, "응원하기 성공", Toast.LENGTH_SHORT).show()
 
 
-                            val message = "${binding.userName.text}님이 나를 응원하고 싶어 합니다."
-                            val friend = "friend"
-                            val entityId = getNextEntityId()
-
-                            noticeApiHelper.addNotification(message, friend, entityId, onSuccess = { noticeId ->
-
-                                // ✅ 서버 알림 추가가 성공하면 ViewModel에도 추가
-                                val notifyViewModel = NotifyViewModel.getInstance(application)
-                                Log.d("FriendpageActivity", "FriendpageActivity ViewModel 해시코드: ${notifyViewModel.hashCode()}")
-
-                                val notification = NotificationItem(
-                                    userId = friendUserId.toString(),
-                                    noticeId = noticeId,
-                                    profileImageRes = R.drawable.ic_friend_2,
-                                    message = "${binding.userName.text}님이 나를 응원하고 싶어 합니다.",
-                                    onAccept = { userId -> acceptFollowRequest(userId) },
-                                    onReject = { userId, noticeId -> rejectFollowRequest(userId, noticeId) }
-                                )
-
-                                notifyViewModel.addNotification(notification)
-
-                                Log.d("FriendpageActivity", "📌 알림 ViewModel에 전달됨: ${notification.userId}, 메시지: ${notification.message}")
-                            },
-                                onFailure = { errorMessage ->
-                                    Log.e("FriendpageActivity", "📌 서버 알림 추가 실패: $errorMessage")
-                                })
+//                            val message = "${binding.userName.text}님이 나를 응원하고 싶어 합니다."
+//                            val friend = "friend"
+//                            val entityId = getNextEntityId()
+//
+//                            noticeApiHelper.addNotification(message, friend, entityId, onSuccess = { noticeId ->
+//
+//                                // ✅ 서버 알림 추가가 성공하면 ViewModel에도 추가
+//                                val notifyViewModel = NotifyViewModel.getInstance(application)
+//                                Log.d("FriendpageActivity", "FriendpageActivity ViewModel 해시코드: ${notifyViewModel.hashCode()}")
+//
+//                                val notification = NotificationItem(
+//                                    userId = friendUserId.toString(),
+//                                    noticeId = noticeId,
+//                                    profileImageRes = R.drawable.ic_friend_2,
+//                                    message = "${binding.userName.text}님이 나를 응원하고 싶어 합니다.",
+//                                    onAccept = { userId -> acceptFollowRequest(userId) },
+//                                    onReject = { userId, noticeId -> rejectFollowRequest(userId, noticeId) }
+//                                )
+//
+//                                notifyViewModel.addNotification(notification)
+//
+//                                Log.d("FriendpageActivity", "📌 알림 ViewModel에 전달됨: ${notification.userId}, 메시지: ${notification.message}")
+//                            },
+//                                onFailure = { errorMessage ->
+//                                    Log.e("FriendpageActivity", "📌 서버 알림 추가 실패: $errorMessage")
+//                                })
                         }
                     }
 

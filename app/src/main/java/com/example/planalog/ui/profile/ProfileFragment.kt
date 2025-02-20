@@ -59,7 +59,6 @@ class ProfileFragment : Fragment() {
         loadUserProfile()
         fetchFriendCount()
         setupRecyclerView()
-
         setupUI()
 
 
@@ -175,5 +174,11 @@ class ProfileFragment : Fragment() {
             }
         })
     }
+
+    fun updatePostCount(count: Int) {
+        if (!isAdded) return
+        binding.postCountNumber.text = count.toString()
+    }
+
 
 }

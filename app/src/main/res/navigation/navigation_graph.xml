@@ -39,4 +39,29 @@
             app:argType="integer" />
     </fragment>
 
+
+
+    <!-- 마이페이지 모먼트 프래그먼트 -->
+    <fragment
+        android:id="@+id/mypageMomentFragment"
+        android:name="com.example.planalog.ui.profile.MyPageMomentFragment"
+        tools:layout="@layout/fragment_mypage_moment">
+
+        <!-- 액션: MypageMomentFragment에서 PostDetailFragment로 이동 -->
+        <action
+            android:id="@+id/action_mypageMoment_to_postDetail"
+            app:destination="@id/postDetailFragment" />
+    </fragment>
+
+    <!-- 게시글 상세 페이지 프래그먼트 -->
+    <fragment
+        android:id="@+id/postDetailFragment"
+        android:name="com.example.planalog.ui.post.PostDetailFragment"
+        tools:layout="@layout/fragment_post_detail">
+        <argument
+            android:name="momentId"
+            app:argType="integer" />
+    </fragment>
 </navigation>
+
+
