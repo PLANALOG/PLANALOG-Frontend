@@ -17,5 +17,9 @@ data class NotificationItem(
     val message: String,
     val entityType: String,
     val entityId: Int,
-    val createdAt: String
+    val createdAt: String,
+    val fromUserId: Int,
+    val fromUserName: String,
+    val onAccept: ((Int) -> Unit)? = null,
+    val onReject: ((Int, String) -> Unit)? = null
 )

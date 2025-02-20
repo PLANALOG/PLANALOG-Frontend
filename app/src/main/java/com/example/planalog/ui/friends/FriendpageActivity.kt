@@ -15,6 +15,7 @@ import com.example.planalog.databinding.ActivityFriendpageBinding
 import com.example.planalog.network.api.FriendApiHelper
 import com.example.planalog.network.api.FriendCountHelper
 import com.example.planalog.network.api.NoticeApiHelper
+import com.example.planalog.network.api.UserApiHelper
 import com.example.planalog.network.friend.FriendRequestCallback
 import com.example.planalog.network.user.response.FriendProfile
 import com.example.planalog.ui.post.PostDetailFragment
@@ -29,6 +30,7 @@ class FriendpageActivity : AppCompatActivity() {
     private var followStatus = false
     private lateinit var spf: SharedPreferences
     private lateinit var friendApiHelper: FriendApiHelper
+    private lateinit var userApiHelper: UserApiHelper
     private lateinit var noticeApiHelper: NoticeApiHelper
     private lateinit var friendCountHelper: FriendCountHelper
     private lateinit var momentAdapter: FriendpageMomentAdapter
@@ -41,6 +43,7 @@ class FriendpageActivity : AppCompatActivity() {
 
         friendApiHelper = FriendApiHelper(this)
         noticeApiHelper = NoticeApiHelper(this)
+        userApiHelper = UserApiHelper(this)
         friendCountHelper = FriendCountHelper(this)
         spf = getSharedPreferences("follow_status", Context.MODE_PRIVATE)
 
@@ -61,7 +64,9 @@ class FriendpageActivity : AppCompatActivity() {
             toggleFollowButton(followStatus)
 
             fetchFriendCount(friendUserId!!)
-            friendApiHelper.getFriendProfile(friendUserId!!)
+            userApiHelper.getFriendProfile(friendUserId!!) { nickname ->
+                Log.d("FriendpageActivity", "친구 닉네임 : $nickname")
+            }
             fetchFriendMoments()  // ✅ 친구 모먼트 가져오기
         } else {
             Log.e("FriendpageActivity", "전달된 사용자 데이터가 없습니다.")
